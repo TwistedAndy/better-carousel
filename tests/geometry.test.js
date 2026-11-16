@@ -1,0 +1,126 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { alignOffset, columns, fits, groups, inView, nearestSnap, progress, snapOfSlide, snaps, targetLocation } from '../src/geometry.js';
+
+// The %item model: 300 px slides with a 20 px right margin, in a 940 px viewport (3 slides)
+const row = (count, size = 300, gap = 20) => Array.from({ length: count }, (item, index) => ({ start: index * (size + gap), end: index * (size + gap) + size }));
+
+const view = 940;
+
+const base = { view, slidesToScroll: 1, containScroll: 'trimSnaps' };
+
+test('center: the slide center is at the viewport center, with no half-gap offset', () => {
+	const slides = row(6),
+		result = snaps({ ...base, slides, align: 'center', containScroll: false });
+
+	result.snaps.forEach((snap, index) => {
+		const slide = slides[index];
+		assert.equal((slide.start + slide.end) / 2 + snap.location, view / 2);
+		assert.equal(snap.slide, index);
+	});
+});
+
+test('center with trimSnaps: merged edge snaps and the active slide of each snap', () => {
+	const slides = row(6),
+		result = snaps({ ...base, slides, align: 'center' });
+
+	assert.deepEqual(result.snaps.map((snap) => snap.location), [0, -320, -640, -960]);
+	assert.deepEqual(result.snaps.map((snap) => snap.slide), [1, 2, 3, 4]);
+	assert.equal(result.max, 0);
+	assert.equal(result.min, -960);
+	assert.deepEqual(slides.map((slide, index) => snapOfSlide(result.snaps, slides, index, view, 'center')), [0, 0, 1, 2, 3, 3]);
+});
+
+test('center with keepSnaps: one snap for each slide, clamped', () => {
+	const slides = row(6),
+		result = snaps({ ...base, slides, align: 'center', containScroll: 'keepSnaps' });
+
+	assert.deepEqual(result.snaps.map((snap) => snap.location), [0, 0, -320, -640, -960, -960]);
+	assert.equal(snapOfSlide(result.snaps, slides, 0, view, 'center'), 0);
+});
+
+test('containScroll false: the limits are the first and the last snap', () => {
+	const slides = row(6),
+		result = snaps({ ...base, slides, align: 'center', containScroll: false });
+
+	assert.equal(result.max, 320);
+	assert.equal(result.min, -1280);
+	assert.equal(result.snaps.length, 6);
+});
+
+test('start and end alignment', () => {
+	const slides = row(6),
+		start = snaps({ ...base, slides, align: 'start' }),
+		end = snaps({ ...base, slides, align: 'end' });
+
+	assert.deepEqual(start.snaps.map((snap) => snap.location), [0, -320, -640, -960]);
+	assert.deepEqual(start.snaps.map((snap) => snap.slide), [0, 1, 2, 3]);
+	assert.deepEqual(end.snaps.map((snap) => snap.location), [0, -320, -640, -960]);
+	assert.deepEqual(end.snaps.map((snap) => snap.slide), [2, 3, 4, 5]);
+});
+
+test('align function', () => {
+	assert.equal(alignOffset((viewSize, snapSize) => viewSize - snapSize - 10, 940, 300, 0), 630);
+});
+
+test('2-row grid: columns, snaps and the top slide wins', () => {
+	// Column pitch 110 px: a 2 x 2 slide, then 4 single slides in 2 columns, then a 2 x 2 slide
+	const slides = [
+		{ start: 0, end: 210 },
+		{ start: 220, end: 320 },
+		{ start: 220, end: 320 },
+		{ start: 330, end: 430 },
+		{ start: 330, end: 430 },
+		{ start: 440, end: 650 },
+		{ start: 660, end: 760 },
+		{ start: 660, end: 760 }
+	];
+
+	assert.equal(columns(slides).length, 5);
+
+	const result = snaps({ ...base, view: 300, slides, align: 'start' });
+
+	assert.deepEqual(result.snaps.map((snap) => snap.location), [0, -220, -330, -440, -460]);
+	assert.deepEqual(result.snaps.map((snap) => snap.slide), [0, 1, 3, 5, 5]);
+});
+
+test('slidesToScroll: a number and auto', () => {
+	const slides = row(6);
+
+	assert.deepEqual(snaps({ ...base, slides, align: 'start', slidesToScroll: 2 }).snaps.map((snap) => snap.location), [0, -640, -960]);
+	assert.equal(groups(columns(slides), view, 'auto').length, 2);
+	assert.deepEqual(snaps({ ...base, slides, align: 'start', slidesToScroll: 'auto' }).snaps.map((snap) => snap.location), [0, -960]);
+});
+
+test('fit mode at the limit', () => {
+	assert.equal(fits(row(3), 940), true);
+	assert.equal(fits([{ start: 0, end: 942 }], 940), false);
+	assert.equal(fits([], 940), true);
+});
+
+test('loop snaps: no clamp and the last snap is not a copy of the first', () => {
+	const slides = row(6),
+		result = snaps({ ...base, slides, align: 'center', period: 1920 });
+
+	assert.deepEqual(result.snaps.map((snap) => snap.location), [320, 0, -320, -640, -960, -1280]);
+	assert.deepEqual(result.snaps.map((snap) => snap.slide), [0, 1, 2, 3, 4, 5]);
+});
+
+test('loop: target locations and the nearest snap modulo the period', () => {
+	assert.equal(targetLocation(320, -1300, 1920), -1600);
+	assert.equal(targetLocation(320, -1280, 1920, 1), -1600);
+	assert.equal(targetLocation(-1280, 320, 1920, -1), 640);
+	assert.equal(nearestSnap([{ location: 320 }, { location: -1280 }], -1500, 1920), 0);
+});
+
+test('progress and slides in view', () => {
+	assert.equal(progress(-480, -960, 0), 0.5);
+	assert.equal(progress(-480, 0, 0, 1920), 0.25);
+
+	const slides = row(6);
+
+	assert.deepEqual(inView(slides, -160, view, 0), [0, 1, 2, 3]);
+	assert.deepEqual(inView(slides, -160, view, 1), [1, 2]);
+	assert.deepEqual(inView(slides, 0, view, 0, 1920), [0, 1, 2]);
+	assert.deepEqual(inView(slides, 320, view, 0, 1920), [0, 1, 5]);
+});

@@ -1,0 +1,95 @@
+.hero_box {
+	--color-section: var(--color-secondary-alt);
+	--gap-section-top: calc(1.5 * var(--gap-section));
+	--width-fixed: var(--width-fixed-small);
+	overflow: hidden;
+	background-image: url('assets/pattern_waves.png');
+	text-align: center;
+
+	&:before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(180deg, #{rgbo(--color-secondary, 90%)}, var(--color-secondary));
+	}
+
+	.contents {
+		max-width: none;
+		margin-bottom: calc(2 * var(--gap-contents));
+	}
+
+	h1 {
+		max-width: 820px;
+		margin: 0 auto;
+
+		img {
+			display: block;
+			width: 100%;
+			height: auto;
+		}
+
+	}
+
+	.content {
+		max-width: var(--width-contents);
+		margin: 28px auto 18px;
+		font-size: var(--size-large);
+		line-height: 1.6;
+	}
+
+	.images {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		margin-bottom: 30px;
+		gap: 8px;
+	}
+
+	// The photo carousel: the selected photo in the center, the others dim
+	.better {
+		max-width: 1240px;
+		margin: 0 auto;
+	}
+
+	.better_viewport {
+		overflow: visible;
+	}
+
+	.items {
+		justify-content: center;
+		--gap-grid-x: 24px;
+	}
+
+	.item {
+		width: min(720px, 76vw);
+		margin-bottom: 0;
+		overflow: hidden;
+		border-radius: var(--radius-large);
+		box-shadow: var(--shadow-large);
+		opacity: 0.45;
+		transition: opacity 0.4s;
+
+		&.active {
+			opacity: 1;
+		}
+
+		img {
+			display: block;
+			width: 100%;
+			height: auto;
+			aspect-ratio: 12 / 7;
+			object-fit: cover;
+		}
+
+	}
+
+	.better_dots {
+		--button-base: var(--theme-white);
+		--button-text-disabled: #{rgbo(--theme-white, 45%)};
+	}
+
+	@include tablet_large {
+		--gap-section-top: var(--gap-section);
+	}
+
+}

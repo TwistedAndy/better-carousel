@@ -1,0 +1,302 @@
+// Snap math. This module does not use the DOM.
+//
+// All values are on the main axis, in px. A slide is { start, end }: its border box at location 0, relative to the viewport start.
+// The location L is the translate of the container. A slide shows at start + L.
+
+/**
+ * Get the offset of a snap from the viewport start.
+ *
+ * @param {string|Function} align 'start', 'center', 'end' or (viewSize, snapSize, index) => offset.
+ * @param {number} view The viewport size.
+ * @param {number} size The snap size.
+ * @param {number} index The snap index.
+ * @returns {number}
+ */
+export function alignOffset(align, view, size, index) {
+	if (typeof align === 'function') {
+		return align(view, size, index);
+	}
+	return align === 'center' ? (view - size) / 2 : align === 'end' ? view - size : 0;
+}
+
+/**
+ * Get the first start and the last end of the slides.
+ *
+ * @param {Array<{start: number, end: number}>} slides
+ * @returns {{start: number, end: number, size: number, max: number}} max is the size of the largest slide.
+ */
+export function bounds(slides) {
+	let start = Infinity,
+		end = -Infinity,
+		max = 0;
+
+	for (const slide of slides) {
+		start = Math.min(start, slide.start);
+		end = Math.max(end, slide.end);
+		max = Math.max(max, slide.end - slide.start);
+	}
+
+	return { start, end, size: end - start, max };
+}
+
+/**
+ * Find if all slides fit in the viewport.
+ *
+ * @param {Array<{start: number, end: number}>} slides
+ * @param {number} view
+ * @returns {boolean}
+ */
+export function fits(slides, view) {
+	return !slides.length || bounds(slides).size <= view + 1;
+}
+
+/**
+ * Put the slides that start at the same position (1 px or less) into one column.
+ * In a flex row, one column has one slide. In a grid, a column can have more slides.
+ *
+ * @param {Array<{start: number, end: number}>} slides
+ * @returns {Array<{start: number, end: number}>} The columns, sorted by start.
+ */
+export function columns(slides) {
+	const order = slides.map((slide, index) => index).sort((a, b) => slides[a].start - slides[b].start || a - b),
+		list = [];
+
+	let column;
+
+	for (const index of order) {
+		const slide = slides[index];
+		if (column && slide.start - column.start <= 1) {
+			column.end = Math.max(column.end, slide.end);
+		} else {
+			column = { start: slide.start, end: slide.end };
+			list.push(column);
+		}
+	}
+
+	return list;
+}
+
+/**
+ * Put the columns into groups. One group gives one snap.
+ *
+ * @param {Array<{start: number, end: number}>} list The columns.
+ * @param {number} view
+ * @param {number|string} count A number of columns, or 'auto' for as many as fit in the viewport.
+ * @returns {Array<{start: number, end: number}>}
+ */
+export function groups(list, view, count) {
+	const result = [];
+
+	let group,
+		size = 0;
+
+	for (const column of list) {
+		const fit = count === 'auto' ? group && column.end - group.start <= view + 1 : size < count;
+		if (group && fit) {
+			group.end = Math.max(group.end, column.end);
+			size++;
+		} else {
+			group = { start: column.start, end: column.end };
+			result.push(group);
+			size = 1;
+		}
+	}
+
+	return result;
+}
+
+/**
+ * Get the distance between two locations. In loop mode, use the shortest distance modulo the period.
+ *
+ * @param {number} a
+ * @param {number} b
+ * @param {number} [period] The loop period, or 0 if the loop is off.
+ * @returns {number} a - b
+ */
+export function distance(a, b, period) {
+	const value = a - b;
+	return period ? value - Math.round(value / period) * period : value;
+}
+
+/**
+ * Compute the snaps.
+ *
+ * @param {object} args
+ * @param {Array<{start: number, end: number}>} args.slides
+ * @param {number} args.view The viewport size.
+ * @param {string|Function} args.align
+ * @param {number|string} args.slidesToScroll
+ * @param {string|boolean} args.containScroll 'trimSnaps', 'keepSnaps' or false.
+ * @param {number} [args.period] The loop period, or 0 if the loop is off.
+ * @returns {{snaps: Array<{location: number, slide: number}>, min: number, max: number}}
+ * Each snap has its location and its active slide. min and max are the limits of the location if the loop is off.
+ */
+export function snaps({ slides, view, align, slidesToScroll, containScroll, period = 0 }) {
+	const content = bounds(slides);
+
+	let max = -content.start || 0,
+		min = view - content.end,
+		list = groups(columns(slides), view, slidesToScroll).map((group, index) => alignOffset(align, view, group.end - group.start, index) - group.start);
+
+	if (!period) {
+		if (containScroll) {
+			list = list.map((location) => Math.min(max, Math.max(min, location)));
+		} else {
+			max = Math.max(...list);
+			min = Math.min(...list);
+		}
+	}
+
+	if (period || containScroll !== 'keepSnaps') {
+		list = list.filter((location, index) => !index || Math.abs(distance(location, list[index - 1], period)) > 1);
+		if (period && list.length > 1 && Math.abs(distance(list[0], list[list.length - 1], period)) <= 1) {
+			list.pop();
+		}
+	}
+
+	return {
+		snaps: list.map((location) => ({ location, slide: activeSlide(slides, location, view, align, period) })),
+		min,
+		max
+	};
+}
+
+/**
+ * Find the slide whose anchor is nearest to the align point at a location.
+ * The anchor is the start for 'start', the center for 'center' and the end for 'end'.
+ * If two slides have the same distance, the lower index wins.
+ *
+ * @param {Array<{start: number, end: number}>} slides
+ * @param {number} location
+ * @param {number} view
+ * @param {string|Function} align
+ * @param {number} [period]
+ * @returns {number} The slide index.
+ */
+export function activeSlide(slides, location, view, align, period) {
+	let best = -1,
+		gap = Infinity;
+
+	slides.forEach((slide, index) => {
+		const value = Math.abs(distance(slide.start + location, alignOffset(align, view, slide.end - slide.start, index), period));
+		if (value < gap - 0.5) {
+			gap = value;
+			best = index;
+		}
+	});
+
+	return best;
+}
+
+/**
+ * Find the snap of a slide: the snap whose active slide it is, or the snap nearest to the raw location of the slide.
+ *
+ * @param {Array<{location: number, slide: number}>} list The snaps.
+ * @param {Array<{start: number, end: number}>} slides
+ * @param {number} index The slide index.
+ * @param {number} view
+ * @param {string|Function} align
+ * @param {number} [period]
+ * @returns {number} The snap index.
+ */
+export function snapOfSlide(list, slides, index, view, align, period) {
+	const found = list.findIndex((snap) => snap.slide === index),
+		slide = slides[index];
+
+	if (found > -1 || !slide) {
+		return Math.max(found, 0);
+	}
+
+	return nearestSnap(list, alignOffset(align, view, slide.end - slide.start, index) - slide.start, period);
+}
+
+/**
+ * Find the snap nearest to a location.
+ *
+ * @param {Array<{location: number}>} list The snaps.
+ * @param {number} location
+ * @param {number} [period]
+ * @returns {number} The snap index.
+ */
+export function nearestSnap(list, location, period) {
+	let best = 0,
+		gap = Infinity;
+
+	list.forEach((snap, index) => {
+		const value = Math.abs(distance(snap.location, location, period));
+		if (value < gap) {
+			gap = value;
+			best = index;
+		}
+	});
+
+	return best;
+}
+
+/**
+ * Get the location of a snap that is nearest to the current location. In loop mode, a snap has a location in each period.
+ *
+ * @param {number} target The snap location.
+ * @param {number} location The current location.
+ * @param {number} [period]
+ * @param {number} [direction] 1 to go forward (a smaller location), -1 to go back, 0 for the shortest path.
+ * @returns {number}
+ */
+export function targetLocation(target, location, period, direction = 0) {
+	if (!period) {
+		return target;
+	}
+
+	if (direction > 0) {
+		return target + (Math.ceil((location - 0.5 - target) / period) - 1) * period;
+	}
+
+	if (direction < 0) {
+		return target + (Math.floor((location + 0.5 - target) / period) + 1) * period;
+	}
+
+	return location + distance(target, location, period);
+}
+
+/**
+ * Get the progress of a location, from 0 to 1.
+ *
+ * @param {number} location
+ * @param {number} min
+ * @param {number} max
+ * @param {number} [period]
+ * @returns {number}
+ */
+export function progress(location, min, max, period) {
+	if (period) {
+		const value = -location / period;
+		return value - Math.floor(value);
+	}
+	return max > min ? Math.min(1, Math.max(0, (max - location) / (max - min))) : 0;
+}
+
+/**
+ * Find the slides that show at a location.
+ *
+ * @param {Array<{start: number, end: number}>} slides
+ * @param {number} location
+ * @param {number} view
+ * @param {number} threshold The part of a slide that must show, from 0 to 1. With 0, any part is enough.
+ * @param {number} [period]
+ * @returns {number[]} The slide indexes.
+ */
+export function inView(slides, location, view, threshold, period) {
+	const result = [];
+
+	slides.forEach((slide, index) => {
+		const size = slide.end - slide.start,
+			start = period ? distance(slide.start + location + size / 2, view / 2, period) + view / 2 - size / 2 : slide.start + location,
+			visible = Math.min(start + size, view) - Math.max(start, 0);
+
+		if (visible > 0 && visible >= threshold * size - 0.5) {
+			result.push(index);
+		}
+	});
+
+	return result;
+}

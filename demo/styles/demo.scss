@@ -1,0 +1,37 @@
+@charset "utf-8";
+
+@import 'includes/mixins';
+@import 'includes/properties';
+
+@import 'base/reset';
+@import 'base/layout';
+@import 'base/base';
+@import 'base/prism';
+
+@import 'elements/buttons';
+@import 'elements/contents';
+@import 'elements/content';
+@import 'elements/items';
+
+@import 'blocks/header';
+@import 'blocks/hero';
+@import 'blocks/cards';
+@import 'blocks/wrapper';
+@import 'blocks/footer';
+
+// The carousel: the default names, the names of the old theme wrapper, and the "is_" state prefix
+@import 'better-carousel';
+
+$better: 'embla';
+@import 'better-carousel';
+
+.demo_state {
+	$better-state: 'is_';
+	@import 'better-carousel';
+}
+
+:root {
+	--button-arrow: url(ico_arrow.svg);
+}
+
+@import 'blocks/examples';

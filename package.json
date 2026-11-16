@@ -1,0 +1,43 @@
+{
+	"name": "better-carousel",
+	"version": "0.1.0",
+	"description": "A small and fast carousel that takes all sizes, gaps and the layout from CSS.",
+	"type": "module",
+	"main": "./dist/better-carousel.js",
+	"module": "./dist/better-carousel.js",
+	"exports": {
+		".": {
+			"import": "./dist/better-carousel.js",
+			"default": "./dist/better-carousel.js"
+		},
+		"./css": "./dist/better-carousel.css",
+		"./scss": "./src/better-carousel.scss"
+	},
+	"sideEffects": [
+		"*.css",
+		"*.scss"
+	],
+	"files": [
+		"dist",
+		"src"
+	],
+	"scripts": {
+		"build": "rollup -c",
+		"dev": "rollup -c -w",
+		"test": "node --test tests/",
+		"e2e": "node tests/e2e.mjs"
+	},
+	"keywords": [
+		"carousel",
+		"slider",
+		"css"
+	],
+	"license": "MIT",
+	"author": "Andrii Toniievych",
+	"devDependencies": {
+		"@rollup/plugin-terser": "^1.0.2",
+		"puppeteer-core": "^25.17.0",
+		"rollup": "^4.68.4",
+		"sass": "^1.108.2"
+	}
+}
