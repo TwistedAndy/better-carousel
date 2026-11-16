@@ -2,6 +2,7 @@ import terser from '@rollup/plugin-terser';
 import * as sass from 'sass';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
+import { writeDocs } from './scripts/docs.mjs';
 
 const production = !process.env.ROLLUP_WATCH;
 
@@ -62,6 +63,19 @@ const size = {
 	}
 };
 
+/**
+ * Write the reference tables and the file sizes into README.md and index.html.
+ */
+const docs = {
+	name: 'docs',
+	writeBundle() {
+		const changed = writeDocs();
+		if (changed.length) {
+			console.log('Docs: wrote ' + changed.join(', '));
+		}
+	}
+};
+
 const config = [
 	{
 		input,
@@ -82,7 +96,7 @@ if (production) {
 			file: 'dist/better-carousel.min.js',
 			exports: 'default'
 		},
-		plugins: [terser(terserOptions), size]
+		plugins: [terser(terserOptions), size, docs]
 	});
 }
 
