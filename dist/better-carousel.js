@@ -478,8 +478,27 @@ function snaps({ slides, view, align, slidesToScroll, containScroll, period = 0 
 		}
 	}
 
+	const result = list.map((location) => ({ location, slide: activeSlide(slides, location, view, align, period) }));
+
+	// Without the loop, a trimmed snap at an end can get the slide of the snap next to it. Then it takes the nearest slide on its own side.
+	const fix = (snap, from, to) => {
+		const slide = activeSlide(slides, snap.location, view, align, 0, from, to);
+		snap.slide = slide > -1 ? slide : snap.slide;
+	};
+
+	if (!period && result.length > 1) {
+		const first = result[0],
+			last = result[result.length - 1];
+		if (first.slide >= result[1].slide) {
+			fix(first, 0, result[1].slide);
+		}
+		if (last.slide <= result[result.length - 2].slide) {
+			fix(last, result[result.length - 2].slide + 1, slides.length);
+		}
+	}
+
 	return {
-		snaps: list.map((location) => ({ location, slide: activeSlide(slides, location, view, align, period) })),
+		snaps: result,
 		min,
 		max
 	};
@@ -495,15 +514,17 @@ function snaps({ slides, view, align, slidesToScroll, containScroll, period = 0 
  * @param {number} view
  * @param {string|Function} align
  * @param {number} [period]
- * @returns {number} The slide index.
+ * @param {number} [from] The first slide to look at.
+ * @param {number} [to] The slide after the last slide to look at.
+ * @returns {number} The slide index, or -1 if the range is empty.
  */
-function activeSlide(slides, location, view, align, period) {
+function activeSlide(slides, location, view, align, period, from = 0, to = slides.length) {
 	let best = -1,
 		gap = Infinity;
 
 	slides.forEach((slide, index) => {
 		const value = Math.abs(distance(slide.start + location, alignOffset(align, view, slide.end - slide.start, index), period));
-		if (value < gap - 0.5) {
+		if (index >= from && index < to && value < gap - 0.5) {
 			gap = value;
 			best = index;
 		}
@@ -1304,30 +1325,25 @@ function nav(api, root, cls, options) {
 }
 
 /**
- * Connect two carousels with the same slides, such as thumbnails and a main gallery. Each carousel follows the slide that the other selects.
- * A click on a slide of this carousel selects that slide in the other carousel.
+ * Connect a carousel to another carousel with the same slides, such as thumbnails to a main gallery. This carousel follows the slide
+ * that the other carousel selects. Only a click on a slide of this carousel selects that slide in the other carousel: a drag does not.
  *
  * @param {object} api This carousel.
  * @param {object|string|Element} target The other carousel, its container or a selector.
  * @param {(element: Element) => object} find Get the carousel of an element.
  * @param {(node: Element) => number} slideOf Get the original slide index of a node in this carousel, or -1.
+ * @param {(index: number) => void} follow Set the selected slide of this carousel.
  * @returns {() => void} A function that disconnects the carousels.
  */
-function sync(api, target, find, slideOf) {
-	let other = null,
-		lock = false;
+function sync(api, target, find, slideOf, follow) {
+	let other = null;
 
-	// Select the slide of one carousel in the other carousel. The lock stops the select event of the other carousel from coming back.
-	function copy(from, to) {
-		if (to && !lock) {
-			lock = true;
-			to.goToSlide(from.selectedSlide());
-			lock = false;
-		}
+	// Show the slide that the other carousel selects
+	function show(instant) {
+		const index = other.selectedSlide();
+		follow(index);
+		api.goToSlide(index, instant === true);
 	}
-
-	const mine = () => copy(api, other),
-		theirs = () => copy(other, api);
 
 	function click(event) {
 		const index = slideOf(event.target);
@@ -1343,21 +1359,19 @@ function sync(api, target, find, slideOf) {
 		}
 		other = target && target.goTo ? target : find(typeof target === 'string' ? place(target, api.rootNode()) : target);
 		if (other) {
-			other.on('select', theirs);
-			api.goToSlide(other.selectedSlide(), true);
+			other.on('select', show);
+			show(true);
 		}
 	}
 
 	api.on('init', connect);
 	api.on('reinit', connect);
-	api.on('select', mine);
 	api.containerNode().addEventListener('click', click);
 
 	return () => {
 		api.off('init', connect);
 		api.off('reinit', connect);
-		api.off('select', mine);
-		other?.off('select', theirs);
+		other?.off('select', show);
 		api.containerNode().removeEventListener('click', click);
 	};
 }
@@ -1671,6 +1685,7 @@ function BetterCarousel(element, userOptions = {}) {
 		selected = 0,
 		previous = 0,
 		requested = -1,
+		followed = -1,
 		written = { axis: '', container: 0, slides: [] },
 		observed = [],
 		mutationObserver,
@@ -1880,6 +1895,8 @@ function BetterCarousel(element, userOptions = {}) {
 			parts.push(sync(api, options.sync, (node) => node && registry.get(node), (node) => {
 				const index = nodes.findIndex((item) => item.contains(node));
 				return index < 0 ? -1 : original(index);
+			}, (index) => {
+				followed = index;
 			}));
 		}
 
@@ -1911,6 +1928,7 @@ function BetterCarousel(element, userOptions = {}) {
 		removeDrag();
 		parts.forEach((remove) => remove());
 		parts = [];
+		followed = -1;
 		delete api.autoplay;
 		delete api.autoScroll;
 		scroller = null;
@@ -2668,6 +2686,10 @@ function BetterCarousel(element, userOptions = {}) {
 	}
 
 	function selectedSlide() {
+		// A carousel with the sync option selects the slide of the other carousel, also after a drag
+		if (followed > -1) {
+			return followed;
+		}
 		if (!geo) {
 			return Math.max(requested, 0);
 		}

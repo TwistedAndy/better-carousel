@@ -144,17 +144,18 @@
 }
 
 .demo_heading .heading {
-	position: relative;
-	padding-right: 100px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 16px;
 
-	.better_button {
-		top: 0;
-		bottom: auto;
+	h3 {
+		flex: 1;
+		margin: 0;
 	}
 
-	.better_prev {
-		right: 48px;
-		left: auto;
+	.better_button {
+		position: relative;
 	}
 
 }
@@ -219,6 +220,11 @@
 
 	}
 
+}
+
+.demo_height .better {
+	max-width: 480px;
+	margin: 0 auto;
 }
 
 .demo_vertical .better {

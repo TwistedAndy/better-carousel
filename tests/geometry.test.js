@@ -63,7 +63,20 @@ test('align function', () => {
 	assert.equal(alignOffset((viewSize, snapSize) => viewSize - snapSize - 10, 940, 300, 0), 630);
 });
 
-test('2-row grid: columns, snaps and the top slide wins', () => {
+test('center with trimSnaps: each trimmed end snap takes a slide on its own side', () => {
+	// 4 slides in the viewport: the slides 1 and 2, then 5 and 6, have the same distance to the center at the trimmed snaps
+	const four = snaps({ ...base, slides: row(8, 220, 20), align: 'center' });
+	assert.deepEqual(four.snaps.map((snap) => snap.location), [0, -120, -360, -600, -840, -960]);
+	assert.deepEqual(four.snaps.map((snap) => snap.slide), [1, 2, 3, 4, 5, 6]);
+
+	// A narrow first slide: at the first snap, slide 2 is nearest to the center, but the second snap centers it
+	const narrow = [{ start: 0, end: 100 }, ...row(4).map((slide) => ({ start: slide.start + 120, end: slide.end + 120 }))],
+		result = snaps({ ...base, slides: narrow, align: 'center' });
+	assert.deepEqual(result.snaps.map((snap) => snap.location), [0, -120, -440]);
+	assert.deepEqual(result.snaps.map((snap) => snap.slide), [1, 2, 3]);
+});
+
+test('2-row grid: columns, snaps, the top slide wins, and the trimmed end snap takes the next column', () => {
 	// Column pitch 110 px: a 2 x 2 slide, then 4 single slides in 2 columns, then a 2 x 2 slide
 	const slides = [
 		{ start: 0, end: 210 },
@@ -81,7 +94,7 @@ test('2-row grid: columns, snaps and the top slide wins', () => {
 	const result = snaps({ ...base, view: 300, slides, align: 'start' });
 
 	assert.deepEqual(result.snaps.map((snap) => snap.location), [0, -220, -330, -440, -460]);
-	assert.deepEqual(result.snaps.map((snap) => snap.slide), [0, 1, 3, 5, 5]);
+	assert.deepEqual(result.snaps.map((snap) => snap.slide), [0, 1, 3, 5, 6]);
 });
 
 test('slidesToScroll: a number and auto', () => {

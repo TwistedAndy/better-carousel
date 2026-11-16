@@ -43,13 +43,14 @@ await page.evaluate(() => window.ready);
 await helpers();
 
 // Alignment at each snap
-for (const [id, key, skip] of [['start', 'start', 'last'], ['center', 'center', ''], ['end', 'end', 'first']]) {
+// The trimmed snaps at the ends do not align: the carousel stops at the edge
+for (const [id, key, skip] of [['start', 'start', 'last'], ['center', 'center', 'both'], ['end', 'end', 'first']]) {
 	const errors = await page.evaluate((id, key, skip) => {
 		const carousel = window.byId(id),
 			count = carousel.snapList().length,
 			list = [];
 		for (let index = 0; index < count; index++) {
-			if ((skip === 'last' && index === count - 1) || (skip === 'first' && index === 0)) {
+			if ((skip !== 'first' && skip && index === count - 1) || (skip !== 'last' && skip && index === 0)) {
 				continue;
 			}
 			carousel.goTo(index, true);
@@ -442,7 +443,7 @@ await page.evaluate(() => {
 		return [id, carousel.containerNode().children.length, carousel.slideNodes().length, carousel.snapList().length];
 	}));
 	const map = Object.fromEntries(counts.map(([id, ...rest]) => [id, rest]));
-	check('clone counts: none for 10 and 6 slides and the grid, one copy for 3 wide slides', map.loop[0] === 10 && map.loopcenter[0] === 6 && map.gallery[0] === 20 && map.clones[0] === 6 && map.clones[2] === 3, JSON.stringify(map));
+	check('clone counts: none for 10 and 8 slides and the grid, one copy for 3 wide slides', map.loop[0] === 10 && map.loopcenter[0] === 8 && map.gallery[0] === 20 && map.clones[0] === 6 && map.clones[2] === 3, JSON.stringify(map));
 }
 
 for (const [id, limit] of [['loop', 21], ['loopcenter', 21], ['clones', 21], ['gallery', 11]]) {
@@ -601,6 +602,27 @@ for (const [id, limit] of [['loop', 21], ['clones', 21]]) {
 		return { thumbs: thumbs.selectedSlide(), active: thumbs.slideNodes().findIndex((node) => node.classList.contains('active')), center: Math.abs(window.box(thumbs).center) };
 	});
 	check('sync: the next photo moves the thumbnails to its centered thumbnail', next.thumbs === 4 && next.active === 4 && next.center <= 0.5, JSON.stringify(next));
+
+	// A drag on the thumbnails moves only the thumbnails: the photo and the marked thumbnail stay
+	await page.evaluate(() => window.byId('product', 1).viewportNode().scrollIntoView({ block: 'center', behavior: 'instant' }));
+	const strip = await page.evaluate(() => {
+		const rect = window.byId('product', 1).viewportNode().getBoundingClientRect();
+		return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+	});
+	await page.mouse.move(strip.x, strip.y);
+	await page.mouse.down();
+	for (let step = 1; step <= 20; step++) {
+		await page.mouse.move(strip.x + step * 20, strip.y);
+		await wait(16);
+	}
+	await page.mouse.up();
+	await wait(900);
+	const dragged = await page.evaluate(() => {
+		const main = window.byId('product'),
+			thumbs = window.byId('product', 1);
+		return { main: main.selectedSlide(), thumbs: thumbs.selectedSlide(), snap: thumbs.selectedSnap(), active: thumbs.slideNodes().findIndex((node) => node.classList.contains('active')) };
+	});
+	check('sync: a drag on the thumbnails does not change the photo or the marked thumbnail', dragged.main === 4 && dragged.thumbs === 4 && dragged.active === 4 && dragged.snap === 0, JSON.stringify(dragged));
 }
 
 {
@@ -918,14 +940,17 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 	const value = await page.evaluate(async () => {
 		const carousel = window.byId('height'),
 			viewport = carousel.viewportNode(),
-			first = viewport.style.height;
-		carousel.goTo(2);
+			slide = (index) => Math.round(carousel.slideNodes()[index].getBoundingClientRect().height),
+			first = Math.round(parseFloat(viewport.style.height));
+		carousel.goTo(1);
 		await new Promise((resolve) => setTimeout(resolve, 100));
 		const middle = viewport.getBoundingClientRect().height;
 		await new Promise((resolve) => setTimeout(resolve, 600));
-		return { first, last: viewport.style.height, middle, transition: getComputedStyle(viewport).transitionProperty };
+		const last = Math.round(parseFloat(viewport.style.height));
+		carousel.goTo(0, true);
+		return { first, wide: slide(0), last, square: slide(1), middle, transition: getComputedStyle(viewport).transitionProperty };
 	});
-	check('auto height: the viewport gets the height of the tallest slide in view, with a transition', value.first === '220px' && value.last === '280px' && value.middle > 220 && value.middle < 280 && value.transition.includes('height'), JSON.stringify(value));
+	check('auto height: the viewport gets the height of the slide in view, with a transition', value.first === value.wide && value.last === value.square && value.wide < value.square && value.middle > value.wide && value.middle < value.square && value.transition.includes('height'), JSON.stringify(value));
 }
 
 // Controls in slides

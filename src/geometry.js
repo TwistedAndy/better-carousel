@@ -154,8 +154,27 @@ export function snaps({ slides, view, align, slidesToScroll, containScroll, peri
 		}
 	}
 
+	const result = list.map((location) => ({ location, slide: activeSlide(slides, location, view, align, period) }));
+
+	// Without the loop, a trimmed snap at an end can get the slide of the snap next to it. Then it takes the nearest slide on its own side.
+	const fix = (snap, from, to) => {
+		const slide = activeSlide(slides, snap.location, view, align, 0, from, to);
+		snap.slide = slide > -1 ? slide : snap.slide;
+	};
+
+	if (!period && result.length > 1) {
+		const first = result[0],
+			last = result[result.length - 1];
+		if (first.slide >= result[1].slide) {
+			fix(first, 0, result[1].slide);
+		}
+		if (last.slide <= result[result.length - 2].slide) {
+			fix(last, result[result.length - 2].slide + 1, slides.length);
+		}
+	}
+
 	return {
-		snaps: list.map((location) => ({ location, slide: activeSlide(slides, location, view, align, period) })),
+		snaps: result,
 		min,
 		max
 	};
@@ -171,15 +190,17 @@ export function snaps({ slides, view, align, slidesToScroll, containScroll, peri
  * @param {number} view
  * @param {string|Function} align
  * @param {number} [period]
- * @returns {number} The slide index.
+ * @param {number} [from] The first slide to look at.
+ * @param {number} [to] The slide after the last slide to look at.
+ * @returns {number} The slide index, or -1 if the range is empty.
  */
-export function activeSlide(slides, location, view, align, period) {
+export function activeSlide(slides, location, view, align, period, from = 0, to = slides.length) {
 	let best = -1,
 		gap = Infinity;
 
 	slides.forEach((slide, index) => {
 		const value = Math.abs(distance(slide.start + location, alignOffset(align, view, slide.end - slide.start, index), period));
-		if (value < gap - 0.5) {
+		if (index >= from && index < to && value < gap - 0.5) {
 			gap = value;
 			best = index;
 		}

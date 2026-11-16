@@ -124,6 +124,7 @@ export default function BetterCarousel(element, userOptions = {}) {
 		selected = 0,
 		previous = 0,
 		requested = -1,
+		followed = -1,
 		written = { axis: '', container: 0, slides: [] },
 		observed = [],
 		mutationObserver,
@@ -333,6 +334,8 @@ export default function BetterCarousel(element, userOptions = {}) {
 			parts.push(sync(api, options.sync, (node) => node && registry.get(node), (node) => {
 				const index = nodes.findIndex((item) => item.contains(node));
 				return index < 0 ? -1 : original(index);
+			}, (index) => {
+				followed = index;
 			}));
 		}
 
@@ -364,6 +367,7 @@ export default function BetterCarousel(element, userOptions = {}) {
 		removeDrag();
 		parts.forEach((remove) => remove());
 		parts = [];
+		followed = -1;
 		delete api.autoplay;
 		delete api.autoScroll;
 		scroller = null;
@@ -1121,6 +1125,10 @@ export default function BetterCarousel(element, userOptions = {}) {
 	}
 
 	function selectedSlide() {
+		// A carousel with the sync option selects the slide of the other carousel, also after a drag
+		if (followed > -1) {
+			return followed;
+		}
 		if (!geo) {
 			return Math.max(requested, 0);
 		}
