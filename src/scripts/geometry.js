@@ -300,12 +300,10 @@ export function targetLocation(target, location, period, direction = 0) {
  * Get the progress of a location, from 0 to 1.
  *
  * @param {number} location
- * @param {number} min
- * @param {number} max With the loop, the location of the first snap.
- * @param {number} [period]
+ * @param {{min: number, max: number, period: number}} limits The limits of the location and the loop period. With the loop, max is the location of the first snap.
  * @returns {number}
  */
-export function progress(location, min, max, period) {
+export function progress(location, { min, max, period }) {
 	if (period) {
 		const value = (max - location) / period;
 		return value - Math.floor(value);

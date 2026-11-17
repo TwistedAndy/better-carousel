@@ -62,10 +62,12 @@ function controller(context, name, options, hooks) {
 	const { api, root, container, cls, emit } = context,
 		labels = context.options.labels,
 		button = create('button', cls.button + ' ' + cls.play),
-		handlers = [['init', show], ['reinit', show], ['resize', show], ['init', begin], ['reinit', begin], ...(hooks.events || [])];
+		handlers = [['init', show], ['reinit', show], ['resize', show], ...(hooks.events || [])];
 
 	let playing = false,
-		watch = null;
+		watch = null,
+		// true until the first init
+		first = true;
 
 	button.type = 'button';
 	button.setAttribute('aria-controls', container.id);
@@ -84,14 +86,12 @@ function controller(context, name, options, hooks) {
 		} else if (!button.isConnected) {
 			root.append(button);
 		}
-	}
-
-	// Start at the first init, unless the user prefers less motion
-	function begin() {
-		api.off('init', begin);
-		api.off('reinit', begin);
-		if (options.playOnInit && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
-			control.play();
+		// Start at the first init, unless the user prefers less motion
+		if (first) {
+			first = false;
+			if (options.playOnInit && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+				control.play();
+			}
 		}
 	}
 
@@ -208,7 +208,7 @@ export function autoplay(context) {
 export function autoScroll(context) {
 	const options = settings(autoScrollDefaults, 'speed', context.options.autoScroll);
 
-	// The motion of a loop: { from, direction, length, list, duration, animations, raf }, or null
+	// The motion of a loop: { from, direction, length, list, duration, animations }, or null
 	let scroll = null,
 		// The start delay
 		timer = 0;
@@ -224,20 +224,9 @@ export function autoScroll(context) {
 				return paused ? context.halt() : timer || run();
 			}
 			scroll.animations.forEach((animation) => animation[paused ? 'pause' : 'play']());
-			cancelAnimationFrame(scroll.raf);
-			if (!paused) {
-				follow();
-			}
+			context.watch(!paused);
 		}
 	});
-
-	// With the "progress" or the "offset" option, write their values on each frame while the loop motion plays
-	function follow() {
-		if (context.track) {
-			context.track(at());
-			scroll.raf = requestAnimationFrame(follow);
-		}
-	}
 
 	/**
 	 * Start the auto scroll after its delay.
@@ -292,7 +281,7 @@ export function autoScroll(context) {
 			]
 		};
 		scroll.animations.forEach((animation) => animation.startTime = start);
-		follow();
+		context.watch(true);
 	}
 
 	// The time in the iteration, from 0 to 1
@@ -342,7 +331,6 @@ export function autoScroll(context) {
 		cancel() {
 			const location = at();
 			scroll?.animations.forEach((animation) => animation.cancel());
-			cancelAnimationFrame(scroll?.raf);
 			scroll = null;
 			return location;
 		},

@@ -122,11 +122,11 @@ test('loop: target locations and the nearest snap modulo the period', () => {
 });
 
 test('progress and slides in view', () => {
-	assert.equal(progress(-480, -960, 0), 0.5);
-	assert.equal(progress(-480, 0, 0, 1920), 0.25);
+	assert.equal(progress(-480, { min: -960, max: 0 }), 0.5);
+	assert.equal(progress(-480, { min: 0, max: 0, period: 1920 }), 0.25);
 	// With the loop, the progress starts at the first snap, also if its location is not 0
-	assert.equal(progress(-160, 0, 320, 1920), 0.25);
-	assert.equal(progress(320, 0, 320, 1920), 0);
+	assert.equal(progress(-160, { min: 0, max: 320, period: 1920 }), 0.25);
+	assert.equal(progress(320, { min: 0, max: 320, period: 1920 }), 0);
 
 	const slides = row(6);
 

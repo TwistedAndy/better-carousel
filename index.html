@@ -1296,9 +1296,9 @@ BetterCarousel(element, { classes: { active: 'selected' } });</code></pre></div>
 	<div class="content">
 	<ul><li>A motion is a Web Animations API animation of <code>translate</code>. No script runs for each frame.</li><li>The auto scroll is one animation that does not stop. During the motion, the browser does no script, style, layout or paint work.</li><li>One <code>ResizeObserver</code> serves all carousels. It reads the layout of all carousels first, and then it writes. For this reason, the browser calculates the layout only one time.</li><li>The dots move with <code>translate</code> and change size with <code>transform</code>. A click on a dot causes no layout work.</li><li>The listeners for the autoplay and the mouse wheel exist only while they can do something.</li><li>The <code>progress</code> and <code>offset</code> options run a script on each frame of a motion. For this reason, they are off by default.</li></ul><!-- generated:sizes -->
 <div class="table table_reference"><table><thead><tr><th>File</th><th>Minified</th><th>Gzip</th><th>Brotli</th></tr></thead><tbody>
-<tr><td><code>better-carousel.min.js</code></td><td>28.3 KB</td><td>11.2 KB</td><td>10.2 KB</td></tr>
+<tr><td><code>better-carousel.min.js</code></td><td>28.0 KB</td><td>11.2 KB</td><td>10.2 KB</td></tr>
 <tr><td><code>better-carousel.css</code></td><td>3.9 KB</td><td>1.2 KB</td><td>1.0 KB</td></tr>
-<tr><td>Total</td><td>32.1 KB</td><td>12.4 KB</td><td>11.2 KB</td></tr>
+<tr><td>Total</td><td>31.8 KB</td><td>12.4 KB</td><td>11.2 KB</td></tr>
 </tbody></table></div>
 <!-- /generated --><p>The same features in Embla 9 (the core, three plugins and a wrapper) are 12.6 KB gzip.</p><div class="table"><table><thead><tr><th>Measure, on a phone with a CPU 4 times slower</th><th>Better Carousel</th></tr></thead><tbody><tr><td>JS size, gzip</td><td><!-- generated:gzip -->11.2 KB<!-- /generated --></td></tr><tr><td>CPU load during 10 s of auto scroll</td><td>0.5%</td></tr><tr><td>CPU load during 10 s of autoplay</td><td>1.1%</td></tr><tr><td>Total Blocking Time added at page load</td><td>0 ms</td></tr><tr><td>Layout shift</td><td>0</td></tr></tbody></table></div>
 	</div>

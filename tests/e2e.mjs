@@ -961,15 +961,20 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 			viewport = carousel.viewportNode(),
 			slide = (index) => Math.round(carousel.slideNodes()[index].getBoundingClientRect().height),
 			first = Math.round(parseFloat(viewport.style.height));
+		let resized = 0;
+		const count = () => resized++;
+		carousel.on('resize', count);
 		carousel.goTo(1);
 		await new Promise((resolve) => setTimeout(resolve, 100));
 		const middle = viewport.getBoundingClientRect().height;
 		await new Promise((resolve) => setTimeout(resolve, 600));
 		const last = Math.round(parseFloat(viewport.style.height));
+		carousel.off('resize', count);
 		carousel.goTo(0, true);
-		return { first, wide: slide(0), last, square: slide(1), middle, transition: getComputedStyle(viewport).transitionProperty };
+		return { first, wide: slide(0), last, square: slide(1), middle, resized, transition: getComputedStyle(viewport).transitionProperty };
 	});
 	check('auto height: the viewport gets the height of the slide in view, with a transition', value.first === value.wide && value.last === value.square && value.wide < value.square && value.middle > value.wide && value.middle < value.square && value.transition.includes('height'), JSON.stringify(value));
+	check('auto height: the height transition of the viewport causes no measure pass', value.resized === 0, JSON.stringify(value));
 }
 
 // Progress and offset

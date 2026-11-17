@@ -674,9 +674,9 @@ The library is made for slow phones. A motion runs on the compositor, and a caro
 <!-- generated:sizes -->
 | File | Minified | Gzip | Brotli |
 | --- | --- | --- | --- |
-| `better-carousel.min.js` | 28.3 KB | 11.2 KB | 10.2 KB |
+| `better-carousel.min.js` | 28.0 KB | 11.2 KB | 10.2 KB |
 | `better-carousel.css` | 3.9 KB | 1.2 KB | 1.0 KB |
-| Total | 32.1 KB | 12.4 KB | 11.2 KB |
+| Total | 31.8 KB | 12.4 KB | 11.2 KB |
 <!-- /generated -->
 
 The same features in Embla 9 (the core, three plugins and a wrapper) are 12.6 KB gzip.

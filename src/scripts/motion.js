@@ -93,15 +93,11 @@ export function releaseDuration(path, velocity, curve, fallback) {
 /**
  * Get the velocity from the last samples of a drag.
  *
- * @param {Array<number[]>} samples [location, time] pairs, the oldest first.
+ * @param {Array<number[]>} samples [location, time] pairs, the oldest first. A drag always has one sample or more.
  * @returns {number} px/ms
  */
 export function velocity(samples) {
 	const last = samples[samples.length - 1];
-
-	if (!last) {
-		return 0;
-	}
 
 	// The last sample is always in its own window, so find() always finds a sample
 	const first = samples.find((sample) => last[1] - sample[1] <= 100),
@@ -178,19 +174,13 @@ export function releaseTarget({ location, from, velocity, current, snaps, min, m
  * @param {(location: number) => string} css Get the CSS translate value of a location.
  * @param {(location: number) => void} frame Write a location.
  * @param {() => void} done Called when a motion ends.
- * @param {(location: number) => void} [follow] Called on each frame of a Web Animations API motion, with the location now.
  * @returns {{run: Function, retarget: Function, stop: Function, current: Function}}
  */
-export function animator(element, css, frame, done, follow) {
+export function animator(element, css, frame, done) {
 	let state = null;
 
 	const time = () => state.animation ? state.animation.currentTime || 0 : performance.now() - state.start,
-		current = () => state && state.from + (state.to - state.from) * state.ease(state.duration > 0 ? time() / state.duration : 1);
-
-	function watch() {
-		follow(current());
-		state.raf = requestAnimationFrame(watch);
-	}
+		current = () => state && state.from + (state.to - state.from) * state.ease(time() / state.duration);
 
 	function tick() {
 		if (time() >= state.duration) {
@@ -247,9 +237,6 @@ export function animator(element, css, frame, done, follow) {
 				state.raf = requestAnimationFrame(tick);
 			} else {
 				animate(0);
-				if (follow) {
-					watch();
-				}
 			}
 		},
 

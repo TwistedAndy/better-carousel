@@ -18,20 +18,15 @@ export function setClass(element, name, on) {
 }
 
 /**
- * Set an attribute, or remove it if the value is null or false.
+ * Set an attribute, or remove it if the value is false.
  *
  * @param {Element} element
  * @param {string} name
- * @param {string|boolean|null} value
+ * @param {string|false} value
  */
 export function setAttribute(element, name, value) {
-	const text = value === true ? '' : value === false || value == null ? null : String(value);
-	if (element.getAttribute(name) !== text) {
-		if (text === null) {
-			element.removeAttribute(name);
-		} else {
-			element.setAttribute(name, text);
-		}
+	if (element.getAttribute(name) !== (value || null)) {
+		value ? element.setAttribute(name, value) : element.removeAttribute(name);
 	}
 }
 

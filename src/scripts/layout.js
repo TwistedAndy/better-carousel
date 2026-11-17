@@ -48,7 +48,7 @@ export function readLayout(container, options) {
  * @param {HTMLElement[]} nodes All slides, clones included.
  * @param {object} layout The result of readLayout().
  * @param {{axis: string, container: number, slides: number[]}} written The translate values that the library wrote, in px on the screen.
- * @returns {{view: number, cross: number, slides: Array<{start: number, end: number, cross: number}>, gap: number}}
+ * @returns {{view: number, slides: Array<{start: number, end: number, cross: number}>, gap: number}}
  * gap is the loop gap: the space between the last slide and the next copy of the first slide.
  */
 export function readRects(viewport, nodes, layout, written) {
@@ -88,7 +88,6 @@ export function readRects(viewport, nodes, layout, written) {
 
 	return {
 		view: x ? box.width : box.height,
-		cross: x ? box.height : box.width,
 		slides,
 		gap
 	};

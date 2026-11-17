@@ -253,7 +253,6 @@ export function wheel(context) {
 		remove() {
 			viewport.removeEventListener('wheel', onWheel);
 			clearTimeout(timer);
-			timer = 0;
 		}
 	};
 }

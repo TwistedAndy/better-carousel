@@ -102,20 +102,15 @@ function setClass(element, name, on) {
 }
 
 /**
- * Set an attribute, or remove it if the value is null or false.
+ * Set an attribute, or remove it if the value is false.
  *
  * @param {Element} element
  * @param {string} name
- * @param {string|boolean|null} value
+ * @param {string|false} value
  */
 function setAttribute(element, name, value) {
-	const text = value === true ? '' : value === false || value == null ? null : String(value);
-	if (element.getAttribute(name) !== text) {
-		if (text === null) {
-			element.removeAttribute(name);
-		} else {
-			element.setAttribute(name, text);
-		}
+	if (element.getAttribute(name) !== (value || null)) {
+		value ? element.setAttribute(name, value) : element.removeAttribute(name);
 	}
 }
 
@@ -583,10 +578,12 @@ function controller(context, name, options, hooks) {
 	const { api, root, container, cls, emit } = context,
 		labels = context.options.labels,
 		button = create('button', cls.button + ' ' + cls.play),
-		handlers = [['init', show], ['reinit', show], ['resize', show], ['init', begin], ['reinit', begin], ...(hooks.events || [])];
+		handlers = [['init', show], ['reinit', show], ['resize', show], ...(hooks.events || [])];
 
 	let playing = false,
-		watch = null;
+		watch = null,
+		// true until the first init
+		first = true;
 
 	button.type = 'button';
 	button.setAttribute('aria-controls', container.id);
@@ -605,14 +602,12 @@ function controller(context, name, options, hooks) {
 		} else if (!button.isConnected) {
 			root.append(button);
 		}
-	}
-
-	// Start at the first init, unless the user prefers less motion
-	function begin() {
-		api.off('init', begin);
-		api.off('reinit', begin);
-		if (options.playOnInit && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
-			control.play();
+		// Start at the first init, unless the user prefers less motion
+		if (first) {
+			first = false;
+			if (options.playOnInit && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+				control.play();
+			}
 		}
 	}
 
@@ -729,7 +724,7 @@ function autoplay(context) {
 function autoScroll(context) {
 	const options = settings(autoScrollDefaults, 'speed', context.options.autoScroll);
 
-	// The motion of a loop: { from, direction, length, list, duration, animations, raf }, or null
+	// The motion of a loop: { from, direction, length, list, duration, animations }, or null
 	let scroll = null,
 		// The start delay
 		timer = 0;
@@ -745,20 +740,9 @@ function autoScroll(context) {
 				return paused ? context.halt() : timer || run();
 			}
 			scroll.animations.forEach((animation) => animation[paused ? 'pause' : 'play']());
-			cancelAnimationFrame(scroll.raf);
-			if (!paused) {
-				follow();
-			}
+			context.watch(!paused);
 		}
 	});
-
-	// With the "progress" or the "offset" option, write their values on each frame while the loop motion plays
-	function follow() {
-		if (context.track) {
-			context.track(at());
-			scroll.raf = requestAnimationFrame(follow);
-		}
-	}
 
 	/**
 	 * Start the auto scroll after its delay.
@@ -813,7 +797,7 @@ function autoScroll(context) {
 			]
 		};
 		scroll.animations.forEach((animation) => animation.startTime = start);
-		follow();
+		context.watch(true);
 	}
 
 	// The time in the iteration, from 0 to 1
@@ -863,7 +847,6 @@ function autoScroll(context) {
 		cancel() {
 			const location = at();
 			scroll?.animations.forEach((animation) => animation.cancel());
-			cancelAnimationFrame(scroll?.raf);
 			scroll = null;
 			return location;
 		},
@@ -1187,12 +1170,10 @@ function targetLocation(target, location, period, direction = 0) {
  * Get the progress of a location, from 0 to 1.
  *
  * @param {number} location
- * @param {number} min
- * @param {number} max With the loop, the location of the first snap.
- * @param {number} [period]
+ * @param {{min: number, max: number, period: number}} limits The limits of the location and the loop period. With the loop, max is the location of the first snap.
  * @returns {number}
  */
-function progress(location, min, max, period) {
+function progress(location, { min, max, period }) {
 	if (period) {
 		const value = (max - location) / period;
 		return value - Math.floor(value);
@@ -1346,15 +1327,11 @@ function releaseDuration(path, velocity, curve, fallback) {
 /**
  * Get the velocity from the last samples of a drag.
  *
- * @param {Array<number[]>} samples [location, time] pairs, the oldest first.
+ * @param {Array<number[]>} samples [location, time] pairs, the oldest first. A drag always has one sample or more.
  * @returns {number} px/ms
  */
 function velocity(samples) {
 	const last = samples[samples.length - 1];
-
-	if (!last) {
-		return 0;
-	}
 
 	// The last sample is always in its own window, so find() always finds a sample
 	const first = samples.find((sample) => last[1] - sample[1] <= 100),
@@ -1431,19 +1408,13 @@ function releaseTarget({ location, from, velocity, current, snaps, min, max, per
  * @param {(location: number) => string} css Get the CSS translate value of a location.
  * @param {(location: number) => void} frame Write a location.
  * @param {() => void} done Called when a motion ends.
- * @param {(location: number) => void} [follow] Called on each frame of a Web Animations API motion, with the location now.
  * @returns {{run: Function, retarget: Function, stop: Function, current: Function}}
  */
-function animator(element, css, frame, done, follow) {
+function animator(element, css, frame, done) {
 	let state = null;
 
 	const time = () => state.animation ? state.animation.currentTime || 0 : performance.now() - state.start,
-		current = () => state && state.from + (state.to - state.from) * state.ease(state.duration > 0 ? time() / state.duration : 1);
-
-	function watch() {
-		follow(current());
-		state.raf = requestAnimationFrame(watch);
-	}
+		current = () => state && state.from + (state.to - state.from) * state.ease(time() / state.duration);
 
 	function tick() {
 		if (time() >= state.duration) {
@@ -1500,9 +1471,6 @@ function animator(element, css, frame, done, follow) {
 				state.raf = requestAnimationFrame(tick);
 			} else {
 				animate(0);
-				if (follow) {
-					watch();
-				}
 			}
 		},
 
@@ -1784,7 +1752,6 @@ function wheel(context) {
 		remove() {
 			viewport.removeEventListener('wheel', onWheel);
 			clearTimeout(timer);
-			timer = 0;
 		}
 	};
 }
@@ -1839,7 +1806,7 @@ function readLayout(container, options) {
  * @param {HTMLElement[]} nodes All slides, clones included.
  * @param {object} layout The result of readLayout().
  * @param {{axis: string, container: number, slides: number[]}} written The translate values that the library wrote, in px on the screen.
- * @returns {{view: number, cross: number, slides: Array<{start: number, end: number, cross: number}>, gap: number}}
+ * @returns {{view: number, slides: Array<{start: number, end: number, cross: number}>, gap: number}}
  * gap is the loop gap: the space between the last slide and the next copy of the first slide.
  */
 function readRects(viewport, nodes, layout, written) {
@@ -1879,7 +1846,6 @@ function readRects(viewport, nodes, layout, written) {
 
 	return {
 		view: x ? box.width : box.height,
-		cross: x ? box.height : box.width,
 		slides,
 		gap
 	};
@@ -2272,15 +2238,17 @@ function BetterCarousel(element, userOptions = {}) {
 	// The motion and the input
 	let motion,
 		dragInput,
-		wheelInput;
+		wheelInput,
+		// The frame loop of the "progress" and the "offset" options
+		raf = 0;
 
 	// The auto scroll, if the option is on
 	let auto = null;
 
 	const api = {
 		goTo: (index, instant) => go(physical(index), instant),
-		goToNext: (instant) => api.canGoToNext() && go(wrap(selected + 1), instant, -1, 1),
-		goToPrev: (instant) => api.canGoToPrev() && go(wrap(selected - 1), instant, -1, -1),
+		goToNext: (instant) => api.canGoToNext() && step(selected, 1, instant),
+		goToPrev: (instant) => api.canGoToPrev() && step(selected, -1, instant),
 		goToSlide: (index, instant) => go(physical(api.snapOfSlide(index)), instant, index),
 		canGoToNext: () => !!geo && !geo.fit && (!!geo.period || selected < geo.snaps.length - 1),
 		canGoToPrev: () => !!geo && !geo.fit && (!!geo.period || selected > 0),
@@ -2288,8 +2256,8 @@ function BetterCarousel(element, userOptions = {}) {
 		previousSnap: () => logical(previous),
 		selectedSlide,
 		snapOfSlide: (index) => geo ? logical(snapOfSlide(geo.snaps, geo.slides, index, geo.view, geo.align, geo.period)) : index,
-		snapList: () => geo ? geo.logical.map((index) => progress(geo.snaps[index].location, geo.min, geo.max, geo.period)) : [],
-		scrollProgress: () => geo ? progress(current(), geo.min, geo.max, geo.period) : 0,
+		snapList: () => geo ? geo.logical.map((index) => progress(geo.snaps[index].location, geo)) : [],
+		scrollProgress: () => geo ? progress(current(), geo) : 0,
 		slideNodes: () => slides.slice(),
 		slidesInView: () => visible.slice(),
 		rootNode: () => root,
@@ -2339,12 +2307,14 @@ function BetterCarousel(element, userOptions = {}) {
 				requested = -1;
 				move(index, target, duration, curve);
 			},
-			// Go to the snap after a snap in a direction: 1, -1, or 0 for the snap itself
-			step: (index, direction) => go(wrap(index + direction), false, -1, direction),
+			step,
+			watch,
 			// A linear motion to a location, without the snaps
 			glide: (from, to, duration) => {
+				const raf = events.has('scroll');
 				location = to;
-				motion.run(from, to, duration, [0, 0, 1, 1], events.has('scroll'));
+				motion.run(from, to, duration, [0, 0, 1, 1], raf);
+				watch(!raf);
 			},
 			// Set the slide that the sync option follows
 			follow: (index) => {
@@ -2392,10 +2362,9 @@ function BetterCarousel(element, userOptions = {}) {
 
 		observe(true);
 
-		// With the "progress" or the "offset" option, the features call track() on each frame of a motion
-		Object.assign(context, { root, viewport, container, cls, options, track: options.progress || options.offset ? track : null });
+		Object.assign(context, { root, viewport, container, cls, options });
 
-		motion = animator(container, css, frame, settle, context.track);
+		motion = animator(container, css, frame, settle);
 		dragInput = drag(context);
 		wheelInput = wheel(context);
 		container.addEventListener('focusin', onFocus);
@@ -2450,6 +2419,7 @@ function BetterCarousel(element, userOptions = {}) {
 		}
 
 		motion.stop();
+		cancelAnimationFrame(raf);
 		parts.forEach((part) => part.remove());
 		parts = [];
 		followed = -1;
@@ -2474,15 +2444,13 @@ function BetterCarousel(element, userOptions = {}) {
 		setStyle(container, 'willChange', '');
 		setStyle(viewport, 'touchAction', '');
 		root.style.removeProperty('--better-progress');
-		cleanStyle(container);
-		cleanStyle(viewport);
-		cleanStyle(root);
 
 		for (const name of ['horizontal', 'vertical', 'dynamic', 'dragging']) {
 			setClass(root, cls[name], false);
 		}
 
 		for (const node of [root, viewport, container]) {
+			cleanStyle(node);
 			registry.delete(node);
 		}
 
@@ -2558,11 +2526,6 @@ function BetterCarousel(element, userOptions = {}) {
 		return geo ? geo.map[index] ?? 0 : index;
 	}
 
-	// The physical snap of an index, such as the selected snap + 1. In loop mode, the first snap follows the last snap.
-	function wrap(index) {
-		return snapIndex(index, geo.snaps.length, geo.period);
-	}
-
 	/**
 	 * Find the physical snap of a logical snap that is nearest to the current location.
 	 *
@@ -2610,8 +2573,11 @@ function BetterCarousel(element, userOptions = {}) {
 	 * @returns {boolean} false if nothing changed.
 	 */
 	function measure() {
-		const layout = readLayout(container, options),
-			rects = readRects(viewport, nodes, layout, shown());
+		const sign = geo?.rtl ? -1 : 1,
+			moving = motion.current(),
+			layout = readLayout(container, options),
+			// The translate values that show now: the written values, or the values of a motion or of the auto scroll
+			rects = readRects(viewport, nodes, layout, auto?.shown(sign, written.axis) || (moving === null ? written : { ...written, container: sign * moving }));
 
 		// With clones: 'fill', the loop fills the window
 		lastWindow = options.loop && options.clones === 'fill' ? windowSize(layout.axis) : 0;
@@ -2802,7 +2768,9 @@ function BetterCarousel(element, userOptions = {}) {
 		written.container = screen(value);
 		setStyle(container, 'translate', translate(written.container));
 		place(value, value);
-		context.track?.(value);
+		if (options.progress || options.offset) {
+			track(value);
+		}
 	}
 
 	/**
@@ -2812,11 +2780,11 @@ function BetterCarousel(element, userOptions = {}) {
 	 */
 	function track(at) {
 		if (options.progress === true) {
-			root.style.setProperty('--better-progress', progress(at, geo.min, geo.max, geo.period));
+			root.style.setProperty('--better-progress', progress(at, geo));
 		} else if (options.progress) {
 			const value = snapPosition(geo.snaps, at, geo.period),
 				snap = Math.floor(value);
-			whole.progress = progress(at, geo.min, geo.max, geo.period);
+			whole.progress = progress(at, geo);
 			whole.snap = logical(snap) + value - snap;
 			options.progress(whole, api);
 		}
@@ -2850,6 +2818,21 @@ function BetterCarousel(element, userOptions = {}) {
 	}
 
 	/**
+	 * Call track() on each frame while a motion on the compositor or the auto scroll plays. Such a motion runs no script, so the loop gets
+	 * its location. A requestAnimationFrame motion does not need the loop: it calls write() on each frame. The loop stops when no motion plays.
+	 *
+	 * @param {boolean|number} on false stops the loop. requestAnimationFrame gives a time, which is the same as true.
+	 */
+	function watch(on) {
+		cancelAnimationFrame(raf);
+		const at = on && (options.progress || options.offset) ? auto?.at() ?? motion.current() : null;
+		if (at !== null) {
+			track(at);
+			raf = requestAnimationFrame(watch);
+		}
+	}
+
+	/**
 	 * Write the loop shift of each slide for a motion from one location to another.
 	 *
 	 * @param {number} from
@@ -2873,21 +2856,20 @@ function BetterCarousel(element, userOptions = {}) {
 	}
 
 	/**
-	 * Get the translate values that show now: the written values, or the values of a motion or of the auto scroll.
+	 * Go to the snap after a snap in a direction. In loop mode, the first snap follows the last snap.
 	 *
-	 * @returns {{axis: string, container: number, slides: number[]}}
+	 * @param {number} index The snap.
+	 * @param {number} direction 1, -1, or 0 for the snap itself.
+	 * @param {boolean} [instant]
 	 */
-	function shown() {
-		const sign = geo?.rtl ? -1 : 1,
-			moving = motion.current();
-
-		return auto?.shown(sign, written.axis) || (moving === null ? written : { ...written, container: sign * moving });
+	function step(index, direction, instant) {
+		go(snapIndex(index + direction, geo.snaps.length, geo.period), instant, -1, direction);
 	}
 
 	/**
 	 * Go to a snap.
 	 *
-	 * @param {number} index The snap index. physical() and wrap() give a valid index.
+	 * @param {number} index The snap index. physical() and step() give a valid index.
 	 * @param {boolean} [instant]
 	 * @param {number} [slide] The slide index, for goToSlide().
 	 * @param {number} [direction] 1 to go forward, -1 to go back, 0 for the shortest path in a loop.
@@ -2936,6 +2918,7 @@ function BetterCarousel(element, userOptions = {}) {
 				place(from, target);
 			}
 			motion.run(from, target, duration, curve, raf);
+			watch(!raf);
 		}
 
 		if (picked) {
