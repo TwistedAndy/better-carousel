@@ -297,6 +297,45 @@
 
 }
 
+// A carousel on a narrow screen, and a grid from 769 px
+@media (min-width: 769px) {
+
+	.demo_responsive .items.carousel {
+		flex-wrap: wrap;
+	}
+
+}
+
+// The tabs of the hidden carousel, the buttons over a carousel, and the custom controls under it
+.demo_tablist,
+.demo_buttons,
+.demo_controls {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	margin-bottom: 16px;
+	gap: 8px;
+}
+
+.demo_tablist .button[aria-selected="false"] {
+	border-color: var(--color-border);
+	background: none;
+	color: var(--color-heading);
+}
+
+.demo_controls {
+	justify-content: center;
+	margin: 16px 0 0;
+	gap: 16px;
+
+	.demo_counter {
+		min-width: 4em;
+		margin: 0;
+		text-align: center;
+	}
+
+}
+
 .demo_counter {
 	margin: 0 0 12px;
 	color: var(--color-muted);

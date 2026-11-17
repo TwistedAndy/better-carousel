@@ -34,7 +34,7 @@ const helpers = () => page.evaluate(() => {
 			center: (slide[start] + slide[end]) / 2 - (view[start] + view[end]) / 2
 		};
 	};
-	window.byId = (id, index = 0) => window.carousels.filter((carousel) => carousel.rootNode().closest('#' + id))[index];
+	window.byId = (id, index = 0) => window.carousels.filter((carousel) => carousel.rootNode()?.closest('#' + id))[index];
 });
 
 await page.setViewport({ width: 1200, height: 900 });
@@ -522,7 +522,7 @@ for (const [id, limit] of [['loop', 21], ['clones', 21]]) {
 			active: names(carousel.slideNodes()[0])
 		};
 	});
-	check('embla preset: the class names of the old wrapper', value.root === 'embla embla_horizontal embla_dynamic' && value.viewport === 'embla_viewport' && value.container && value.buttons.join() === 'embla_button embla_prev,embla_button embla_next' && value.dots === 'embla_dots' && value.dot.startsWith('embla_dot') && value.active === 'item active', JSON.stringify(value));
+	check('embla preset: the class names of the old wrapper', value.root === 'embla embla_horizontal embla_dynamic' && value.viewport === 'embla_viewport' && value.container && value.buttons.join() === 'embla_button embla_prev,embla_button embla_next' && value.dots === 'embla_dots' && value.dot.startsWith('embla_dot') && value.active === 'item is_active', JSON.stringify(value));
 }
 
 {
@@ -558,14 +558,14 @@ for (const [id, limit] of [['loop', 21], ['clones', 21]]) {
 			changes
 		};
 	});
-	check('dots: 5 dots around the current dot have state classes', value.count === 15 && value.marked === 'first,prev,current,next,last' && value.current === 7, JSON.stringify(value));
+	check('dots: 5 dots around the current dot have state classes', value.count === 15 && value.marked === 'is_first,is_prev,is_current,is_next,is_last' && value.current === 7, JSON.stringify(value));
 	check('dots: the 5 dots show in the window with the current dot in the center, and the other dots do not show and are out of the tab order', value.hidden && value.shown && value.centered && value.tabbable, JSON.stringify(value));
 	check('dots: one select changes no more than 10 class lists', value.changes <= 10, value.changes + ' changes');
 }
 
 {
 	const value = await page.evaluate(() => {
-		const carousel = window.byId('state');
+		const carousel = window.byId('embla');
 		carousel.goTo(1, true);
 		const result = [carousel.slideNodes()[1].className, carousel.rootNode().querySelector('.is_current')?.className];
 		carousel.goTo(0, true);
@@ -961,14 +961,20 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 			viewport = carousel.viewportNode(),
 			slide = (index) => Math.round(carousel.slideNodes()[index].getBoundingClientRect().height),
 			first = Math.round(parseFloat(viewport.style.height));
-		let resized = 0;
-		const count = () => resized++;
-		carousel.on('resize', count);
 		carousel.goTo(1);
 		await new Promise((resolve) => setTimeout(resolve, 100));
 		const middle = viewport.getBoundingClientRect().height;
 		await new Promise((resolve) => setTimeout(resolve, 600));
 		const last = Math.round(parseFloat(viewport.style.height));
+		// Two instant changes: the height transition runs with no motion. Count the second one only,
+		// because a measure pass during the last motion can leave a signature that the first pass at rest changes.
+		carousel.goTo(0, true);
+		await new Promise((resolve) => setTimeout(resolve, 600));
+		let resized = 0;
+		const count = () => resized++;
+		carousel.on('resize', count);
+		carousel.goTo(1, true);
+		await new Promise((resolve) => setTimeout(resolve, 600));
 		carousel.off('resize', count);
 		carousel.goTo(0, true);
 		return { first, wide: slide(0), last, square: slide(1), middle, resized, transition: getComputedStyle(viewport).transitionProperty };
@@ -1005,9 +1011,10 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 	check('offset: --better-offset changes on each frame of a motion', offsets.middle[1] > 0 && offsets.middle[1] < 1 && offsets.end[1] === 0 && offsets.end[0] === -1, JSON.stringify([offsets.middle, offsets.end]));
 
 	// The examples: the timer bar animates while the autoplay plays, the photos far from the center are smaller, and the counter shows the snap
-	await scrollTo('timer');
+	await scrollTo('autoplay');
+	await page.evaluate(() => window.byId('autoplay').autoplay.play());
 	await wait(300);
-	const timer = await page.evaluate(() => document.querySelector('#timer .demo_bar').getAnimations().length);
+	const timer = await page.evaluate(() => document.querySelector('#autoplay .demo_bar').getAnimations().length);
 	await scrollTo('scale');
 	const scaled = await page.evaluate(() => [...document.querySelectorAll('#scale .item > img')].map((image) => +getComputedStyle(image).opacity));
 	await scrollTo('callbacks');
@@ -1090,6 +1097,126 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 		return { frames: stopped, after, moved: list.some((value) => value > 0.05) };
 	});
 	check('progress and offset: the auto scroll calls the callback on each frame, and not after the stop', scroll.frames > 10 && scroll.moved && scroll.after === 0, JSON.stringify(scroll));
+}
+
+// The other cases: right to left, several slides per snap, empty space at the ends, hidden at the start, slide changes, custom controls,
+// lazy images and responsive options
+{
+	await scrollTo('rtl');
+	const rtl = await page.evaluate(async () => {
+		const carousel = window.byId('rtl'),
+			root = carousel.rootNode(),
+			box = carousel.viewportNode().getBoundingClientRect(),
+			right = (index) => Math.round(box.right - carousel.slideNodes()[index].getBoundingClientRect().right),
+			first = right(0),
+			prev = root.querySelector('.better_prev').getBoundingClientRect(),
+			next = root.querySelector('.better_next');
+		next.click();
+		await new Promise((resolve) => carousel.on('settle', resolve));
+		const second = right(1);
+		carousel.goTo(3, true);
+		// The dots move with a transition of 0.2 s
+		await new Promise((resolve) => setTimeout(resolve, 300));
+		const dots = root.querySelector('.better_dots').getBoundingClientRect(),
+			current = root.querySelector('.better_dot[aria-current="true"]').getBoundingClientRect();
+		carousel.goTo(0, true);
+		return { first, second, prev: prev.left > next.getBoundingClientRect().left, dot: Math.round((current.left + current.right) / 2 - (dots.left + dots.right) / 2) };
+	});
+	check('right to left: the first slide is at the right, the next button shows the next slide there, the previous button is at the right, and the current dot is in the center', Math.abs(rtl.first) <= 1 && Math.abs(rtl.second) <= 1 && rtl.prev && Math.abs(rtl.dot) <= 1, JSON.stringify(rtl));
+
+	await scrollTo('groups');
+	const groups = await page.evaluate(() => {
+		const carousel = window.byId('groups'),
+			count = carousel.snapList().length;
+		carousel.goToNext(true);
+		const slide = carousel.selectedSlide();
+		carousel.goTo(0, true);
+		return { count, slide };
+	});
+	check('slidesToScroll: auto: one snap for each page of 4 slides', groups.count === 3 && groups.slide === 4, JSON.stringify(groups));
+
+	await scrollTo('contain');
+	const contain = await page.evaluate(() => {
+		const free = window.byId('contain', 0),
+			keep = window.byId('contain', 1),
+			box = free.viewportNode().getBoundingClientRect(),
+			slide = free.slideNodes()[0].getBoundingClientRect();
+		return { center: Math.round((slide.left + slide.right) / 2 - (box.left + box.right) / 2), snaps: [free.snapList().length, keep.snapList().length], same: keep.snapList()[0] === keep.snapList()[1] };
+	});
+	check('containScroll: false centers the first slide, and keepSnaps keeps a snap for each slide', Math.abs(contain.center) <= 1 && contain.snaps.join() === '7,7' && contain.same, JSON.stringify(contain));
+
+	await scrollTo('hidden');
+	const hidden = await page.evaluate(async () => {
+		const carousel = window.byId('hidden'),
+			before = carousel.isFit();
+		document.getElementById('tab-photos').click();
+		await new Promise((resolve) => setTimeout(resolve, 300));
+		const after = { fit: carousel.isFit(), snaps: carousel.snapList().length, buttons: carousel.rootNode().querySelectorAll('.better_button').length };
+		document.getElementById('tab-text').click();
+		return { before, ...after };
+	});
+	check('hidden at the start: the carousel starts to move when its tab shows', hidden.before && !hidden.fit && hidden.snaps > 1 && hidden.buttons === 2, JSON.stringify(hidden));
+
+	await scrollTo('changes');
+	const changes = await page.evaluate(async () => {
+		const carousel = window.byId('changes'),
+			box = carousel.rootNode().closest('.demo'),
+			start = carousel.slideNodes().length;
+		let events = 0;
+		const count = () => events++;
+		carousel.on('slideschanged', count);
+		box.querySelector('[data-add]').click();
+		await new Promise((resolve) => setTimeout(resolve, 300));
+		const added = carousel.slideNodes().length,
+			label = carousel.slideNodes()[added - 1].getAttribute('aria-label');
+		box.querySelector('[data-remove]').click();
+		await new Promise((resolve) => setTimeout(resolve, 300));
+		carousel.off('slideschanged', count);
+		return { start, added, label, removed: carousel.slideNodes().length, events };
+	});
+	check('slide changes: a new slide gets its name, and each change emits slideschanged', changes.added === changes.start + 1 && changes.label === changes.added + ' of ' + changes.added && changes.removed === changes.start && changes.events === 2, JSON.stringify(changes));
+
+	await scrollTo('custom');
+	const custom = await page.evaluate(() => {
+		const carousel = window.byId('custom'),
+			box = carousel.rootNode().closest('.demo'),
+			prev = box.querySelector('[data-prev]'),
+			next = box.querySelector('[data-next]'),
+			counter = box.querySelector('.demo_counter'),
+			count = carousel.snapList().length,
+			first = [counter.textContent, prev.disabled, next.disabled];
+		next.click();
+		const second = [counter.textContent, prev.disabled];
+		carousel.goTo(count - 1, true);
+		const last = [counter.textContent, next.disabled];
+		carousel.goTo(0, true);
+		return { count, first, second, last, arrows: carousel.rootNode().querySelectorAll('.better_button').length };
+	});
+	check('custom controls: the counter and the disabled buttons follow the carousel', custom.first.join() === '1 / ' + custom.count + ',true,false' && custom.second.join() === '2 / ' + custom.count + ',false' && custom.last.join() === custom.count + ' / ' + custom.count + ',true' && custom.arrows === 0, JSON.stringify(custom));
+
+	await scrollTo('images');
+	const images = await page.evaluate(() => {
+		const carousel = window.byId('images'),
+			list = () => carousel.slideNodes().map((slide) => slide.querySelector('img').hasAttribute('src')),
+			first = list();
+		carousel.goTo(carousel.snapList().length - 1, true);
+		const last = list();
+		carousel.goTo(0, true);
+		return { first, last };
+	});
+	check('lazy images: the slides in view and the next slide load first, and the others load when they come near', images.first.filter(Boolean).length === 4 && !images.first[images.first.length - 1] && images.last.every(Boolean), JSON.stringify(images));
+
+	// Responsive options: a grid from 769 px, and a carousel under it
+	await page.evaluate(() => document.getElementById('breakpoints').scrollIntoView({ block: 'center', behavior: 'instant' }));
+	const container = () => page.evaluate(() => document.querySelector('#breakpoints .items').classList.contains('better_container'));
+	const wide = await container();
+	await page.setViewport({ width: 600, height: 900 });
+	await wait(500);
+	const narrow = await container();
+	await page.setViewport({ width: 1200, height: 900 });
+	await wait(500);
+	const back = await container();
+	check('responsive options: active: false in a breakpoint stops the carousel, and it starts again under the breakpoint', !wide && narrow && !back, JSON.stringify({ wide, narrow, back }));
 }
 
 // Controls in slides

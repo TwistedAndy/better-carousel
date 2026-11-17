@@ -128,7 +128,8 @@ function parts(html, local) {
 			['`better-carousel.css`', ...css.map(kb)],
 			['Total', ...js.map((value, index) => kb(value + css[index]))]
 		], html, local),
-		gzip: kb(js[1])
+		gzip: kb(js[1]),
+		version: 'v' + JSON.parse(readFileSync(root + 'package.json', 'utf8')).version
 	};
 
 	// The option names in HTML get an anchor for the links from the examples
@@ -157,7 +158,8 @@ export function writeDocs(write = true) {
 			if (!(name in list)) {
 				throw new Error(file + ': unknown generated part "' + name + '"');
 			}
-			const value = name === 'gzip' ? list.gzip : '\n' + list[name] + '\n' + prefix;
+			// The short parts are in a line of text
+			const value = name === 'gzip' || name === 'version' ? list[name] : '\n' + list[name] + '\n' + prefix;
 			return prefix + '<!-- generated:' + name + ' -->' + value + '<!-- /generated -->';
 		});
 

@@ -16,6 +16,7 @@
 
 	.logo img {
 		display: block;
+		border-radius: 6px;
 		width: var(--width-logo);
 		// on narrow phones keep the logo readable, the menu moves off center instead
 		max-width: none;
@@ -27,28 +28,72 @@
 		margin: 0;
 		padding: 0;
 		list-style: none;
-		gap: 22px;
+		gap: 4px;
 
 		a {
+			display: block;
+			position: relative;
+			padding: 6px 14px;
+			border-radius: 8px;
 			color: var(--color-muted);
 			font-weight: 500;
 			text-decoration: none;
+			transition: color 0.2s, background-color 0.2s;
+
+			// The mark of the part of the page in view
+			&:after {
+				content: '';
+				position: absolute;
+				right: 14px;
+				bottom: 0;
+				left: 14px;
+				height: 2px;
+				border-radius: 1px;
+				background: var(--color-primary);
+				scale: 0 1;
+				transition: scale 0.2s;
+			}
 
 			@include hover {
 				&:hover {
+					background: #{rgbo(--color-primary, 8%)};
 					color: var(--color-heading);
 				}
 			}
 
 		}
 
+		.active a {
+			color: var(--color-primary);
+
+			&:after {
+				scale: 1 1;
+			}
+
+		}
+
+	}
+
+	.meta {
+		display: flex;
+		align-items: center;
+		justify-self: end;
+		gap: 16px;
+	}
+
+	.version {
+		padding: 2px 10px;
+		border: 1px solid var(--color-border);
+		border-radius: 20px;
+		color: var(--color-muted);
+		font-size: var(--size-tiny);
+		font-weight: 500;
 	}
 
 	.link {
 		--mask-image: url('assets/ico_github.svg');
 		display: flex;
 		align-items: center;
-		justify-self: end;
 		color: var(--color-heading);
 		font-size: var(--size-small);
 		font-weight: 500;
@@ -77,7 +122,17 @@
 
 		.menu {
 			font-size: var(--size-small);
-			gap: 14px;
+
+			a {
+				padding: 6px 10px;
+
+				&:after {
+					right: 10px;
+					left: 10px;
+				}
+
+			}
+
 		}
 
 		.link span {
@@ -87,10 +142,21 @@
 	}
 
 	@include phone_large {
-		--width-logo: 124px;
-		gap: 12px;
+		// The logo mark in place of the full logo, so that all links fit
+		--width-logo: 28px;
+		gap: 8px;
 
-		.menu li:first-child {
+		.menu a {
+			padding: 6px 8px;
+
+			&:after {
+				right: 8px;
+				left: 8px;
+			}
+
+		}
+
+		.version {
 			display: none;
 		}
 

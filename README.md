@@ -144,6 +144,8 @@ The library does not set the size of the slides or the space between them. It re
 
 The carousel measures again when the CSS changes, when the page adds or removes a slide, and when an image loads. To add or remove a slide, change the elements in the container.
 
+A carousel can start in a hidden element, such as a tab, an accordion or a modal window. It has no size, so it shows no arrows and no dots. When the element shows, the carousel measures and starts to move.
+
 ## Frameworks
 
 1. Render the root and the viewport in the component.
@@ -313,6 +315,16 @@ BetterCarousel(element, {
     '(min-width: 1024px)': { draggable: false },
   },
 })
+
+// The options that need no example of their own
+BetterCarousel(element, {
+  startSnap: 2,          // Start at the third snap
+  duration: 600,         // The duration of a motion by one snap, in ms
+  inViewThreshold: 0.5,  // A slide is in view when half of it shows
+  resize: false,         // Do not measure again when a size changes
+  slideChanges: false,   // Do not watch for added and removed slides
+  wrap: false,           // Add no root and viewport: the page has them
+})
 ```
 
 <!-- generated:options -->
@@ -320,33 +332,33 @@ BetterCarousel(element, {
 | --- | --- | --- | --- |
 | `axis` | `'x'`, `'y'`, `'auto'` | `'auto'` | The axis of the motion. With `'auto'`, the CSS of the container sets the axis. ([example](https://twistedandy.github.io/better-carousel/#switch)) |
 | `align` | `'start'`, `'center'`, `'end'`, `'auto'`, `function` | `'auto'` | The position of the selected snap in the viewport. A function gets `(viewSize, snapSize, index)` and returns the offset in px. With `'auto'`, `justify-content` sets the alignment. ([example](https://twistedandy.github.io/better-carousel/#center)) |
-| `direction` | `'ltr'`, `'rtl'`, `'auto'` | `'auto'` | The text direction. With `'auto'`, the CSS `direction` sets it. |
+| `direction` | `'ltr'`, `'rtl'`, `'auto'` | `'auto'` | The text direction. With `'auto'`, the CSS `direction` sets it. ([example](https://twistedandy.github.io/better-carousel/#rtl)) |
 | `loop` | `boolean` | `false` | The first slide comes after the last slide. ([example](https://twistedandy.github.io/better-carousel/#loop)) |
 | `clones` | `'auto'`, `'fill'`, `false` | `'auto'` | `'auto'`: add clones only if the loop needs them. `'fill'`: add clones that fill the window. `false`: add no clones. ([example](https://twistedandy.github.io/better-carousel/#clones)) |
 | `dragFree` | `boolean`, `'snap'` | `false` | `true`: glide after a drag and stop at any position. `'snap'`: glide and stop at the nearest snap. ([example](https://twistedandy.github.io/better-carousel/#free)) |
-| `containScroll` | `'trimSnaps'`, `'keepSnaps'`, `false` | `'trimSnaps'` | `'trimSnaps'`: no empty space at the ends. `'keepSnaps'`: no empty space, but keep a snap for each group. `false`: snaps can show empty space. ([example](https://twistedandy.github.io/better-carousel/#center)) |
-| `slidesToScroll` | `number`, `'auto'` | `1` | The number of slides in one snap. `'auto'`: the slides that fit in the viewport. |
+| `containScroll` | `'trimSnaps'`, `'keepSnaps'`, `false` | `'trimSnaps'` | `'trimSnaps'`: no empty space at the ends. `'keepSnaps'`: no empty space, but keep a snap for each group. `false`: snaps can show empty space. ([example](https://twistedandy.github.io/better-carousel/#contain)) |
+| `slidesToScroll` | `number`, `'auto'` | `1` | The number of slides in one snap. `'auto'`: the slides that fit in the viewport. ([example](https://twistedandy.github.io/better-carousel/#groups)) |
 | `skipSnaps` | `boolean`, `number` | `true` | A fast flick can move more than one snap. `false`: one snap. A number: the maximum number of snaps. ([example](https://twistedandy.github.io/better-carousel/#skip)) |
 | `dragThreshold` | `number` | `10` | The distance in px that the pointer moves before a drag starts. |
-| `duration` | `number` | `400` | The duration of a motion by one snap, in ms. A longer motion takes more time, to a maximum of 2 times this value. |
-| `startSnap` | `number` | `0` | The index of the snap at the start. |
+| `duration` | `number` | `400` | The duration of a motion by one snap, in ms. A longer motion takes more time, to a maximum of 2 times this value. ([example](https://twistedandy.github.io/better-carousel/#options-usage)) |
+| `startSnap` | `number` | `0` | The index of the snap at the start. ([example](https://twistedandy.github.io/better-carousel/#options-usage)) |
 | `lazy` | `boolean`, `number` | `false` | `true`: start when the carousel comes within one screen of the view. A number: the distance in px. ([example](https://twistedandy.github.io/better-carousel/#lazy)) |
 | `draggable` | `boolean` | `true` | Drag with the mouse, the pen and the finger. |
 | `wheel` | `boolean`, `'both'` | `true` | The mouse wheel moves a vertical carousel. `'both'`: also a horizontal carousel. `false`: the wheel does not move the carousel. ([example](https://twistedandy.github.io/better-carousel/#vertical)) |
-| `resize` | `boolean` | `true` | Measure again when a size changes. |
-| `slideChanges` | `boolean` | `true` | Measure again when the page adds or removes a slide. |
+| `resize` | `boolean` | `true` | Measure again when a size changes. ([example](https://twistedandy.github.io/better-carousel/#options-usage)) |
+| `slideChanges` | `boolean` | `true` | Measure again when the page adds or removes a slide. ([example](https://twistedandy.github.io/better-carousel/#changes)) |
 | `focus` | `boolean` | `true` | Go to a slide when it gets the keyboard focus. ([example](https://twistedandy.github.io/better-carousel/#controls)) |
-| `inViewThreshold` | `number` | `0` | The part of a slide, from 0 to 1, that must show for `slidesInView()`. |
-| `active` | `boolean` | `true` | `false`: do not start the carousel. Use it in `breakpoints`. |
-| `breakpoints` | `object` | `{}` | The options for media queries: `{ '(min-width: 768px)': { loop: true } }`. |
+| `inViewThreshold` | `number` | `0` | The part of a slide, from 0 to 1, that must show for `slidesInView()`. ([example](https://twistedandy.github.io/better-carousel/#options-usage)) |
+| `active` | `boolean` | `true` | `false`: do not start the carousel. Use it in `breakpoints`. ([example](https://twistedandy.github.io/better-carousel/#breakpoints)) |
+| `breakpoints` | `object` | `{}` | The options for media queries: `{ '(min-width: 768px)': { loop: true } }`. ([example](https://twistedandy.github.io/better-carousel/#breakpoints)) |
 | `container` | `string` | `null` | The selector of the container, if the element is the root. |
 | `slides` | `string` | `null` | The selector of the slides. With `null`, all children of the container are slides. |
-| `wrap` | `boolean` | `true` | Add the root and the viewport if the page does not have them. |
+| `wrap` | `boolean` | `true` | Add the root and the viewport if the page does not have them. ([example](https://twistedandy.github.io/better-carousel/#options-usage)) |
 | `arrows` | `boolean`, `Element`, `string` | `true` | Add the arrows to the root. `false`: no arrows. An element or a selector: add the arrows to that element. ([example](https://twistedandy.github.io/better-carousel/#heading)) |
 | `dots` | `boolean`, `Element`, `string` | `true` | Add the dots. The values are the same as for `arrows`. ([example](https://twistedandy.github.io/better-carousel/#heading)) |
-| `labels` | `object` | English | The texts for screen readers: `carousel`, `slide` (`'%d of %n'`), `prev`, `next`, `dot` (`'Go to slide %d'`), `play`, `pause`. `%d` is the slide number, and `%n` is the number of slides. |
+| `labels` | `object` | English | The texts for screen readers: `carousel`, `slide` (`'%d of %n'`), `prev`, `next`, `dot` (`'Go to slide %d'`), `play`, `pause`. `%d` is the slide number, and `%n` is the number of slides. ([example](#accessibility)) |
 | `classes` | `string`, `object` | `null` | A class prefix such as `'embla'`, or an object with the names to change. The [Classes](#classes) table gives all names. ([example](https://twistedandy.github.io/better-carousel/#embla)) |
-| `state` | `string` | `''` | The prefix of the state classes, such as `'is_'`. ([example](https://twistedandy.github.io/better-carousel/#state)) |
+| `state` | `string` | `''` | The prefix of the state classes, such as `'is_'`. ([example](https://twistedandy.github.io/better-carousel/#embla)) |
 | `sync` | carousel, `Element`, `string` | `null` | Another carousel, its container or a selector. This carousel follows the selected slide of the other carousel. A click on a slide selects it in the other carousel. ([example](https://twistedandy.github.io/better-carousel/#product)) |
 | `autoplay` | `boolean`, `number`, `object` | `false` | Go to the next slide after a delay. `true`, a delay in ms, or an object. ([example](#autoplay)) |
 | `autoScroll` | `boolean`, `number`, `object` | `false` | Move the slides at a constant speed. `true`, a speed in px/s, or an object. ([example](https://twistedandy.github.io/better-carousel/#logos)) |
@@ -667,6 +679,22 @@ The carousel follows the carousel pattern of the WAI-ARIA Authoring Practices an
 - The autoplay and the auto scroll have a play and pause button (WCAG 2.2.2). The keyboard focus pauses them. If the user prefers reduced motion, they do not start.
 - A drag across the axis scrolls the page. A link opens on a click, but not after a drag.
 
+To translate the labels, set `labels`. In the texts, `%d` is the slide number, and `%n` is the number of slides:
+
+```js
+BetterCarousel.defaults = {
+  labels: {
+    carousel: 'Karussell',
+    slide: '%d von %n',
+    prev: 'Vorheriges Bild',
+    next: 'Nächstes Bild',
+    dot: 'Zu Bild %d',
+    play: 'Diashow starten',
+    pause: 'Diashow anhalten',
+  },
+}
+```
+
 ## Performance
 
 The library is made for slow phones. A motion runs on the compositor, and a carousel at rest uses no CPU.
@@ -675,8 +703,8 @@ The library is made for slow phones. A motion runs on the compositor, and a caro
 | File | Minified | Gzip | Brotli |
 | --- | --- | --- | --- |
 | `better-carousel.min.js` | 28.0 KB | 11.2 KB | 10.2 KB |
-| `better-carousel.css` | 3.9 KB | 1.2 KB | 1.0 KB |
-| Total | 31.8 KB | 12.4 KB | 11.2 KB |
+| `better-carousel.css` | 4.0 KB | 1.3 KB | 1.0 KB |
+| Total | 32.0 KB | 12.4 KB | 11.2 KB |
 <!-- /generated -->
 
 The same features in Embla 9 (the core, three plugins and a wrapper) are 12.6 KB gzip.

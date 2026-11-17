@@ -10,7 +10,7 @@
 </head>
 <body>
 	<header class="header_box">
-		<a class="logo" href="#top" aria-label="Better Carousel"><img src="demo/assets/logo.svg" alt="Better Carousel" width="190" height="19"></a>
+		<a class="logo" href="#top" aria-label="Better Carousel"><picture><source media="(max-width: 480px)" srcset="demo/assets/favicon.svg"><img src="demo/assets/logo.svg" alt="Better Carousel" width="190" height="19"></picture></a>
 		<nav class="navigation" aria-label="Sections">
 			<ul class="menu">
 				<li><a href="#installation">Docs</a></li>
@@ -18,7 +18,10 @@
 				<li><a href="#options">API</a></li>
 			</ul>
 		</nav>
-		<a class="link" href="https://github.com/TwistedAndy/better-carousel" aria-label="GitHub repository"><span>TwistedAndy/better-carousel</span></a>
+		<div class="meta">
+			<span class="version"><!-- generated:version -->v0.1.0<!-- /generated --></span>
+			<a class="link" href="https://github.com/TwistedAndy/better-carousel" aria-label="GitHub repository"><span>TwistedAndy/better-carousel</span></a>
+		</div>
 	</header>
 
 	<section class="hero_box is_dark" id="top">
@@ -50,7 +53,7 @@
 	<section class="cards_box is_dark has_no_top">
 		<div class="fixed">
 			<ul class="items items_4">
-				<li class="item"><h3>Smooth</h3><p class="text">Each motion runs on the compositor. No script runs on each frame, also during a drag.</p></li>
+				<li class="item"><h3>Smooth</h3><p class="text">Each motion runs on the compositor, so no script runs on each frame of a motion.</p></li>
 				<li class="item"><h3>CSS layout</h3><p class="text">The sizes, the margins, the axis and the alignment come from your CSS.</p></li>
 				<li class="item"><h3>Small</h3><p class="text"><!-- generated:gzip -->11.2 KB<!-- /generated --> gzip with loop, autoplay, auto scroll, auto height and sync.</p></li>
 				<li class="item"><h3>Accessible</h3><p class="text">WCAG 2.1 AA: names, keyboard, focus, live region and reduced motion.</p></li>
@@ -61,7 +64,7 @@
 	<div class="wrapper_box">
 		<div class="fixed">
 			<aside class="sidebar" aria-label="Table of contents">
-				<nav class="navigation"><ul class="menu"><li class="submenu"><span class="label">Getting started</span><ul class="sub-menu"><li><a href="#installation">Installation</a></li><li><a href="#quick-start">Quick start</a></li><li><a href="#concepts">Concepts</a></li><li><a href="#frameworks">Frameworks</a></li><li><a href="#css-layout">CSS layout</a></li><li><a href="#options-usage">Set the options</a></li><li><a href="#styling">Styling</a></li></ul></li><li class="submenu"><span class="label">Layout</span><ul class="sub-menu"><li><a href="#start">Start alignment</a></li><li><a href="#center">Center alignment</a></li><li><a href="#end">End alignment</a></li><li><a href="#fit">Fit mode</a></li><li><a href="#vertical">Vertical</a></li><li><a href="#switch">Axis switch</a></li><li><a href="#auto">Dynamic widths</a></li><li><a href="#autocenter">Centered dynamic widths</a></li><li><a href="#grow">The selected slide grows</a></li></ul></li><li class="submenu"><span class="label">Loop</span><ul class="sub-menu"><li><a href="#loop">Loop</a></li><li><a href="#loopcenter">Centered loop</a></li><li><a href="#clones">Loop with clones</a></li><li><a href="#fill">Clones fill the window</a></li><li><a href="#gallery">Grid with two rows</a></li></ul></li><li class="submenu"><span class="label">Drag and input</span><ul class="sub-menu"><li><a href="#drag">Links in slides</a></li><li><a href="#free">Free drag</a></li><li><a href="#freesnap">Free drag with snaps</a></li><li><a href="#skip">One snap for each flick</a></li><li><a href="#controls">Controls in slides</a></li></ul></li><li class="submenu"><span class="label">Navigation</span><ul class="sub-menu"><li><a href="#heading">Arrow and dot position</a></li><li><a href="#product">Gallery with thumbnails</a></li></ul></li><li class="submenu"><span class="label">Motion</span><ul class="sub-menu"><li><a href="#autoplay">Autoplay</a></li><li><a href="#timer">Autoplay timer</a></li><li><a href="#logos">Auto scroll</a></li><li><a href="#height">Auto height</a></li></ul></li><li class="submenu"><span class="label">Progress and offset</span><ul class="sub-menu"><li><a href="#progress-and-offset">Progress bar</a></li><li><a href="#parallax">Parallax</a></li><li><a href="#scale">Scale and fade</a></li><li><a href="#callbacks">Callbacks</a></li></ul></li><li class="submenu"><span class="label">Class names</span><ul class="sub-menu"><li><a href="#embla">Class prefix</a></li><li><a href="#state">State prefix</a></li></ul></li><li class="submenu"><span class="label">Reference</span><ul class="sub-menu"><li><a href="#options">Options</a></li><li><a href="#methods">Methods</a></li><li><a href="#events">Events</a></li><li><a href="#classes">Classes</a></li><li><a href="#from-embla">Coming from Embla</a></li></ul></li><li class="submenu"><span class="label">Accessibility and speed</span><ul class="sub-menu"><li><a href="#accessibility">Accessibility</a></li><li><a href="#performance">Performance</a></li><li><a href="#lazy">Lazy start</a></li></ul></li></ul></nav>
+				<nav class="navigation"><ul class="menu"><li class="submenu"><span class="label">Getting started</span><ul class="sub-menu"><li><a href="#installation">Installation</a></li><li><a href="#quick-start">Quick start</a></li><li><a href="#concepts">How it works</a></li><li><a href="#css-layout">CSS layout</a></li><li><a href="#options-usage">Configuration</a></li><li><a href="#styling">Styling</a></li><li><a href="#frameworks">Frameworks</a></li></ul></li><li class="submenu"><span class="label">Layout</span><ul class="sub-menu"><li><a href="#start">Start alignment</a></li><li><a href="#center">Center alignment</a></li><li><a href="#end">End alignment</a></li><li><a href="#contain">Space at the ends</a></li><li><a href="#groups">Several slides per snap</a></li><li><a href="#rtl">Right to left</a></li><li><a href="#fit">Fit mode</a></li><li><a href="#vertical">Vertical carousel</a></li><li><a href="#switch">Responsive axis</a></li><li><a href="#breakpoints">Responsive options</a></li><li><a href="#auto">Variable widths</a></li><li><a href="#autocenter">Variable and centered</a></li><li><a href="#grow">Growing selected slide</a></li><li><a href="#gallery">Grid layout</a></li><li><a href="#height">Auto height</a></li><li><a href="#hidden">Hidden at the start</a></li></ul></li><li class="submenu"><span class="label">Loop</span><ul class="sub-menu"><li><a href="#loop">Infinite loop</a></li><li><a href="#loopcenter">Centered loop</a></li><li><a href="#clones">Loop with clones</a></li><li><a href="#fill">Clones fill the window</a></li></ul></li><li class="submenu"><span class="label">Interaction</span><ul class="sub-menu"><li><a href="#free">Free drag</a></li><li><a href="#freesnap">Free drag with snaps</a></li><li><a href="#skip">One snap per flick</a></li><li><a href="#drag">Links in slides</a></li><li><a href="#controls">Forms in slides</a></li><li><a href="#changes">Add and remove slides</a></li></ul></li><li class="submenu"><span class="label">Navigation</span><ul class="sub-menu"><li><a href="#heading">Controls in a heading</a></li><li><a href="#custom">Custom controls</a></li><li><a href="#product">Thumbnails</a></li></ul></li><li class="submenu"><span class="label">Autoplay</span><ul class="sub-menu"><li><a href="#autoplay">Autoplay</a></li><li><a href="#logos">Auto scroll</a></li></ul></li><li class="submenu"><span class="label">Effects</span><ul class="sub-menu"><li><a href="#progress-and-offset">Progress bar</a></li><li><a href="#parallax">Parallax</a></li><li><a href="#scale">Scale and fade</a></li><li><a href="#callbacks">Custom effects</a></li></ul></li><li class="submenu"><span class="label">Reference</span><ul class="sub-menu"><li><a href="#options">Options</a></li><li><a href="#methods">Methods</a></li><li><a href="#events">Events</a></li><li><a href="#classes">Classes</a></li><li><a href="#embla">Custom class names</a></li><li><a href="#from-embla">Migrate from Embla</a></li></ul></li><li class="submenu"><span class="label">Accessibility and speed</span><ul class="sub-menu"><li><a href="#accessibility">Accessibility</a></li><li><a href="#performance">Performance</a></li><li><a href="#lazy">Lazy start</a></li><li><a href="#images">Lazy images</a></li></ul></li></ul></nav>
 			</aside>
 			<main class="container">
 
@@ -104,13 +107,13 @@ import 'better-carousel/css';</code></pre></div><h3>Files</h3><div class="table"
 const carousel = BetterCarousel(document.querySelector('.items'));
 
 // All carousels on the page
-const carousels = BetterCarousel.initAll('.items.carousel');</code></pre></div><p>The <a href="#concepts">Concepts</a> section shows the markup that the library adds.</p>
+const carousels = BetterCarousel.initAll('.items.carousel');</code></pre></div><p>The <a href="#concepts">How it works</a> section shows the markup that the library adds.</p>
 	</div>
 </section>
 
 <section class="section" id="concepts">
 	<div class="contents">
-		<h2><a href="#concepts">Concepts</a></h2>
+		<h2><a href="#concepts">How it works</a></h2>
 		<div class="content"><p>The library puts the container into a viewport and a root. Then it adds the arrows and the dots to the root:</p></div>
 	</div>
 	<div class="content">
@@ -124,6 +127,84 @@ const carousels = BetterCarousel.initAll('.items.carousel');</code></pre></div><
   &lt;button class="better_button better_next" aria-label="Next slide"&gt;&lt;/button&gt;
   &lt;div class="better_dots"&gt;...&lt;/div&gt;
 &lt;/div&gt;</code></pre></div><div class="table"><table><thead><tr><th>Term</th><th>Meaning</th></tr></thead><tbody><tr><td>Root</td><td>The outer element. It holds the viewport, the arrows and the dots. The library adds it if the page does not have it.</td></tr><tr><td>Viewport</td><td>The element that clips the slides. Its size is the visible area.</td></tr><tr><td>Container</td><td>The element that moves. Your CSS sets its layout, and the library sets its <code>translate</code>.</td></tr><tr><td>Slide</td><td>A child of the container, or an element that matches the <code>slides</code> selector.</td></tr><tr><td>Snap</td><td>A position where the carousel can stop. A snap shows one slide or a group of slides.</td></tr><tr><td>Selected snap</td><td>The snap that shows now. <code>selectedSnap()</code> gives its index.</td></tr><tr><td>Selected slide</td><td>The slide at the selected snap. It gets the <code>active</code> class. <code>selectedSlide()</code> gives its index.</td></tr><tr><td>Clone</td><td>A copy of a slide that the loop adds when the slides are too few. Clones are not in <code>slideNodes()</code>, and they have no index.</td></tr><tr><td>Motion</td><td>A change of position with an animation. When a motion stops, the <code>settle</code> event occurs.</td></tr><tr><td>Fit</td><td>All slides show in the viewport. The carousel does not move, and it does not show the arrows and the dots (<a href="#fit">example</a>).</td></tr></tbody></table></div><p>A carousel can have fewer snaps than slides. For example, <code>slidesToScroll: 2</code> puts two slides into each snap. Also, <code>containScroll: 'trimSnaps'</code> removes the snaps that show empty space at the ends. For this reason, the methods use two types of index:</p><ul><li><code>goTo()</code>, <code>selectedSnap()</code> and <code>snapList()</code> use a snap index.</li><li><code>goToSlide()</code>, <code>selectedSlide()</code>, <code>slidesInView()</code> and <code>slideNodes()</code> use a slide index.</li><li><code>snapOfSlide(index)</code> gives the snap index of a slide.</li></ul><p>Each example on this page shows its selected snap and its selected slide under the carousel.</p>
+	</div>
+</section>
+
+<section class="section" id="css-layout">
+	<div class="contents">
+		<h2><a href="#css-layout">CSS layout</a></h2>
+		<div class="content"><p>The library does not set the size of the slides or the space between them. It reads these values from the CSS and moves only the container. For this reason, one carousel can show 1 slide on a phone and 4 slides on a desktop, with no change in the script.</p></div>
+	</div>
+	<div class="content">
+	<div class="table"><table><thead><tr><th>The CSS of the container</th><th>The result</th></tr></thead><tbody><tr><td><code>display: flex</code>, a row</td><td>A horizontal carousel</td></tr><tr><td><code>flex-direction: column</code></td><td>A vertical carousel (<a href="#vertical">example</a>)</td></tr><tr><td><code>display: grid</code> with <code>grid-auto-flow: column</code></td><td>A horizontal carousel with more rows (<a href="#gallery">example</a>)</td></tr><tr><td><code>justify-content: center</code></td><td>The selected slide is in the center (<a href="#center">example</a>)</td></tr><tr><td><code>justify-content: flex-end</code></td><td>The selected slide is at the end (<a href="#end">example</a>)</td></tr><tr><td>The margins of the slides and a negative margin of the container</td><td>The space between the slides. In a loop, also the space between the last slide and the first slide.</td></tr><tr><td><code>direction: rtl</code></td><td>A right-to-left carousel</td></tr></tbody></table></div><p>The carousel measures again when the CSS changes, when the page adds or removes a slide, and when an image loads.</p>
+	</div>
+</section>
+
+<section class="section" id="options-usage">
+	<div class="contents">
+		<h2><a href="#options-usage">Configuration</a></h2>
+		<div class="content"><p>Set the options in the call, in the <code>data-carousel</code> attribute, or in <code>BetterCarousel.defaults</code> for all carousels. If the call and the attribute set the same option, the value of the attribute applies.</p></div>
+	</div>
+	<div class="content">
+	<div class="code"><div class="heading"><span class="label">JavaScript</span><button class="button" type="button" data-copy aria-label="Copy JavaScript code">Copy</button></div><pre><code class="language-javascript">// All carousels of the site
+BetterCarousel.defaults = { loop: true, dragThreshold: 2 };
+
+// One carousel
+BetterCarousel(element, { align: 'center', dots: false });
+
+// Other options for a media query
+BetterCarousel(element, {
+  breakpoints: {
+    '(min-width: 1024px)': { draggable: false }
+  }
+});</code></pre></div><p>Write the value of <code>data-carousel</code> in JSON:</p><div class="code"><div class="heading"><span class="label">HTML</span><button class="button" type="button" data-copy aria-label="Copy HTML code">Copy</button></div><pre><code class="language-html">&lt;div class="items items_4 carousel" data-carousel='{"loop":true,"autoplay":3000}'&gt;
+  &lt;div class="item"&gt;...&lt;/div&gt;
+  &lt;div class="item"&gt;...&lt;/div&gt;
+  &lt;div class="item"&gt;...&lt;/div&gt;
+  ...
+&lt;/div&gt;</code></pre></div><p>These options need no example of their own:</p><div class="code"><div class="heading"><span class="label">JavaScript</span><button class="button" type="button" data-copy aria-label="Copy JavaScript code">Copy</button></div><pre><code class="language-javascript">BetterCarousel(element, {
+  startSnap: 2,          // Start at the third snap
+  duration: 600,         // The duration of a motion by one snap, in ms
+  inViewThreshold: 0.5,  // A slide is in view when half of it shows
+  resize: false,         // Do not measure again when a size changes
+  slideChanges: false,   // Do not watch for added and removed slides
+  wrap: false,           // Add no root and viewport: the page has them
+});</code></pre></div><p>The <a href="#options">Options</a> reference gives all options and their default values.</p>
+	</div>
+</section>
+
+<section class="section" id="styling">
+	<div class="contents">
+		<h2><a href="#styling">Styling</a></h2>
+		<div class="content"><p>The stylesheet has the rules that the carousel needs. It also has the look of the arrows, the dots and the play button. To change the colors, set the CSS variables. To change the class names, compile the SCSS file.</p></div>
+	</div>
+	<div class="content">
+	<h3>CSS variables</h3><p>The buttons and the dots use the button variables of the theme. The dots use <code>--button-text-disabled</code>, and the selected dot uses <code>--button-base</code>. The arrow icon is an inline SVG in the stylesheet. To use a different icon, set <code>--button-arrow</code>.</p><div class="code"><div class="heading"><span class="label">CSS</span><button class="button" type="button" data-copy aria-label="Copy CSS code">Copy</button></div><pre><code class="language-css">:root {
+  --height-button: 2.5rem;         /* The size of the buttons */
+  --button-arrow: url(arrow.svg);  /* Optional: the default is a chevron */
+
+  --button-border: #7c3aed;
+  --button-base: #7c3aed;
+  --button-text: #fff;
+  --button-border-active: #6d28d9;
+  --button-base-active: #6d28d9;
+  --button-text-active: #fff;
+  --button-border-disabled: #e8e8e8;
+  --button-base-disabled: #f5f5f5;
+  --button-text-disabled: #74787d;
+}</code></pre></div><h3>SCSS</h3><p>The SCSS file uses <code>@import</code> and global variables, so it compiles with Dart Sass and with node-sass. Set the variables before the import:</p><div class="code"><div class="heading"><span class="label">SCSS</span><button class="button" type="button" data-copy aria-label="Copy SCSS code">Copy</button></div><pre><code class="language-css">// The class prefix: .embla, .embla_viewport, .embla_button
+$better: 'embla';
+
+// The prefix of the state classes: .is_active, .is_current
+$better-state: 'is_';
+
+// Only the rules that the carousel needs: no look for the buttons and the dots
+$better-look: false;
+
+// The default icon of the arrows. The --button-arrow variable comes first.
+$better-arrow: url(arrow.svg);
+
+@import 'better-carousel';</code></pre></div><p>Then set the same names in the options: <code>{ classes: 'embla', state: 'is_' }</code>. The <a href="#classes">Classes</a> reference gives all names.</p>
 	</div>
 </section>
 
@@ -243,77 +324,6 @@ export default function Carousel(props) {
 	</div>
 </section>
 
-<section class="section" id="css-layout">
-	<div class="contents">
-		<h2><a href="#css-layout">CSS layout</a></h2>
-		<div class="content"><p>The library does not set the size of the slides or the space between them. It reads these values from the CSS and moves only the container. For this reason, one carousel can show 1 slide on a phone and 4 slides on a desktop, with no change in the script.</p></div>
-	</div>
-	<div class="content">
-	<div class="table"><table><thead><tr><th>The CSS of the container</th><th>The result</th></tr></thead><tbody><tr><td><code>display: flex</code>, a row</td><td>A horizontal carousel</td></tr><tr><td><code>flex-direction: column</code></td><td>A vertical carousel (<a href="#vertical">example</a>)</td></tr><tr><td><code>display: grid</code> with <code>grid-auto-flow: column</code></td><td>A horizontal carousel with more rows (<a href="#gallery">example</a>)</td></tr><tr><td><code>justify-content: center</code></td><td>The selected slide is in the center (<a href="#center">example</a>)</td></tr><tr><td><code>justify-content: flex-end</code></td><td>The selected slide is at the end (<a href="#end">example</a>)</td></tr><tr><td>The margins of the slides and a negative margin of the container</td><td>The space between the slides. In a loop, also the space between the last slide and the first slide.</td></tr><tr><td><code>direction: rtl</code></td><td>A right-to-left carousel</td></tr></tbody></table></div><p>The carousel measures again when the CSS changes, when the page adds or removes a slide, and when an image loads. One <code>ResizeObserver</code> serves all carousels on the page. It reads the layout of all carousels first, and then it writes the changes. For this reason, the browser calculates the layout only one time.</p>
-	</div>
-</section>
-
-<section class="section" id="options-usage">
-	<div class="contents">
-		<h2><a href="#options-usage">Set the options</a></h2>
-		<div class="content"><p>Set the options in the call, in the <code>data-carousel</code> attribute, or in <code>BetterCarousel.defaults</code> for all carousels. If the call and the attribute set the same option, the value of the attribute applies.</p></div>
-	</div>
-	<div class="content">
-	<div class="code"><div class="heading"><span class="label">JavaScript</span><button class="button" type="button" data-copy aria-label="Copy JavaScript code">Copy</button></div><pre><code class="language-javascript">// All carousels of the site
-BetterCarousel.defaults = { loop: true, dragThreshold: 2 };
-
-// One carousel
-BetterCarousel(element, { align: 'center', dots: false });
-
-// Other options for a media query
-BetterCarousel(element, {
-  breakpoints: {
-    '(min-width: 1024px)': { draggable: false }
-  }
-});</code></pre></div><p>Write the value of <code>data-carousel</code> in JSON:</p><div class="code"><div class="heading"><span class="label">HTML</span><button class="button" type="button" data-copy aria-label="Copy HTML code">Copy</button></div><pre><code class="language-html">&lt;div class="items items_4 carousel" data-carousel='{"loop":true,"autoplay":3000}'&gt;
-  &lt;div class="item"&gt;...&lt;/div&gt;
-  &lt;div class="item"&gt;...&lt;/div&gt;
-  &lt;div class="item"&gt;...&lt;/div&gt;
-  ...
-&lt;/div&gt;</code></pre></div><p>The <a href="#options">Options</a> reference gives all options and their default values.</p>
-	</div>
-</section>
-
-<section class="section" id="styling">
-	<div class="contents">
-		<h2><a href="#styling">Styling</a></h2>
-		<div class="content"><p>The stylesheet has the rules that the carousel needs. It also has the look of the arrows, the dots and the play button. To change the colors, set the CSS variables. To change the class names, compile the SCSS file.</p></div>
-	</div>
-	<div class="content">
-	<h3>CSS variables</h3><p>The buttons and the dots use the button variables of the theme. The dots use <code>--button-text-disabled</code>, and the selected dot uses <code>--button-base</code>. The arrow icon is an inline SVG in the stylesheet. To use a different icon, set <code>--button-arrow</code>.</p><div class="code"><div class="heading"><span class="label">CSS</span><button class="button" type="button" data-copy aria-label="Copy CSS code">Copy</button></div><pre><code class="language-css">:root {
-  --height-button: 2.5rem;         /* The size of the buttons */
-  --button-arrow: url(arrow.svg);  /* Optional: the default is a chevron */
-
-  --button-border: #7c3aed;
-  --button-base: #7c3aed;
-  --button-text: #fff;
-  --button-border-active: #6d28d9;
-  --button-base-active: #6d28d9;
-  --button-text-active: #fff;
-  --button-border-disabled: #e8e8e8;
-  --button-base-disabled: #f5f5f5;
-  --button-text-disabled: #74787d;
-}</code></pre></div><h3>SCSS</h3><p>The SCSS file uses <code>@import</code> and global variables, so it compiles with Dart Sass and with node-sass. Set the variables before the import:</p><div class="code"><div class="heading"><span class="label">SCSS</span><button class="button" type="button" data-copy aria-label="Copy SCSS code">Copy</button></div><pre><code class="language-css">// The class prefix: .embla, .embla_viewport, .embla_button
-$better: 'embla';
-
-// The prefix of the state classes: .is_active, .is_current
-$better-state: 'is_';
-
-// Only the rules that the carousel needs: no look for the buttons and the dots
-$better-look: false;
-
-// The default icon of the arrows. The --button-arrow variable comes first.
-$better-arrow: url(arrow.svg);
-
-@import 'better-carousel';</code></pre></div><p>Then set the same names in the options: <code>{ classes: 'embla', state: 'is_' }</code>. The <a href="#classes">Classes</a> reference gives all names.</p>
-	</div>
-</section>
-
 <section class="section" id="start">
 	<div class="contents">
 		<span class="caption">Layout</span><h2><a href="#start">Start alignment</a></h2>
@@ -348,7 +358,7 @@ $better-arrow: url(arrow.svg);
   ...
 &lt;/div&gt;</code></pre></div><div class="code"><div class="heading"><span class="label">CSS</span><button class="button" type="button" data-copy aria-label="Copy CSS code">Copy</button></div><pre><code class="language-css">.items.is_center {
   justify-content: center;
-}</code></pre></div><p>To keep the empty space at the ends, set <code>containScroll: false</code>.</p>
+}</code></pre></div><p>To keep the empty space at the ends, set <code>containScroll: false</code>. The <a href="#contain">Space at the ends</a> section shows the options.</p>
 	</div>
 </section>
 
@@ -369,6 +379,72 @@ $better-arrow: url(arrow.svg);
 &lt;/div&gt;</code></pre></div><div class="code"><div class="heading"><span class="label">CSS</span><button class="button" type="button" data-copy aria-label="Copy CSS code">Copy</button></div><pre><code class="language-css">.items.is_end {
   justify-content: flex-end;
 }</code></pre></div>
+	</div>
+</section>
+
+<section class="section" id="contain">
+	<div class="contents">
+		<h2><a href="#contain">Space at the ends</a></h2>
+		<div class="content"><p>The two carousels have <code>align: 'center'</code>. By default, a centered carousel stops at the edge at the first and the last slide, so that no empty space shows. This is <code>containScroll: 'trimSnaps'</code>.</p><ul><li>The first carousel has <code>containScroll: false</code>. The first and the last slide also go to the center, and empty space shows at the ends.</li><li>The second carousel has <code>containScroll: 'keepSnaps'</code>. It stops at the edges, but it keeps a snap for each slide. For this reason, it has 7 snaps, and some snaps at the ends have the same position.</li></ul></div>
+	</div>
+	<div class="content">
+	<div class="demo"><div class="items items_3 carousel" data-carousel='{"align":"center","containScroll":false}'>
+			<div class="item"><img src="demo/images/11-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">1</span></div><div class="item"><img src="demo/images/12-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">2</span></div><div class="item"><img src="demo/images/13-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">3</span></div><div class="item"><img src="demo/images/14-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">4</span></div><div class="item"><img src="demo/images/16-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">5</span></div><div class="item"><img src="demo/images/17-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">6</span></div><div class="item"><img src="demo/images/18-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">7</span></div>
+		</div>
+		<div class="items items_3 carousel" data-carousel='{"align":"center","containScroll":"keepSnaps"}'>
+			<div class="item"><img src="demo/images/11-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">1</span></div><div class="item"><img src="demo/images/12-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">2</span></div><div class="item"><img src="demo/images/13-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">3</span></div><div class="item"><img src="demo/images/14-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">4</span></div><div class="item"><img src="demo/images/16-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">5</span></div><div class="item"><img src="demo/images/17-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">6</span></div><div class="item"><img src="demo/images/18-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">7</span></div>
+		</div></div>
+	<div class="code"><div class="heading"><span class="label">HTML</span><button class="button" type="button" data-copy aria-label="Copy HTML code">Copy</button></div><pre><code class="language-html">&lt;div class="items items_3 carousel" data-carousel='{"align":"center","containScroll":false}'&gt;
+  &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
+  &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
+  &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
+  ...
+&lt;/div&gt;
+
+&lt;div class="items items_3 carousel" data-carousel='{"align":"center","containScroll":"keepSnaps"}'&gt;
+  &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
+  &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
+  &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
+  ...
+&lt;/div&gt;</code></pre></div>
+	</div>
+</section>
+
+<section class="section" id="groups">
+	<div class="contents">
+		<h2><a href="#groups">Several slides per snap</a></h2>
+		<div class="content"><p>With <code>slidesToScroll: 'auto'</code>, one snap has all the slides that fit in the viewport. An arrow moves the carousel by a full page, and each dot is one page. A number, such as <code>slidesToScroll: 2</code>, puts this number of slides into each snap.</p></div>
+	</div>
+	<div class="content">
+	<div class="demo"><div class="items items_4 carousel" data-carousel='{"slidesToScroll":"auto"}'>
+			<div class="item"><img src="demo/images/11-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">1</span></div><div class="item"><img src="demo/images/12-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">2</span></div><div class="item"><img src="demo/images/13-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">3</span></div><div class="item"><img src="demo/images/14-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">4</span></div><div class="item"><img src="demo/images/16-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">5</span></div><div class="item"><img src="demo/images/17-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">6</span></div><div class="item"><img src="demo/images/18-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">7</span></div><div class="item"><img src="demo/images/19-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">8</span></div><div class="item"><img src="demo/images/21-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">9</span></div><div class="item"><img src="demo/images/22-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">10</span></div><div class="item"><img src="demo/images/23-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">11</span></div><div class="item"><img src="demo/images/24-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">12</span></div>
+		</div></div>
+	<div class="code"><div class="heading"><span class="label">HTML</span><button class="button" type="button" data-copy aria-label="Copy HTML code">Copy</button></div><pre><code class="language-html">&lt;div class="items items_4 carousel" data-carousel='{"slidesToScroll":"auto"}'&gt;
+  &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
+  &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
+  &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
+  ...
+&lt;/div&gt;</code></pre></div>
+	</div>
+</section>
+
+<section class="section" id="rtl">
+	<div class="contents">
+		<h2><a href="#rtl">Right to left</a></h2>
+		<div class="content"><p>The parent of this carousel has <code>dir="rtl"</code>. The library reads the direction from the CSS. The first slide is at the right, and a drag to the right shows the next slide. The arrows and the dots also follow the direction.</p></div>
+	</div>
+	<div class="content">
+	<div class="demo"><div dir="rtl"><div class="items items_3 carousel" data-carousel='{"loop":true}'>
+			<div class="item"><img src="demo/images/11-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">1</span></div><div class="item"><img src="demo/images/12-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">2</span></div><div class="item"><img src="demo/images/13-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">3</span></div><div class="item"><img src="demo/images/14-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">4</span></div><div class="item"><img src="demo/images/16-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">5</span></div><div class="item"><img src="demo/images/17-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">6</span></div><div class="item"><img src="demo/images/18-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">7</span></div>
+		</div></div></div>
+	<div class="code"><div class="heading"><span class="label">HTML</span><button class="button" type="button" data-copy aria-label="Copy HTML code">Copy</button></div><pre><code class="language-html">&lt;div dir="rtl"&gt;
+  &lt;div class="items items_3 carousel" data-carousel='{"loop":true}'&gt;
+    &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
+    &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
+    &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
+    ...
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre></div><p>To set the direction in the script, use <code>direction: 'rtl'</code>.</p>
 	</div>
 </section>
 
@@ -398,7 +474,7 @@ $better-arrow: url(arrow.svg);
 
 <section class="section" id="vertical">
 	<div class="contents">
-		<h2><a href="#vertical">Vertical</a></h2>
+		<h2><a href="#vertical">Vertical carousel</a></h2>
 		<div class="content"><p>The container has <code>flex-direction: column</code>, and the root has a height. For this reason, the carousel moves on the vertical axis.</p></div>
 	</div>
 	<div class="content">
@@ -429,7 +505,7 @@ BetterCarousel(element, { wheel: true });</code></pre></div>
 
 <section class="section" id="switch">
 	<div class="contents">
-		<h2><a href="#switch">Axis switch</a></h2>
+		<h2><a href="#switch">Responsive axis</a></h2>
 		<div class="content"><p>This carousel is horizontal on a narrow screen and vertical from 769 px. Only the CSS changes. Change the width of the window to see the change.</p></div>
 	</div>
 	<div class="content">
@@ -458,9 +534,31 @@ BetterCarousel(element, { wheel: true });</code></pre></div>
 	</div>
 </section>
 
+<section class="section" id="breakpoints">
+	<div class="contents">
+		<h2><a href="#breakpoints">Responsive options</a></h2>
+		<div class="content"><p>On a narrow screen, this is a carousel. From 769 px, a breakpoint sets <code>active: false</code>. The carousel stops, and the CSS shows the slides as a grid. Change the width of the window to see the change.</p><p>The options of a breakpoint merge over the other options. When a media query starts or stops to match, the carousel starts again with the new options, and the selected slide stays.</p></div>
+	</div>
+	<div class="content">
+	<div class="demo"><div class="demo_responsive"><div class="items items_3 carousel" data-carousel='{"breakpoints":{"(min-width: 769px)":{"active":false}}}'>
+			<div class="item"><img src="demo/images/21-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">1</span></div><div class="item"><img src="demo/images/22-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">2</span></div><div class="item"><img src="demo/images/23-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">3</span></div><div class="item"><img src="demo/images/24-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">4</span></div><div class="item"><img src="demo/images/26-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">5</span></div><div class="item"><img src="demo/images/27-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">6</span></div>
+		</div></div></div>
+	<div class="code"><div class="heading"><span class="label">HTML</span><button class="button" type="button" data-copy aria-label="Copy HTML code">Copy</button></div><pre><code class="language-html">&lt;div class="items items_3 carousel" data-carousel='{"breakpoints":{"(min-width: 769px)":{"active":false}}}'&gt;
+  &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
+  &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
+  &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
+  ...
+&lt;/div&gt;</code></pre></div><div class="code"><div class="heading"><span class="label">CSS</span><button class="button" type="button" data-copy aria-label="Copy CSS code">Copy</button></div><pre><code class="language-css">@media (min-width: 769px) {
+  .items.carousel {
+    flex-wrap: wrap;
+  }
+}</code></pre></div>
+	</div>
+</section>
+
 <section class="section" id="auto">
 	<div class="contents">
-		<h2><a href="#auto">Dynamic widths</a></h2>
+		<h2><a href="#auto">Variable widths</a></h2>
 		<div class="content"><p>The slides have <code>width: auto</code>, so the content sets the width of each slide. In this example, the images load after 1 second and change the widths. The carousel measures again and keeps the selected slide.</p></div>
 	</div>
 	<div class="content">
@@ -484,7 +582,7 @@ BetterCarousel(element, { wheel: true });</code></pre></div>
 
 <section class="section" id="autocenter">
 	<div class="contents">
-		<h2><a href="#autocenter">Centered dynamic widths</a></h2>
+		<h2><a href="#autocenter">Variable and centered</a></h2>
 		<div class="content"><p>The slides have <code>width: auto</code>, and the container has <code>justify-content: center</code>. With <code>loop: true</code>, the selected slide is always in the center, also at the first and the last slide. The images load after 1 second and change the widths. The carousel measures again and keeps the selected slide in the center.</p></div>
 	</div>
 	<div class="content">
@@ -512,7 +610,7 @@ BetterCarousel(element, { wheel: true });</code></pre></div>
 
 <section class="section" id="grow">
 	<div class="contents">
-		<h2><a href="#grow">The selected slide grows</a></h2>
+		<h2><a href="#grow">Growing selected slide</a></h2>
 		<div class="content"><p>The selected slide gets the <code>active</code> class, and a CSS transition makes it wider. The carousel keeps the selected slide in the center during the transition.</p></div>
 	</div>
 	<div class="content">
@@ -535,9 +633,81 @@ BetterCarousel(element, { wheel: true });</code></pre></div>
 	</div>
 </section>
 
+<section class="section" id="gallery">
+	<div class="contents">
+		<h2><a href="#gallery">Grid layout</a></h2>
+		<div class="content"><p>A CSS grid with two rows and <code>loop: true</code>. The first slide and the sixth slide of each group of ten use 2 × 2 cells. The library reads the columns of the grid.</p></div>
+	</div>
+	<div class="content">
+	<div class="demo"><div class="gallery_box"><div class="items items_grid_large carousel" data-carousel='{"loop":true}'>
+			<div class="item"><img src="demo/images/10-800x800.jpg" alt=""></div><div class="item"><img src="demo/images/11-400x400.jpg" alt=""></div><div class="item"><img src="demo/images/12-400x400.jpg" alt=""></div><div class="item"><img src="demo/images/13-400x400.jpg" alt=""></div><div class="item"><img src="demo/images/14-400x400.jpg" alt=""></div><div class="item"><img src="demo/images/15-800x800.jpg" alt=""></div><div class="item"><img src="demo/images/16-400x400.jpg" alt=""></div><div class="item"><img src="demo/images/17-400x400.jpg" alt=""></div><div class="item"><img src="demo/images/18-400x400.jpg" alt=""></div><div class="item"><img src="demo/images/19-400x400.jpg" alt=""></div><div class="item"><img src="demo/images/20-800x800.jpg" alt=""></div><div class="item"><img src="demo/images/21-400x400.jpg" alt=""></div><div class="item"><img src="demo/images/22-400x400.jpg" alt=""></div><div class="item"><img src="demo/images/23-400x400.jpg" alt=""></div><div class="item"><img src="demo/images/24-400x400.jpg" alt=""></div><div class="item"><img src="demo/images/25-800x800.jpg" alt=""></div><div class="item"><img src="demo/images/26-400x400.jpg" alt=""></div><div class="item"><img src="demo/images/27-400x400.jpg" alt=""></div><div class="item"><img src="demo/images/28-400x400.jpg" alt=""></div><div class="item"><img src="demo/images/29-400x400.jpg" alt=""></div>
+		</div></div></div>
+	<div class="code"><div class="heading"><span class="label">HTML</span><button class="button" type="button" data-copy aria-label="Copy HTML code">Copy</button></div><pre><code class="language-html">&lt;div class="items items_grid_large carousel" data-carousel='{"loop":true}'&gt;
+  &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
+  &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
+  &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
+  ...
+&lt;/div&gt;</code></pre></div><div class="code"><div class="heading"><span class="label">CSS</span><button class="button" type="button" data-copy aria-label="Copy CSS code">Copy</button></div><pre><code class="language-css">.items_grid_large {
+  display: grid;
+  grid-template-rows: repeat(2, 1fr);
+  grid-auto-flow: column dense;
+  grid-auto-columns: 25%;
+}
+
+/* The margins of the slides make the space, as in a flex row */
+.items_grid_large .item {
+  width: calc(100% - 10px);
+  margin: 0 10px 10px 0;
+}
+
+.items_grid_large .item:nth-child(10n + 1),
+.items_grid_large .item:nth-child(10n + 6) {
+  grid-column: auto / span 2;
+  grid-row: auto / span 2;
+}</code></pre></div>
+	</div>
+</section>
+
+<section class="section" id="height">
+	<div class="contents">
+		<h2><a href="#height">Auto height</a></h2>
+		<div class="content"><p>One slide shows in the viewport, and the photos have different shapes. With <code>autoHeight: true</code>, the viewport gets the height of the tallest slide in view. As a result, no empty space shows under a wide photo.</p></div>
+	</div>
+	<div class="content">
+	<div class="demo"><div class="demo_height"><div class="items items_1 carousel" data-carousel='{"autoHeight":true}'>
+			<div class="item"><img src="demo/images/30-1200x700.jpg" alt="" width="1200" height="700" loading="lazy"><span class="number">1</span></div><div class="item"><img src="demo/images/11-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">2</span></div><div class="item"><img src="demo/images/31-1200x700.jpg" alt="" width="1200" height="700" loading="lazy"><span class="number">3</span></div><div class="item"><img src="demo/images/15-800x800.jpg" alt="" width="800" height="800" loading="lazy"><span class="number">4</span></div><div class="item"><img src="demo/images/32-1200x700.jpg" alt="" width="1200" height="700" loading="lazy"><span class="number">5</span></div><div class="item"><img src="demo/images/12-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">6</span></div>
+		</div></div></div>
+	<div class="code"><div class="heading"><span class="label">HTML</span><button class="button" type="button" data-copy aria-label="Copy HTML code">Copy</button></div><pre><code class="language-html">&lt;div class="items items_1 carousel" data-carousel='{"autoHeight":true}'&gt;
+  &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
+  &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
+  &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
+  ...
+&lt;/div&gt;</code></pre></div><p>Add a transition to make the change of height smooth:</p><div class="code"><div class="heading"><span class="label">CSS</span><button class="button" type="button" data-copy aria-label="Copy CSS code">Copy</button></div><pre><code class="language-css">.better_auto_height .better_viewport {
+  transition: height 0.3s;
+}</code></pre></div>
+	</div>
+</section>
+
+<section class="section" id="hidden">
+	<div class="contents">
+		<h2><a href="#hidden">Hidden at the start</a></h2>
+		<div class="content"><p>The carousel is in the second tab, which is hidden at the start. A hidden carousel has no size, so it shows no arrows and no dots. When the tab shows, the ResizeObserver measures the carousel, and it starts to move. A call to <code>reInit()</code> is not necessary. The same applies to a carousel in an accordion or in a modal window.</p></div>
+	</div>
+	<div class="content">
+	<div class="demo"><div class="demo_tabs"><div class="demo_tablist" role="tablist"><button class="button" type="button" role="tab" id="tab-text" aria-selected="true" aria-controls="panel-text">Text</button><button class="button" type="button" role="tab" id="tab-photos" aria-selected="false" aria-controls="panel-photos">Photos</button></div><div class="demo_panel" role="tabpanel" id="panel-text" aria-labelledby="tab-text"><p>Open the Photos tab. The carousel in it starts when the tab shows.</p></div><div class="demo_panel" role="tabpanel" id="panel-photos" aria-labelledby="tab-photos" hidden><div class="items items_3 carousel">
+			<div class="item"><img src="demo/images/19-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">1</span></div><div class="item"><img src="demo/images/21-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">2</span></div><div class="item"><img src="demo/images/22-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">3</span></div><div class="item"><img src="demo/images/23-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">4</span></div><div class="item"><img src="demo/images/24-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">5</span></div><div class="item"><img src="demo/images/26-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">6</span></div>
+		</div></div></div></div>
+	<div class="code"><div class="heading"><span class="label">JavaScript</span><button class="button" type="button" data-copy aria-label="Copy JavaScript code">Copy</button></div><pre><code class="language-javascript">// Start the carousel at once, also when its tab is hidden
+BetterCarousel(element);
+
+// Later, show the tab: the carousel measures and starts to move
+panel.hidden = false;</code></pre></div>
+	</div>
+</section>
+
 <section class="section" id="loop">
 	<div class="contents">
-		<span class="caption">Loop</span><h2><a href="#loop">Loop</a></h2>
+		<span class="caption">Loop</span><h2><a href="#loop">Infinite loop</a></h2>
 		<div class="content"><p>With <code>loop: true</code>, the first slide comes after the last slide. This carousel has enough slides, so it needs no clones: the library moves the original slides.</p></div>
 	</div>
 	<div class="content">
@@ -620,62 +790,9 @@ BetterCarousel(element, { wheel: true });</code></pre></div>
 	</div>
 </section>
 
-<section class="section" id="gallery">
-	<div class="contents">
-		<h2><a href="#gallery">Grid with two rows</a></h2>
-		<div class="content"><p>A CSS grid with two rows and <code>loop: true</code>. The first slide and the sixth slide of each group of ten use 2 × 2 cells. The library reads the columns of the grid.</p></div>
-	</div>
-	<div class="content">
-	<div class="demo"><div class="gallery_box"><div class="items items_grid_large carousel" data-carousel='{"loop":true}'>
-			<div class="item"><img src="demo/images/10-800x800.jpg" alt=""></div><div class="item"><img src="demo/images/11-400x400.jpg" alt=""></div><div class="item"><img src="demo/images/12-400x400.jpg" alt=""></div><div class="item"><img src="demo/images/13-400x400.jpg" alt=""></div><div class="item"><img src="demo/images/14-400x400.jpg" alt=""></div><div class="item"><img src="demo/images/15-800x800.jpg" alt=""></div><div class="item"><img src="demo/images/16-400x400.jpg" alt=""></div><div class="item"><img src="demo/images/17-400x400.jpg" alt=""></div><div class="item"><img src="demo/images/18-400x400.jpg" alt=""></div><div class="item"><img src="demo/images/19-400x400.jpg" alt=""></div><div class="item"><img src="demo/images/20-800x800.jpg" alt=""></div><div class="item"><img src="demo/images/21-400x400.jpg" alt=""></div><div class="item"><img src="demo/images/22-400x400.jpg" alt=""></div><div class="item"><img src="demo/images/23-400x400.jpg" alt=""></div><div class="item"><img src="demo/images/24-400x400.jpg" alt=""></div><div class="item"><img src="demo/images/25-800x800.jpg" alt=""></div><div class="item"><img src="demo/images/26-400x400.jpg" alt=""></div><div class="item"><img src="demo/images/27-400x400.jpg" alt=""></div><div class="item"><img src="demo/images/28-400x400.jpg" alt=""></div><div class="item"><img src="demo/images/29-400x400.jpg" alt=""></div>
-		</div></div></div>
-	<div class="code"><div class="heading"><span class="label">HTML</span><button class="button" type="button" data-copy aria-label="Copy HTML code">Copy</button></div><pre><code class="language-html">&lt;div class="items items_grid_large carousel" data-carousel='{"loop":true}'&gt;
-  &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
-  &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
-  &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
-  ...
-&lt;/div&gt;</code></pre></div><div class="code"><div class="heading"><span class="label">CSS</span><button class="button" type="button" data-copy aria-label="Copy CSS code">Copy</button></div><pre><code class="language-css">.items_grid_large {
-  display: grid;
-  grid-template-rows: repeat(2, 1fr);
-  grid-auto-flow: column dense;
-  grid-auto-columns: 25%;
-}
-
-/* The margins of the slides make the space, as in a flex row */
-.items_grid_large .item {
-  width: calc(100% - 10px);
-  margin: 0 10px 10px 0;
-}
-
-.items_grid_large .item:nth-child(10n + 1),
-.items_grid_large .item:nth-child(10n + 6) {
-  grid-column: auto / span 2;
-  grid-row: auto / span 2;
-}</code></pre></div>
-	</div>
-</section>
-
-<section class="section" id="drag">
-	<div class="contents">
-		<span class="caption">Drag and input</span><h2><a href="#drag">Links in slides</a></h2>
-		<div class="content"><p>Each slide is a link. A click opens the link, but a drag does not. Press Tab to move the focus to the next link. The carousel moves to show the focused slide.</p></div>
-	</div>
-	<div class="content">
-	<div class="demo"><div class="items items_3 carousel">
-			<a class="item" href="#slide-1"><img src="demo/images/11-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">1</span></a><a class="item" href="#slide-2"><img src="demo/images/12-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">2</span></a><a class="item" href="#slide-3"><img src="demo/images/13-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">3</span></a><a class="item" href="#slide-4"><img src="demo/images/14-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">4</span></a><a class="item" href="#slide-5"><img src="demo/images/16-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">5</span></a><a class="item" href="#slide-6"><img src="demo/images/17-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">6</span></a><a class="item" href="#slide-7"><img src="demo/images/18-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">7</span></a><a class="item" href="#slide-8"><img src="demo/images/19-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">8</span></a>
-		</div></div>
-	<div class="code"><div class="heading"><span class="label">HTML</span><button class="button" type="button" data-copy aria-label="Copy HTML code">Copy</button></div><pre><code class="language-html">&lt;div class="items items_3 carousel"&gt;
-  &lt;a class="item" href="/product-1"&gt;...&lt;/a&gt;
-  &lt;a class="item" href="/product-2"&gt;...&lt;/a&gt;
-  &lt;a class="item" href="/product-3"&gt;...&lt;/a&gt;
-  ...
-&lt;/div&gt;</code></pre></div><p>A drag starts after the pointer moves 10 px. Change this distance with <code>dragThreshold</code>.</p>
-	</div>
-</section>
-
 <section class="section" id="free">
 	<div class="contents">
-		<h2><a href="#free">Free drag</a></h2>
+		<span class="caption">Interaction</span><h2><a href="#free">Free drag</a></h2>
 		<div class="content"><p>With <code>dragFree: true</code>, the carousel glides after a drag and stops at any location.</p></div>
 	</div>
 	<div class="content">
@@ -711,7 +828,7 @@ BetterCarousel(element, { wheel: true });</code></pre></div>
 
 <section class="section" id="skip">
 	<div class="contents">
-		<h2><a href="#skip">One snap for each flick</a></h2>
+		<h2><a href="#skip">One snap per flick</a></h2>
 		<div class="content"><p>With <code>skipSnaps: false</code>, a flick moves the carousel by one snap only. With the default <code>true</code>, a fast flick can move the carousel by more than one snap. A number sets the maximum number of snaps for one flick.</p></div>
 	</div>
 	<div class="content">
@@ -728,9 +845,27 @@ BetterCarousel(element, { skipSnaps: 2 });</code></pre></div>
 	</div>
 </section>
 
+<section class="section" id="drag">
+	<div class="contents">
+		<h2><a href="#drag">Links in slides</a></h2>
+		<div class="content"><p>Each slide is a link. A click opens the link, but a drag does not. Press Tab to move the focus to the next link. The carousel moves to show the focused slide.</p></div>
+	</div>
+	<div class="content">
+	<div class="demo"><div class="items items_3 carousel">
+			<a class="item" href="#slide-1"><img src="demo/images/11-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">1</span></a><a class="item" href="#slide-2"><img src="demo/images/12-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">2</span></a><a class="item" href="#slide-3"><img src="demo/images/13-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">3</span></a><a class="item" href="#slide-4"><img src="demo/images/14-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">4</span></a><a class="item" href="#slide-5"><img src="demo/images/16-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">5</span></a><a class="item" href="#slide-6"><img src="demo/images/17-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">6</span></a><a class="item" href="#slide-7"><img src="demo/images/18-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">7</span></a><a class="item" href="#slide-8"><img src="demo/images/19-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">8</span></a>
+		</div></div>
+	<div class="code"><div class="heading"><span class="label">HTML</span><button class="button" type="button" data-copy aria-label="Copy HTML code">Copy</button></div><pre><code class="language-html">&lt;div class="items items_3 carousel"&gt;
+  &lt;a class="item" href="/product-1"&gt;...&lt;/a&gt;
+  &lt;a class="item" href="/product-2"&gt;...&lt;/a&gt;
+  &lt;a class="item" href="/product-3"&gt;...&lt;/a&gt;
+  ...
+&lt;/div&gt;</code></pre></div><p>A drag starts after the pointer moves 10 px. Change this distance with <code>dragThreshold</code>.</p>
+	</div>
+</section>
+
 <section class="section" id="controls">
 	<div class="contents">
-		<h2><a href="#controls">Controls in slides</a></h2>
+		<h2><a href="#controls">Forms in slides</a></h2>
 		<div class="content"><p>Each slide is an <code>article</code> with a link and a button. The second slide also has a form field. Press Tab to move the focus through the controls. The carousel moves to show each focused control.</p></div>
 	</div>
 	<div class="content">
@@ -749,9 +884,32 @@ BetterCarousel(element, { skipSnaps: 2 });</code></pre></div>
 	</div>
 </section>
 
+<section class="section" id="changes">
+	<div class="contents">
+		<h2><a href="#changes">Add and remove slides</a></h2>
+		<div class="content"><p>The buttons add a slide at the end and remove the last slide. The carousel sees the change in the container and measures again. The selected slide stays. Then the carousel emits the <code>slideschanged</code> event. A call to <code>reInit()</code> is not necessary. With <code>slideChanges: false</code>, the carousel does not watch the container.</p></div>
+	</div>
+	<div class="content">
+	<div class="demo"><div class="demo_buttons"><button class="button" type="button" data-add>Add a slide</button><button class="button" type="button" data-remove>Remove the last slide</button></div><div class="items items_3 carousel" data-demo="changes">
+			<div class="item"><img src="demo/images/11-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">1</span></div><div class="item"><img src="demo/images/12-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">2</span></div><div class="item"><img src="demo/images/13-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">3</span></div><div class="item"><img src="demo/images/14-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">4</span></div>
+		</div></div>
+	<div class="code"><div class="heading"><span class="label">JavaScript</span><button class="button" type="button" data-copy aria-label="Copy JavaScript code">Copy</button></div><pre><code class="language-javascript">const carousel = BetterCarousel(element);
+
+// Add a slide at the end
+carousel.containerNode().append(slide);
+
+// Remove the last slide
+carousel.slideNodes().pop().remove();
+
+carousel.on('slideschanged', () =&gt; {
+  console.log(carousel.slideNodes().length + ' slides');
+});</code></pre></div>
+	</div>
+</section>
+
 <section class="section" id="heading">
 	<div class="contents">
-		<span class="caption">Navigation</span><h2><a href="#heading">Arrow and dot position</a></h2>
+		<span class="caption">Navigation</span><h2><a href="#heading">Controls in a heading</a></h2>
 		<div class="content"><p>With <code>arrows: '.heading'</code> and <code>dots: '.heading'</code>, the library puts the arrows and the dots into the heading, outside the carousel. It searches for a selector in the root first, and then in each parent of the root. The value can also be an element.</p></div>
 	</div>
 	<div class="content">
@@ -788,9 +946,40 @@ BetterCarousel(element, { skipSnaps: 2 });</code></pre></div>
 	</div>
 </section>
 
+<section class="section" id="custom">
+	<div class="contents">
+		<h2><a href="#custom">Custom controls</a></h2>
+		<div class="content"><p>With <code>arrows: false</code> and <code>dots: false</code>, the library adds no controls, and the page can have its own. In this example, the buttons and the counter use the methods and the events of the carousel:</p><ul><li><code>canGoToPrev()</code> and <code>canGoToNext()</code> disable a button at the ends;</li><li>the <code>select</code> event updates the counter, and the <code>init</code> and <code>reinit</code> events write its first value.</li></ul></div>
+	</div>
+	<div class="content">
+	<div class="demo"><div class="items items_3 carousel" data-demo="custom" data-carousel='{"arrows":false,"dots":false}'>
+			<div class="item"><img src="demo/images/11-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">1</span></div><div class="item"><img src="demo/images/12-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">2</span></div><div class="item"><img src="demo/images/13-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">3</span></div><div class="item"><img src="demo/images/14-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">4</span></div><div class="item"><img src="demo/images/16-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">5</span></div><div class="item"><img src="demo/images/17-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">6</span></div><div class="item"><img src="demo/images/18-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">7</span></div>
+		</div><div class="demo_controls"><button class="button" type="button" data-prev>Previous</button><span class="demo_counter" aria-live="polite"></span><button class="button" type="button" data-next>Next</button></div></div>
+	<div class="code"><div class="heading"><span class="label">HTML</span><button class="button" type="button" data-copy aria-label="Copy HTML code">Copy</button></div><pre><code class="language-html">&lt;div class="items items_3 carousel" data-carousel='{"arrows":false,"dots":false}'&gt;...&lt;/div&gt;
+&lt;div class="controls"&gt;
+  &lt;button type="button" class="prev"&gt;Previous&lt;/button&gt;
+  &lt;span class="counter" aria-live="polite"&gt;&lt;/span&gt;
+  &lt;button type="button" class="next"&gt;Next&lt;/button&gt;
+&lt;/div&gt;</code></pre></div><div class="code"><div class="heading"><span class="label">JavaScript</span><button class="button" type="button" data-copy aria-label="Copy JavaScript code">Copy</button></div><pre><code class="language-javascript">const carousel = BetterCarousel(element),
+  prev = document.querySelector('.prev'),
+  next = document.querySelector('.next'),
+  counter = document.querySelector('.counter');
+
+function update() {
+  prev.disabled = !carousel.canGoToPrev();
+  next.disabled = !carousel.canGoToNext();
+  counter.textContent = (carousel.selectedSnap() + 1) + ' / ' + carousel.snapList().length;
+}
+
+prev.addEventListener('click', () =&gt; carousel.goToPrev());
+next.addEventListener('click', () =&gt; carousel.goToNext());
+['init', 'reinit', 'resize', 'select'].forEach((name) =&gt; carousel.on(name, update));</code></pre></div>
+	</div>
+</section>
+
 <section class="section" id="product">
 	<div class="contents">
-		<h2><a href="#product">Gallery with thumbnails</a></h2>
+		<h2><a href="#product">Thumbnails</a></h2>
 		<div class="content"><p>A main gallery with a row of thumbnails under it. The arrows of the main gallery are at the two sides of the thumbnails. The thumbnails carousel has the <code>sync</code> option: it follows the main gallery, and a click on a thumbnail selects its photo.</p></div>
 	</div>
 	<div class="content">
@@ -848,63 +1037,25 @@ const thumbs = BetterCarousel(document.querySelector('.gallery_thumbs'), {
 
 <section class="section" id="autoplay">
 	<div class="contents">
-		<span class="caption">Motion</span><h2><a href="#autoplay">Autoplay</a></h2>
-		<div class="content"><p>The carousel goes to the next slide each 2 seconds. Slide 3 stays for 6 seconds, because it has <code>data-delay="6000"</code>. The button stops and starts the autoplay.</p></div>
+		<span class="caption">Autoplay</span><h2><a href="#autoplay">Autoplay</a></h2>
+		<div class="content"><p>The carousel goes to the next slide each 2 seconds, and the bar over the slides shows the time to the next slide. Slide 3 stays for 6 seconds, because it has <code>data-delay="6000"</code>. The button stops and starts the autoplay.</p></div>
 	</div>
 	<div class="content">
-	<div class="demo"><div class="items items_3 carousel" data-carousel='{"loop":true,"autoplay":2000}'>
+	<div class="demo"><div class="demo_bar"></div><div class="items items_3 carousel" data-carousel='{"loop":true}' data-demo="autoplay">
 			<div class="item"><img src="demo/images/11-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">1</span></div><div class="item"><img src="demo/images/12-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">2</span></div><div class="item" data-delay="6000"><img src="demo/images/13-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">3</span></div><div class="item"><img src="demo/images/14-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">4</span></div><div class="item"><img src="demo/images/16-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">5</span></div><div class="item"><img src="demo/images/17-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">6</span></div><div class="item"><img src="demo/images/18-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">7</span></div>
 		</div></div>
-	<div class="code"><div class="heading"><span class="label">HTML</span><button class="button" type="button" data-copy aria-label="Copy HTML code">Copy</button></div><pre><code class="language-html">&lt;div class="items items_3 carousel" data-carousel='{"loop":true,"autoplay":2000}'&gt;
+	<div class="code"><div class="heading"><span class="label">HTML</span><button class="button" type="button" data-copy aria-label="Copy HTML code">Copy</button></div><pre><code class="language-html">&lt;div class="bar"&gt;&lt;/div&gt;
+&lt;div class="items items_3 carousel"&gt;
   &lt;div class="item"&gt;...&lt;/div&gt;
   &lt;div class="item"&gt;...&lt;/div&gt;
   &lt;div class="item" data-delay="6000"&gt;...&lt;/div&gt;
-  ...
-&lt;/div&gt;</code></pre></div><p>The autoplay pauses when the keyboard focus is in the carousel, when the tab is hidden, and when the carousel is out of view. If the user prefers reduced motion, the autoplay does not start. Set an object to change the other settings. In the object, <code>delay</code> can also be an array with one delay for each snap. A <code>data-delay</code> attribute has priority over <code>delay</code>. These are the default values:</p><div class="code"><div class="heading"><span class="label">JavaScript</span><button class="button" type="button" data-copy aria-label="Copy JavaScript code">Copy</button></div><pre><code class="language-javascript">BetterCarousel(element, {
-  autoplay: {
-    delay: 4000,               // ms on each slide, or an array with ms for each snap
-    stopOnInteraction: true,   // A drag, an arrow or a dot stops the autoplay
-    stopOnMouseEnter: false,   // Pause while the mouse is on the carousel
-    stopOnFocusIn: true,       // Pause while the keyboard focus is in the carousel
-    stopOnLastSnap: false,     // Stop at the last snap, if loop is false
-    playOnInit: true,
-    instant: false,            // Jump to the next slide with no motion
-    timer: null                // A function that shows the time to the next slide
-  }
-});</code></pre></div><p>To show the time to the next slide, set <code>timer</code> to a function. The carousel calls it when the timer starts, with the delay in ms and the carousel. The function can return a cleanup function. The carousel calls the cleanup function when this timer ends or stops, for example at a pause. The library has no styles for a progress indicator. See the <a href="#timer">example</a>.</p><div class="code"><div class="heading"><span class="label">JavaScript</span><button class="button" type="button" data-copy aria-label="Copy JavaScript code">Copy</button></div><pre><code class="language-javascript">const bar = document.querySelector('.progress');
-
-BetterCarousel(element, {
-  autoplay: {
-    timer: (delay) =&gt; {
-      const animation = bar.animate([{ scale: '0 1' }, { scale: '1 1' }], delay);
-      return () =&gt; animation.cancel();
-    }
-  }
-});</code></pre></div><p>An animation of <code>scale</code>, <code>translate</code> or <code>opacity</code> runs on the compositor: no script runs for each frame.</p>
-	</div>
-</section>
-
-<section class="section" id="timer">
-	<div class="contents">
-		<h2><a href="#timer">Autoplay timer</a></h2>
-		<div class="content"><p>The <code>timer</code> function of the autoplay shows the time to the next slide. In this example, it animates the bar over the slides. The animation runs on the compositor, and the carousel stops it at a pause or at a drag.</p></div>
-	</div>
-	<div class="content">
-	<div class="demo"><div class="demo_timer"><div class="demo_bar"></div><div class="items items_3 carousel" data-carousel='{"loop":true}' data-demo="timer">
-			<div class="item"><img src="demo/images/11-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">1</span></div><div class="item"><img src="demo/images/12-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">2</span></div><div class="item"><img src="demo/images/13-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">3</span></div><div class="item"><img src="demo/images/14-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">4</span></div><div class="item"><img src="demo/images/16-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">5</span></div><div class="item"><img src="demo/images/17-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">6</span></div><div class="item"><img src="demo/images/18-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">7</span></div>
-		</div></div></div>
-	<div class="code"><div class="heading"><span class="label">HTML</span><button class="button" type="button" data-copy aria-label="Copy HTML code">Copy</button></div><pre><code class="language-html">&lt;div class="bar"&gt;&lt;/div&gt;
-&lt;div class="items items_3 carousel"&gt;
-  &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
-  &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
-  &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
   ...
 &lt;/div&gt;</code></pre></div><div class="code"><div class="heading"><span class="label">JavaScript</span><button class="button" type="button" data-copy aria-label="Copy JavaScript code">Copy</button></div><pre><code class="language-javascript">const bar = document.querySelector('.bar');
 
 BetterCarousel(element, {
   loop: true,
   autoplay: {
-    delay: 3000,
+    delay: 2000,
     timer: (delay) =&gt; {
       const animation = bar.animate([{ scale: '0 1' }, { scale: '1 1' }], delay);
       return () =&gt; animation.cancel();
@@ -915,7 +1066,18 @@ BetterCarousel(element, {
   background: currentColor;
   transform-origin: left;
   scale: 0 1;
-}</code></pre></div>
+}</code></pre></div><p>The <code>timer</code> function shows the time to the next slide. The carousel calls it when the timer starts, with the delay in ms and the carousel. The function can return a cleanup function. The carousel calls the cleanup function when this timer ends or stops, for example at a pause or a drag. The library has no styles for a timer. An animation of <code>scale</code>, <code>translate</code> or <code>opacity</code> runs on the compositor, so no script runs for each frame.</p><p>The autoplay pauses when the keyboard focus is in the carousel, when the tab is hidden, and when the carousel is out of view. If the user prefers reduced motion, the autoplay does not start. A number sets the delay, and an object changes the other settings. In the object, <code>delay</code> can also be an array with one delay for each snap. A <code>data-delay</code> attribute has priority over <code>delay</code>. These are the default values:</p><div class="code"><div class="heading"><span class="label">JavaScript</span><button class="button" type="button" data-copy aria-label="Copy JavaScript code">Copy</button></div><pre><code class="language-javascript">BetterCarousel(element, {
+  autoplay: {
+    delay: 4000,               // ms on each slide, or an array with ms for each snap
+    stopOnInteraction: true,   // A drag, an arrow or a dot stops the autoplay
+    stopOnMouseEnter: false,   // Pause while the mouse is on the carousel
+    stopOnFocusIn: true,       // Pause while the keyboard focus is in the carousel
+    stopOnLastSnap: false,     // Stop at the last snap, if loop is false
+    playOnInit: true,
+    instant: false,            // Jump to the next slide with no motion
+    timer: null                // A function that shows the time to the next slide
+  }
+});</code></pre></div>
 	</div>
 </section>
 
@@ -947,30 +1109,10 @@ BetterCarousel(element, {
 	</div>
 </section>
 
-<section class="section" id="height">
-	<div class="contents">
-		<h2><a href="#height">Auto height</a></h2>
-		<div class="content"><p>One slide shows in the viewport, and the photos have different shapes. With <code>autoHeight: true</code>, the viewport gets the height of the tallest slide in view. As a result, no empty space shows under a wide photo.</p></div>
-	</div>
-	<div class="content">
-	<div class="demo"><div class="demo_height"><div class="items items_1 carousel" data-carousel='{"autoHeight":true}'>
-			<div class="item"><img src="demo/images/30-1200x700.jpg" alt="" width="1200" height="700" loading="lazy"><span class="number">1</span></div><div class="item"><img src="demo/images/11-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">2</span></div><div class="item"><img src="demo/images/31-1200x700.jpg" alt="" width="1200" height="700" loading="lazy"><span class="number">3</span></div><div class="item"><img src="demo/images/15-800x800.jpg" alt="" width="800" height="800" loading="lazy"><span class="number">4</span></div><div class="item"><img src="demo/images/32-1200x700.jpg" alt="" width="1200" height="700" loading="lazy"><span class="number">5</span></div><div class="item"><img src="demo/images/12-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">6</span></div>
-		</div></div></div>
-	<div class="code"><div class="heading"><span class="label">HTML</span><button class="button" type="button" data-copy aria-label="Copy HTML code">Copy</button></div><pre><code class="language-html">&lt;div class="items items_1 carousel" data-carousel='{"autoHeight":true}'&gt;
-  &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
-  &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
-  &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
-  ...
-&lt;/div&gt;</code></pre></div><p>Add a transition to make the change of height smooth:</p><div class="code"><div class="heading"><span class="label">CSS</span><button class="button" type="button" data-copy aria-label="Copy CSS code">Copy</button></div><pre><code class="language-css">.better_auto_height .better_viewport {
-  transition: height 0.3s;
-}</code></pre></div>
-	</div>
-</section>
-
 <section class="section" id="progress-and-offset">
 	<div class="contents">
-		<span class="caption">Progress and offset</span><h2><a href="#progress-and-offset">Progress bar</a></h2>
-		<div class="content"><p>With <code>progress: true</code>, the root gets the <code>--better-progress</code> variable, from 0 to 1. With <code>offset: true</code>, each slide gets the <code>--better-offset</code> variable: the distance from its snap position, in slides. A function instead of <code>true</code> gets the values on each frame. The two options are off by default, because a script runs on each frame of a motion.</p><p>In this example, the progress bar at the bottom of the slides uses <code>--better-progress</code>.</p></div>
+		<span class="caption">Effects</span><h2><a href="#progress-and-offset">Progress bar</a></h2>
+		<div class="content"><p>The <code>progress</code> and <code>offset</code> options give the position of the carousel to CSS or to a function, on each frame of a motion. They are off by default, because a script runs on each frame while they are on.</p><p>With <code>progress: true</code>, the root gets the <code>--better-progress</code> variable, from 0 to 1. In this example, it sets the width of the bar at the bottom of the slides.</p></div>
 	</div>
 	<div class="content">
 	<div class="demo"><div class="demo_progress"><div class="items items_3 carousel" data-carousel='{"progress":true}'>
@@ -997,7 +1139,7 @@ BetterCarousel(element, {
 <section class="section" id="parallax">
 	<div class="contents">
 		<h2><a href="#parallax">Parallax</a></h2>
-		<div class="content"><p>Each photo is larger than its slide, and it moves slower than the slide. The <code>--better-offset</code> variable is 0 for the selected slide, 1 for the next slide and -1 for the previous slide. <code>clamp()</code> keeps the shift in the range from -1 to 1.</p></div>
+		<div class="content"><p>With <code>offset: true</code>, each slide gets the <code>--better-offset</code> variable: the distance from its snap position, in slides. It is 0 for the selected slide, 1 for the next slide and -1 for the previous slide.</p><p>In this example, each photo is larger than its slide, and it moves slower than the slide. <code>clamp()</code> keeps the shift in the range from -1 to 1.</p></div>
 	</div>
 	<div class="content">
 	<div class="demo"><div class="demo_parallax"><div class="items items_1 carousel" data-carousel='{"loop":true,"offset":true}'>
@@ -1046,8 +1188,8 @@ BetterCarousel(element, {
 
 <section class="section" id="callbacks">
 	<div class="contents">
-		<h2><a href="#callbacks">Callbacks</a></h2>
-		<div class="content"><p>A function gets the values that CSS cannot calculate. In this example:</p><ul><li>the <code>progress</code> function writes the position between the snaps, for example 2.4, and the progress in percent;</li><li>the <code>offset</code> function sets the opacity from <code>visible</code>, the part of the slide in the viewport. The slides at the edges are lighter.</li></ul><p>The carousel uses the same state object for each call, so read the values during the call.</p></div>
+		<h2><a href="#callbacks">Custom effects</a></h2>
+		<div class="content"><p>A function in place of <code>true</code> gets the values that CSS cannot calculate. In this example:</p><ul><li>the <code>progress</code> function writes the position between the snaps, for example 2.4, and the progress in percent;</li><li>the <code>offset</code> function sets the opacity from <code>visible</code>, the part of the slide in the viewport. The slides at the edges are lighter.</li></ul><p>The carousel uses the same state object for each call, so read the values during the call.</p></div>
 	</div>
 	<div class="content">
 	<div class="demo"><div class="demo_callbacks"><p class="demo_counter" aria-live="off"></p><div class="items items_2 carousel" data-carousel='{"loop":true,"align":"center"}' data-demo="callbacks">
@@ -1068,42 +1210,6 @@ BetterCarousel(element, {
 	</div>
 </section>
 
-<section class="section" id="embla">
-	<div class="contents">
-		<span class="caption">Class names</span><h2><a href="#embla">Class prefix</a></h2>
-		<div class="content"><p>With <code>classes: 'embla'</code>, the class names get the prefix <code>embla</code>: <code>embla</code>, <code>embla_viewport</code>, <code>embla_button</code>. Use a prefix to match the styles of an existing theme. This carousel has many snaps, so the dots show a window of five dots around the selected dot.</p></div>
-	</div>
-	<div class="content">
-	<div class="demo"><div class="items items_4 carousel" data-carousel='{"classes":"embla","loop":true}'>
-			<div class="item"><img src="demo/images/18-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">1</span></div><div class="item"><img src="demo/images/19-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">2</span></div><div class="item"><img src="demo/images/21-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">3</span></div><div class="item"><img src="demo/images/22-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">4</span></div><div class="item"><img src="demo/images/23-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">5</span></div><div class="item"><img src="demo/images/24-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">6</span></div><div class="item"><img src="demo/images/26-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">7</span></div><div class="item"><img src="demo/images/27-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">8</span></div><div class="item"><img src="demo/images/28-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">9</span></div><div class="item"><img src="demo/images/29-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">10</span></div><div class="item"><img src="demo/images/10-800x800.jpg" alt="" width="800" height="800" loading="lazy"><span class="number">11</span></div><div class="item"><img src="demo/images/15-800x800.jpg" alt="" width="800" height="800" loading="lazy"><span class="number">12</span></div><div class="item"><img src="demo/images/20-800x800.jpg" alt="" width="800" height="800" loading="lazy"><span class="number">13</span></div><div class="item"><img src="demo/images/25-800x800.jpg" alt="" width="800" height="800" loading="lazy"><span class="number">14</span></div><div class="item"><img src="demo/images/11-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">15</span></div>
-		</div></div>
-	<div class="code"><div class="heading"><span class="label">HTML</span><button class="button" type="button" data-copy aria-label="Copy HTML code">Copy</button></div><pre><code class="language-html">&lt;div class="items items_4 carousel" data-carousel='{"classes":"embla","loop":true}'&gt;
-  &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
-  &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
-  &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
-  ...
-&lt;/div&gt;</code></pre></div><p>Compile the SCSS file with <code>$better: 'embla'</code>. The <a href="#styling">Styling</a> section shows how.</p>
-	</div>
-</section>
-
-<section class="section" id="state">
-	<div class="contents">
-		<h2><a href="#state">State prefix</a></h2>
-		<div class="content"><p>With <code>state: 'is_'</code>, the state classes get a prefix: <code>is_active</code>, <code>is_current</code>, <code>is_dragging</code>. This example also uses the class names of Embla.</p></div>
-	</div>
-	<div class="content">
-	<div class="demo"><div class="demo_state"><div class="items items_3 carousel" data-carousel='{"classes":"embla","state":"is_"}'>
-			<div class="item"><img src="demo/images/22-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">1</span></div><div class="item"><img src="demo/images/23-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">2</span></div><div class="item"><img src="demo/images/24-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">3</span></div><div class="item"><img src="demo/images/26-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">4</span></div><div class="item"><img src="demo/images/27-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">5</span></div><div class="item"><img src="demo/images/28-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">6</span></div><div class="item"><img src="demo/images/29-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">7</span></div>
-		</div></div></div>
-	<div class="code"><div class="heading"><span class="label">HTML</span><button class="button" type="button" data-copy aria-label="Copy HTML code">Copy</button></div><pre><code class="language-html">&lt;div class="items items_3 carousel" data-carousel='{"classes":"embla","state":"is_"}'&gt;
-  &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
-  &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
-  &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
-  ...
-&lt;/div&gt;</code></pre></div><p>Compile the SCSS file with <code>$better-state: 'is_'</code>.</p>
-	</div>
-</section>
-
 <section class="section" id="options">
 	<div class="contents">
 		<span class="caption">Reference</span><h2><a href="#options">Options</a></h2>
@@ -1114,33 +1220,33 @@ BetterCarousel(element, {
 <div class="table table_reference"><table><thead><tr><th>Option</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody>
 <tr><td><code id="option-axis">axis</code></td><td><code>'x'</code>, <code>'y'</code>, <code>'auto'</code></td><td><code>'auto'</code></td><td>The axis of the motion. With <code>'auto'</code>, the CSS of the container sets the axis. (<a href="#switch">example</a>)</td></tr>
 <tr><td><code id="option-align">align</code></td><td><code>'start'</code>, <code>'center'</code>, <code>'end'</code>, <code>'auto'</code>, <code>function</code></td><td><code>'auto'</code></td><td>The position of the selected snap in the viewport. A function gets <code>(viewSize, snapSize, index)</code> and returns the offset in px. With <code>'auto'</code>, <code>justify-content</code> sets the alignment. (<a href="#center">example</a>)</td></tr>
-<tr><td><code id="option-direction">direction</code></td><td><code>'ltr'</code>, <code>'rtl'</code>, <code>'auto'</code></td><td><code>'auto'</code></td><td>The text direction. With <code>'auto'</code>, the CSS <code>direction</code> sets it.</td></tr>
+<tr><td><code id="option-direction">direction</code></td><td><code>'ltr'</code>, <code>'rtl'</code>, <code>'auto'</code></td><td><code>'auto'</code></td><td>The text direction. With <code>'auto'</code>, the CSS <code>direction</code> sets it. (<a href="#rtl">example</a>)</td></tr>
 <tr><td><code id="option-loop">loop</code></td><td><code>boolean</code></td><td><code>false</code></td><td>The first slide comes after the last slide. (<a href="#loop">example</a>)</td></tr>
 <tr><td><code id="option-clones">clones</code></td><td><code>'auto'</code>, <code>'fill'</code>, <code>false</code></td><td><code>'auto'</code></td><td><code>'auto'</code>: add clones only if the loop needs them. <code>'fill'</code>: add clones that fill the window. <code>false</code>: add no clones. (<a href="#clones">example</a>)</td></tr>
 <tr><td><code id="option-dragFree">dragFree</code></td><td><code>boolean</code>, <code>'snap'</code></td><td><code>false</code></td><td><code>true</code>: glide after a drag and stop at any position. <code>'snap'</code>: glide and stop at the nearest snap. (<a href="#free">example</a>)</td></tr>
-<tr><td><code id="option-containScroll">containScroll</code></td><td><code>'trimSnaps'</code>, <code>'keepSnaps'</code>, <code>false</code></td><td><code>'trimSnaps'</code></td><td><code>'trimSnaps'</code>: no empty space at the ends. <code>'keepSnaps'</code>: no empty space, but keep a snap for each group. <code>false</code>: snaps can show empty space. (<a href="#center">example</a>)</td></tr>
-<tr><td><code id="option-slidesToScroll">slidesToScroll</code></td><td><code>number</code>, <code>'auto'</code></td><td><code>1</code></td><td>The number of slides in one snap. <code>'auto'</code>: the slides that fit in the viewport.</td></tr>
+<tr><td><code id="option-containScroll">containScroll</code></td><td><code>'trimSnaps'</code>, <code>'keepSnaps'</code>, <code>false</code></td><td><code>'trimSnaps'</code></td><td><code>'trimSnaps'</code>: no empty space at the ends. <code>'keepSnaps'</code>: no empty space, but keep a snap for each group. <code>false</code>: snaps can show empty space. (<a href="#contain">example</a>)</td></tr>
+<tr><td><code id="option-slidesToScroll">slidesToScroll</code></td><td><code>number</code>, <code>'auto'</code></td><td><code>1</code></td><td>The number of slides in one snap. <code>'auto'</code>: the slides that fit in the viewport. (<a href="#groups">example</a>)</td></tr>
 <tr><td><code id="option-skipSnaps">skipSnaps</code></td><td><code>boolean</code>, <code>number</code></td><td><code>true</code></td><td>A fast flick can move more than one snap. <code>false</code>: one snap. A number: the maximum number of snaps. (<a href="#skip">example</a>)</td></tr>
 <tr><td><code id="option-dragThreshold">dragThreshold</code></td><td><code>number</code></td><td><code>10</code></td><td>The distance in px that the pointer moves before a drag starts.</td></tr>
-<tr><td><code id="option-duration">duration</code></td><td><code>number</code></td><td><code>400</code></td><td>The duration of a motion by one snap, in ms. A longer motion takes more time, to a maximum of 2 times this value.</td></tr>
-<tr><td><code id="option-startSnap">startSnap</code></td><td><code>number</code></td><td><code>0</code></td><td>The index of the snap at the start.</td></tr>
+<tr><td><code id="option-duration">duration</code></td><td><code>number</code></td><td><code>400</code></td><td>The duration of a motion by one snap, in ms. A longer motion takes more time, to a maximum of 2 times this value. (<a href="#options-usage">example</a>)</td></tr>
+<tr><td><code id="option-startSnap">startSnap</code></td><td><code>number</code></td><td><code>0</code></td><td>The index of the snap at the start. (<a href="#options-usage">example</a>)</td></tr>
 <tr><td><code id="option-lazy">lazy</code></td><td><code>boolean</code>, <code>number</code></td><td><code>false</code></td><td><code>true</code>: start when the carousel comes within one screen of the view. A number: the distance in px. (<a href="#lazy">example</a>)</td></tr>
 <tr><td><code id="option-draggable">draggable</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Drag with the mouse, the pen and the finger.</td></tr>
 <tr><td><code id="option-wheel">wheel</code></td><td><code>boolean</code>, <code>'both'</code></td><td><code>true</code></td><td>The mouse wheel moves a vertical carousel. <code>'both'</code>: also a horizontal carousel. <code>false</code>: the wheel does not move the carousel. (<a href="#vertical">example</a>)</td></tr>
-<tr><td><code id="option-resize">resize</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Measure again when a size changes.</td></tr>
-<tr><td><code id="option-slideChanges">slideChanges</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Measure again when the page adds or removes a slide.</td></tr>
+<tr><td><code id="option-resize">resize</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Measure again when a size changes. (<a href="#options-usage">example</a>)</td></tr>
+<tr><td><code id="option-slideChanges">slideChanges</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Measure again when the page adds or removes a slide. (<a href="#changes">example</a>)</td></tr>
 <tr><td><code id="option-focus">focus</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Go to a slide when it gets the keyboard focus. (<a href="#controls">example</a>)</td></tr>
-<tr><td><code id="option-inViewThreshold">inViewThreshold</code></td><td><code>number</code></td><td><code>0</code></td><td>The part of a slide, from 0 to 1, that must show for <code>slidesInView()</code>.</td></tr>
-<tr><td><code id="option-active">active</code></td><td><code>boolean</code></td><td><code>true</code></td><td><code>false</code>: do not start the carousel. Use it in <code>breakpoints</code>.</td></tr>
-<tr><td><code id="option-breakpoints">breakpoints</code></td><td><code>object</code></td><td><code>{}</code></td><td>The options for media queries: <code>{ '(min-width: 768px)': { loop: true } }</code>.</td></tr>
+<tr><td><code id="option-inViewThreshold">inViewThreshold</code></td><td><code>number</code></td><td><code>0</code></td><td>The part of a slide, from 0 to 1, that must show for <code>slidesInView()</code>. (<a href="#options-usage">example</a>)</td></tr>
+<tr><td><code id="option-active">active</code></td><td><code>boolean</code></td><td><code>true</code></td><td><code>false</code>: do not start the carousel. Use it in <code>breakpoints</code>. (<a href="#breakpoints">example</a>)</td></tr>
+<tr><td><code id="option-breakpoints">breakpoints</code></td><td><code>object</code></td><td><code>{}</code></td><td>The options for media queries: <code>{ '(min-width: 768px)': { loop: true } }</code>. (<a href="#breakpoints">example</a>)</td></tr>
 <tr><td><code id="option-container">container</code></td><td><code>string</code></td><td><code>null</code></td><td>The selector of the container, if the element is the root.</td></tr>
 <tr><td><code id="option-slides">slides</code></td><td><code>string</code></td><td><code>null</code></td><td>The selector of the slides. With <code>null</code>, all children of the container are slides.</td></tr>
-<tr><td><code id="option-wrap">wrap</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Add the root and the viewport if the page does not have them.</td></tr>
+<tr><td><code id="option-wrap">wrap</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Add the root and the viewport if the page does not have them. (<a href="#options-usage">example</a>)</td></tr>
 <tr><td><code id="option-arrows">arrows</code></td><td><code>boolean</code>, <code>Element</code>, <code>string</code></td><td><code>true</code></td><td>Add the arrows to the root. <code>false</code>: no arrows. An element or a selector: add the arrows to that element. (<a href="#heading">example</a>)</td></tr>
 <tr><td><code id="option-dots">dots</code></td><td><code>boolean</code>, <code>Element</code>, <code>string</code></td><td><code>true</code></td><td>Add the dots. The values are the same as for <code>arrows</code>. (<a href="#heading">example</a>)</td></tr>
-<tr><td><code id="option-labels">labels</code></td><td><code>object</code></td><td>English</td><td>The texts for screen readers: <code>carousel</code>, <code>slide</code> (<code>'%d of %n'</code>), <code>prev</code>, <code>next</code>, <code>dot</code> (<code>'Go to slide %d'</code>), <code>play</code>, <code>pause</code>. <code>%d</code> is the slide number, and <code>%n</code> is the number of slides.</td></tr>
+<tr><td><code id="option-labels">labels</code></td><td><code>object</code></td><td>English</td><td>The texts for screen readers: <code>carousel</code>, <code>slide</code> (<code>'%d of %n'</code>), <code>prev</code>, <code>next</code>, <code>dot</code> (<code>'Go to slide %d'</code>), <code>play</code>, <code>pause</code>. <code>%d</code> is the slide number, and <code>%n</code> is the number of slides. (<a href="#accessibility">example</a>)</td></tr>
 <tr><td><code id="option-classes">classes</code></td><td><code>string</code>, <code>object</code></td><td><code>null</code></td><td>A class prefix such as <code>'embla'</code>, or an object with the names to change. The <a href="#classes">Classes</a> table gives all names. (<a href="#embla">example</a>)</td></tr>
-<tr><td><code id="option-state">state</code></td><td><code>string</code></td><td><code>''</code></td><td>The prefix of the state classes, such as <code>'is_'</code>. (<a href="#state">example</a>)</td></tr>
+<tr><td><code id="option-state">state</code></td><td><code>string</code></td><td><code>''</code></td><td>The prefix of the state classes, such as <code>'is_'</code>. (<a href="#embla">example</a>)</td></tr>
 <tr><td><code id="option-sync">sync</code></td><td>carousel, <code>Element</code>, <code>string</code></td><td><code>null</code></td><td>Another carousel, its container or a selector. This carousel follows the selected slide of the other carousel. A click on a slide selects it in the other carousel. (<a href="#product">example</a>)</td></tr>
 <tr><td><code id="option-autoplay">autoplay</code></td><td><code>boolean</code>, <code>number</code>, <code>object</code></td><td><code>false</code></td><td>Go to the next slide after a delay. <code>true</code>, a delay in ms, or an object. (<a href="#autoplay">example</a>)</td></tr>
 <tr><td><code id="option-autoScroll">autoScroll</code></td><td><code>boolean</code>, <code>number</code>, <code>object</code></td><td><code>false</code></td><td>Move the slides at a constant speed. <code>true</code>, a speed in px/s, or an object. (<a href="#logos">example</a>)</td></tr>
@@ -1250,9 +1356,27 @@ BetterCarousel(element, { classes: { active: 'selected' } });</code></pre></div>
 	</div>
 </section>
 
+<section class="section" id="embla">
+	<div class="contents">
+		<h2><a href="#embla">Custom class names</a></h2>
+		<div class="content"><p>With <code>classes: 'embla'</code>, the class names get the prefix <code>embla</code>: <code>embla</code>, <code>embla_viewport</code>, <code>embla_button</code>. With <code>state: 'is_'</code>, the state classes get the prefix <code>is_</code>: <code>is_active</code>, <code>is_current</code>, <code>is_dragging</code>. Use the prefixes to match the styles of an existing theme. This carousel has many snaps, so the dots show a window of five dots around the selected dot.</p></div>
+	</div>
+	<div class="content">
+	<div class="demo"><div class="demo_classes"><div class="items items_4 carousel" data-carousel='{"classes":"embla","state":"is_","loop":true}'>
+			<div class="item"><img src="demo/images/18-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">1</span></div><div class="item"><img src="demo/images/19-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">2</span></div><div class="item"><img src="demo/images/21-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">3</span></div><div class="item"><img src="demo/images/22-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">4</span></div><div class="item"><img src="demo/images/23-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">5</span></div><div class="item"><img src="demo/images/24-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">6</span></div><div class="item"><img src="demo/images/26-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">7</span></div><div class="item"><img src="demo/images/27-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">8</span></div><div class="item"><img src="demo/images/28-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">9</span></div><div class="item"><img src="demo/images/29-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">10</span></div><div class="item"><img src="demo/images/10-800x800.jpg" alt="" width="800" height="800" loading="lazy"><span class="number">11</span></div><div class="item"><img src="demo/images/15-800x800.jpg" alt="" width="800" height="800" loading="lazy"><span class="number">12</span></div><div class="item"><img src="demo/images/20-800x800.jpg" alt="" width="800" height="800" loading="lazy"><span class="number">13</span></div><div class="item"><img src="demo/images/25-800x800.jpg" alt="" width="800" height="800" loading="lazy"><span class="number">14</span></div><div class="item"><img src="demo/images/11-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">15</span></div>
+		</div></div></div>
+	<div class="code"><div class="heading"><span class="label">HTML</span><button class="button" type="button" data-copy aria-label="Copy HTML code">Copy</button></div><pre><code class="language-html">&lt;div class="items items_4 carousel" data-carousel='{"classes":"embla","state":"is_","loop":true}'&gt;
+  &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
+  &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
+  &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
+  ...
+&lt;/div&gt;</code></pre></div><p>Compile the SCSS file with <code>$better: 'embla'</code> and <code>$better-state: 'is_'</code>. The <a href="#styling">Styling</a> section shows how.</p>
+	</div>
+</section>
+
 <section class="section" id="from-embla">
 	<div class="contents">
-		<h2><a href="#from-embla">Coming from Embla</a></h2>
+		<h2><a href="#from-embla">Migrate from Embla</a></h2>
 		<div class="content"><p>An option, a method or an event that is also in Embla 9 has the same name. This table gives the differences from Embla 9 and Embla 8.</p></div>
 	</div>
 	<div class="content">
@@ -1284,7 +1408,17 @@ BetterCarousel(element, { classes: { active: 'selected' } });</code></pre></div>
 		<div class="content"><p>The carousel follows the carousel pattern of the WAI-ARIA Authoring Practices and WCAG 2.1 AA.</p></div>
 	</div>
 	<div class="content">
-	<ul><li>The root is a region with the name "Carousel". Each slide has a name such as "2 of 8". A slide that is an <code>article</code> or a list item keeps its own role.</li><li>The arrows and the dots are buttons with names. A screen reader reads each new slide (<code>aria-live</code>), but not during the autoplay.</li><li>Tab moves the focus through the links and the fields in the slides. The carousel moves to show the focused element.</li><li>Clones are <code>inert</code> and hidden from screen readers.</li><li>The autoplay and the auto scroll have a play and pause button (WCAG 2.2.2). The keyboard focus pauses them. If the user prefers reduced motion, they do not start.</li><li>A drag across the axis scrolls the page. A link opens on a click, but not after a drag.</li></ul>
+	<ul><li>The root is a region with the name "Carousel". Each slide has a name such as "2 of 8". A slide that is an <code>article</code> or a list item keeps its own role.</li><li>The arrows and the dots are buttons with names. A screen reader reads each new slide (<code>aria-live</code>), but not during the autoplay.</li><li>Tab moves the focus through the links and the fields in the slides. The carousel moves to show the focused element.</li><li>Clones are <code>inert</code> and hidden from screen readers.</li><li>The autoplay and the auto scroll have a play and pause button (WCAG 2.2.2). The keyboard focus pauses them. If the user prefers reduced motion, they do not start.</li><li>A drag across the axis scrolls the page. A link opens on a click, but not after a drag.</li></ul><p>To translate the labels, set <code>labels</code>. In the texts, <code>%d</code> is the slide number, and <code>%n</code> is the number of slides:</p><div class="code"><div class="heading"><span class="label">JavaScript</span><button class="button" type="button" data-copy aria-label="Copy JavaScript code">Copy</button></div><pre><code class="language-javascript">BetterCarousel.defaults = {
+  labels: {
+    carousel: 'Karussell',
+    slide: '%d von %n',
+    prev: 'Vorheriges Bild',
+    next: 'Nächstes Bild',
+    dot: 'Zu Bild %d',
+    play: 'Diashow starten',
+    pause: 'Diashow anhalten',
+  },
+};</code></pre></div>
 	</div>
 </section>
 
@@ -1297,8 +1431,8 @@ BetterCarousel(element, { classes: { active: 'selected' } });</code></pre></div>
 	<ul><li>A motion is a Web Animations API animation of <code>translate</code>. No script runs for each frame.</li><li>The auto scroll is one animation that does not stop. During the motion, the browser does no script, style, layout or paint work.</li><li>One <code>ResizeObserver</code> serves all carousels. It reads the layout of all carousels first, and then it writes. For this reason, the browser calculates the layout only one time.</li><li>The dots move with <code>translate</code> and change size with <code>transform</code>. A click on a dot causes no layout work.</li><li>The listeners for the autoplay and the mouse wheel exist only while they can do something.</li><li>The <code>progress</code> and <code>offset</code> options run a script on each frame of a motion. For this reason, they are off by default.</li></ul><!-- generated:sizes -->
 <div class="table table_reference"><table><thead><tr><th>File</th><th>Minified</th><th>Gzip</th><th>Brotli</th></tr></thead><tbody>
 <tr><td><code>better-carousel.min.js</code></td><td>28.0 KB</td><td>11.2 KB</td><td>10.2 KB</td></tr>
-<tr><td><code>better-carousel.css</code></td><td>3.9 KB</td><td>1.2 KB</td><td>1.0 KB</td></tr>
-<tr><td>Total</td><td>31.8 KB</td><td>12.4 KB</td><td>11.2 KB</td></tr>
+<tr><td><code>better-carousel.css</code></td><td>4.0 KB</td><td>1.3 KB</td><td>1.0 KB</td></tr>
+<tr><td>Total</td><td>32.0 KB</td><td>12.4 KB</td><td>11.2 KB</td></tr>
 </tbody></table></div>
 <!-- /generated --><p>The same features in Embla 9 (the core, three plugins and a wrapper) are 12.6 KB gzip.</p><div class="table"><table><thead><tr><th>Measure, on a phone with a CPU 4 times slower</th><th>Better Carousel</th></tr></thead><tbody><tr><td>JS size, gzip</td><td><!-- generated:gzip -->11.2 KB<!-- /generated --></td></tr><tr><td>CPU load during 10 s of auto scroll</td><td>0.5%</td></tr><tr><td>CPU load during 10 s of autoplay</td><td>1.1%</td></tr><tr><td>Total Blocking Time added at page load</td><td>0 ms</td></tr><tr><td>Layout shift</td><td>0</td></tr></tbody></table></div>
 	</div>
@@ -1314,6 +1448,40 @@ BetterCarousel(element, { classes: { active: 'selected' } });</code></pre></div>
 
 // Start within 300 px of the view
 BetterCarousel.initAll('.items.carousel', { lazy: 300 });</code></pre></div><ul><li>A carousel near the screen starts at once, so that its arrows and dots do not move the page after the first paint.</li><li>Before the start, <code>BetterCarousel.get()</code> gives the carousel, but <code>rootNode()</code> is <code>undefined</code> and <code>slideNodes()</code> is empty.</li><li>A <code>goTo()</code> call starts the carousel at once.</li></ul><p><strong>CAUTION:</strong> Clip the slides of a waiting carousel with CSS, for example with <code>overflow-x: clip</code> on a parent. If you do not, the page gets wider than the screen, and a phone shows the page smaller.</p>
+	</div>
+</section>
+
+<section class="section" id="images">
+	<div class="contents">
+		<h2><a href="#images">Lazy images</a></h2>
+		<div class="content"><p>The images of this carousel load only when their slides come near the view. Each image has <code>data-src</code> in place of <code>src</code>. On the <code>init</code> and the <code>slidesinview</code> events, the script loads the images of the slides in view and of one slide on each side. As a result, the next image is ready before it shows.</p></div>
+	</div>
+	<div class="content">
+	<div class="demo"><div class="items items_3 carousel" data-demo="images">
+			<div class="item"><img data-src="demo/images/21-400x400.jpg" alt="" width="400" height="400"><span class="number">1</span></div><div class="item"><img data-src="demo/images/22-400x400.jpg" alt="" width="400" height="400"><span class="number">2</span></div><div class="item"><img data-src="demo/images/23-400x400.jpg" alt="" width="400" height="400"><span class="number">3</span></div><div class="item"><img data-src="demo/images/24-400x400.jpg" alt="" width="400" height="400"><span class="number">4</span></div><div class="item"><img data-src="demo/images/26-400x400.jpg" alt="" width="400" height="400"><span class="number">5</span></div><div class="item"><img data-src="demo/images/27-400x400.jpg" alt="" width="400" height="400"><span class="number">6</span></div><div class="item"><img data-src="demo/images/28-400x400.jpg" alt="" width="400" height="400"><span class="number">7</span></div><div class="item"><img data-src="demo/images/29-400x400.jpg" alt="" width="400" height="400"><span class="number">8</span></div>
+		</div></div>
+	<div class="code"><div class="heading"><span class="label">HTML</span><button class="button" type="button" data-copy aria-label="Copy HTML code">Copy</button></div><pre><code class="language-html">&lt;div class="items items_3 carousel"&gt;
+  &lt;div class="item"&gt;&lt;img data-src="photo.jpg" alt=""&gt;&lt;/div&gt;
+  &lt;div class="item"&gt;&lt;img data-src="photo.jpg" alt=""&gt;&lt;/div&gt;
+  ...
+&lt;/div&gt;</code></pre></div><div class="code"><div class="heading"><span class="label">JavaScript</span><button class="button" type="button" data-copy aria-label="Copy JavaScript code">Copy</button></div><pre><code class="language-javascript">const carousel = BetterCarousel(element);
+
+function load() {
+  const slides = carousel.slideNodes(),
+    list = carousel.slidesInView();
+
+  // The slides in view, and one slide on each side
+  [list[0] - 1, ...list, list[list.length - 1] + 1].forEach((index) =&gt; {
+    const image = slides[index]?.querySelector('img[data-src]');
+    if (image) {
+      image.src = image.dataset.src;
+      image.removeAttribute('data-src');
+    }
+  });
+}
+
+carousel.on('init', load);
+carousel.on('slidesinview', load);</code></pre></div>
 	</div>
 </section>
 

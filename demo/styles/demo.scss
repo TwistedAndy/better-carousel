@@ -19,13 +19,11 @@
 @import 'blocks/wrapper';
 @import 'blocks/footer';
 
-// The carousel: the default names, the names of the old theme wrapper, and the "is_" state prefix
+// The carousel: the default names, and the names of Embla with the "is_" state prefix
 @import 'better-carousel';
 
-$better: 'embla';
-@import 'better-carousel';
-
-.demo_state {
+.demo_classes {
+	$better: 'embla';
 	$better-state: 'is_';
 	@import 'better-carousel';
 }

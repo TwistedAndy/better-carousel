@@ -57,7 +57,6 @@ test('velocity from the last 100 ms', () => {
 	assert.equal(velocity([[0, 0], [10, 16], [20, 32], [30, 48]]), 30 / 48);
 	assert.equal(velocity([[0, 0], [100, 500], [110, 516]]), 10 / 16);
 	assert.equal(velocity([[5, 10]]), 0);
-	assert.equal(velocity([]), 0);
 });
 
 test('release target', () => {

@@ -772,6 +772,7 @@ pre {
 }
 .header_box .logo img {
   display: block;
+  border-radius: 6px;
   width: var(--width-logo);
   max-width: none;
   height: auto;
@@ -781,23 +782,60 @@ pre {
   margin: 0;
   padding: 0;
   list-style: none;
-  gap: 22px;
+  gap: 4px;
 }
 .header_box .menu a {
+  display: block;
+  position: relative;
+  padding: 6px 14px;
+  border-radius: 8px;
   color: var(--color-muted);
   font-weight: 500;
   text-decoration: none;
+  transition: color 0.2s, background-color 0.2s;
+}
+.header_box .menu a:after {
+  content: "";
+  position: absolute;
+  right: 14px;
+  bottom: 0;
+  left: 14px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--color-primary);
+  scale: 0 1;
+  transition: scale 0.2s;
 }
 @media (hover: hover) {
   .header_box .menu a:hover {
+    background: rgb(from var(--color-primary) r g b / 8%);
     color: var(--color-heading);
   }
+}
+.header_box .menu .active a {
+  color: var(--color-primary);
+}
+.header_box .menu .active a:after {
+  scale: 1 1;
+}
+.header_box .meta {
+  display: flex;
+  align-items: center;
+  justify-self: end;
+  gap: 16px;
+}
+.header_box .version {
+  padding: 2px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  color: var(--color-muted);
+  font-size: var(--size-tiny);
+  font-weight: 500;
 }
 .header_box .link {
   --mask-image: url('assets/ico_github.svg');
   display: flex;
   align-items: center;
-  justify-self: end;
   color: var(--color-heading);
   font-size: var(--size-small);
   font-weight: 500;
@@ -823,7 +861,13 @@ pre {
   }
   .header_box .menu {
     font-size: var(--size-small);
-    gap: 14px;
+  }
+  .header_box .menu a {
+    padding: 6px 10px;
+  }
+  .header_box .menu a:after {
+    right: 10px;
+    left: 10px;
   }
   .header_box .link span {
     display: none;
@@ -831,10 +875,17 @@ pre {
 }
 @media (max-width: 30rem) {
   .header_box {
-    --width-logo: 124px;
-    gap: 12px;
+    --width-logo: 28px;
+    gap: 8px;
   }
-  .header_box .menu li:first-child {
+  .header_box .menu a {
+    padding: 6px 8px;
+  }
+  .header_box .menu a:after {
+    right: 8px;
+    left: 8px;
+  }
+  .header_box .version {
     display: none;
   }
 }
@@ -1220,8 +1271,8 @@ pre {
 .better_button {
   display: block;
   position: absolute;
-  right: 0;
   bottom: 0;
+  inset-inline-end: 0;
   width: var(--height-button);
   height: var(--height-button);
   padding: 0;
@@ -1266,16 +1317,18 @@ pre {
 }
 
 .better_prev {
-  right: auto;
-  left: 0;
+  inset-inline-start: 0;
+  inset-inline-end: auto;
 }
-.better_prev:before {
+
+.better_prev:dir(ltr):before,
+.better_next:dir(rtl):before {
   transform: scaleX(-1);
 }
 
 .better_play {
-  right: auto;
-  left: calc(var(--height-button) + 0.5rem);
+  inset-inline-start: calc(var(--height-button) + 0.5rem);
+  inset-inline-end: auto;
 }
 .better_play:before {
   width: 0.625rem;
@@ -1317,6 +1370,9 @@ pre {
   translate: calc(var(--better-shift, 0) * 1.5rem);
   transition: translate 0.2s;
   cursor: pointer;
+}
+.better_dot:dir(rtl) {
+  translate: calc(var(--better-shift, 0) * -1.5rem);
 }
 .better_dot:focus-visible {
   outline: 2px solid var(--button-border-active, #000);
@@ -1382,50 +1438,45 @@ pre {
   translate: 0 calc(var(--better-shift, 0) * 1.5rem);
 }
 
-.embla {
+.demo_classes .embla {
   display: block;
   position: relative;
 }
-.embla.dragging {
+.demo_classes .embla.is_dragging {
   user-select: none;
   cursor: grabbing;
 }
-
-.embla_viewport {
+.demo_classes .embla_viewport {
   position: relative;
   overflow: hidden;
   width: 100%;
   margin: 0;
   z-index: 1;
 }
-
-.embla_horizontal .embla_container {
+.demo_classes .embla_horizontal .embla_container {
   overflow: visible;
   --gap-grid-y: 0px;
 }
-
-.embla_vertical .embla_viewport {
+.demo_classes .embla_vertical .embla_viewport {
   height: 100%;
 }
-.embla_vertical .embla_container {
+.demo_classes .embla_vertical .embla_container {
   overflow: visible;
   height: calc(100% + var(--gap-grid-y, 0px));
   margin-bottom: calc(-1 * var(--gap-grid-y, 0px));
   --gap-grid-x: 0px;
 }
-
-.embla_auto_height .embla_viewport {
+.demo_classes .embla_auto_height .embla_viewport {
   transition: height 0.3s;
 }
-.embla_auto_height .embla_container {
+.demo_classes .embla_auto_height .embla_container {
   align-items: flex-start;
 }
-
-.embla_button {
+.demo_classes .embla_button {
   display: block;
   position: absolute;
-  right: 0;
   bottom: 0;
+  inset-inline-end: 0;
   width: var(--height-button);
   height: var(--height-button);
   padding: 0;
@@ -1438,11 +1489,11 @@ pre {
   z-index: 5;
   --height-button: 2.5rem;
 }
-.embla_button:focus-visible {
+.demo_classes .embla_button:focus-visible {
   outline: 2px solid var(--button-border-active, #000);
   outline-offset: 2px;
 }
-.embla_button:before {
+.demo_classes .embla_button:before {
   content: "";
   display: block;
   position: absolute;
@@ -1456,45 +1507,42 @@ pre {
   mask: var(--button-arrow, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 12'%3E%3Cpath d='m1 1 5 5-5 5' fill='none' stroke='black' stroke-width='1.5'/%3E%3C/svg%3E")) 50% 50% no-repeat;
 }
 @media (hover: hover) {
-  .embla_button:hover {
+  .demo_classes .embla_button:hover {
     border-color: var(--button-border-active, #000);
     background-color: var(--button-base-active, #000);
     color: var(--button-text-active, #fff);
   }
 }
-.embla_button:disabled {
+.demo_classes .embla_button:disabled {
   border-color: var(--button-border-disabled, #eee);
   background-color: var(--button-base-disabled, #eee);
   color: var(--button-text-disabled, #aaa);
   cursor: default;
 }
-
-.embla_prev {
-  right: auto;
-  left: 0;
+.demo_classes .embla_prev {
+  inset-inline-start: 0;
+  inset-inline-end: auto;
 }
-.embla_prev:before {
+.demo_classes .embla_prev:dir(ltr):before,
+.demo_classes .embla_next:dir(rtl):before {
   transform: scaleX(-1);
 }
-
-.embla_play {
-  right: auto;
-  left: calc(var(--height-button) + 0.5rem);
+.demo_classes .embla_play {
+  inset-inline-start: calc(var(--height-button) + 0.5rem);
+  inset-inline-end: auto;
 }
-.embla_play:before {
+.demo_classes .embla_play:before {
   width: 0.625rem;
   margin-left: -0.3125rem;
   -webkit-mask: none;
   mask: none;
   clip-path: polygon(0 0, 100% 50%, 0 100%);
 }
-
-.embla.playing .embla_play:before {
+.demo_classes .embla.is_playing .embla_play:before {
   background: linear-gradient(90deg, currentColor 35%, transparent 35% 65%, currentColor 65%);
   clip-path: none;
 }
-
-.embla_dots {
+.demo_classes .embla_dots {
   display: flex;
   position: relative;
   align-items: center;
@@ -1505,8 +1553,7 @@ pre {
   z-index: 3;
   --height-button: 2.5rem;
 }
-
-.embla_dot {
+.demo_classes .embla_dot {
   display: flex;
   flex: none;
   align-items: center;
@@ -1522,11 +1569,14 @@ pre {
   transition: translate 0.2s;
   cursor: pointer;
 }
-.embla_dot:focus-visible {
+.demo_classes .embla_dot:dir(rtl) {
+  translate: calc(var(--better-shift, 0) * -1.5rem);
+}
+.demo_classes .embla_dot:focus-visible {
   outline: 2px solid var(--button-border-active, #000);
   outline-offset: -2px;
 }
-.embla_dot:before {
+.demo_classes .embla_dot:before {
   content: "";
   display: block;
   width: 0.875rem;
@@ -1537,23 +1587,22 @@ pre {
   transform: scale(0);
   will-change: transform;
 }
-.embla_dot.last:before, .embla_dot.first:before {
+.demo_classes .embla_dot.is_last:before, .demo_classes .embla_dot.is_first:before {
   transform: scale(0.333);
 }
-.embla_dot.prev:before, .embla_dot.next:before {
+.demo_classes .embla_dot.is_prev:before, .demo_classes .embla_dot.is_next:before {
   transform: scale(0.666);
 }
-.embla_dot.current:before {
+.demo_classes .embla_dot.is_current:before {
   background-color: var(--button-base, #222);
   transform: scale(1);
 }
 @media (hover: hover) {
-  .embla_dot:hover {
+  .demo_classes .embla_dot:hover {
     color: var(--button-base-active, #000);
   }
 }
-
-.embla_vertical .embla_button {
+.demo_classes .embla_vertical .embla_button {
   top: auto;
   right: 0;
   bottom: 0;
@@ -1562,17 +1611,17 @@ pre {
   height: 30px;
   margin: 0;
 }
-.embla_vertical .embla_button:before {
+.demo_classes .embla_vertical .embla_button:before {
   transform: rotate(90deg);
 }
-.embla_vertical .embla_prev {
+.demo_classes .embla_vertical .embla_prev {
   top: 0;
   bottom: auto;
 }
-.embla_vertical .embla_prev:before {
+.demo_classes .embla_vertical .embla_prev:before {
   transform: rotate(-90deg);
 }
-.embla_vertical .embla_dots {
+.demo_classes .embla_vertical .embla_dots {
   position: absolute;
   top: 50%;
   right: 0;
@@ -1582,200 +1631,7 @@ pre {
   margin: 0;
   transform: translateY(-50%);
 }
-.embla_vertical .embla_dot {
-  translate: 0 calc(var(--better-shift, 0) * 1.5rem);
-}
-
-.demo_state .embla {
-  display: block;
-  position: relative;
-}
-.demo_state .embla.is_dragging {
-  user-select: none;
-  cursor: grabbing;
-}
-.demo_state .embla_viewport {
-  position: relative;
-  overflow: hidden;
-  width: 100%;
-  margin: 0;
-  z-index: 1;
-}
-.demo_state .embla_horizontal .embla_container {
-  overflow: visible;
-  --gap-grid-y: 0px;
-}
-.demo_state .embla_vertical .embla_viewport {
-  height: 100%;
-}
-.demo_state .embla_vertical .embla_container {
-  overflow: visible;
-  height: calc(100% + var(--gap-grid-y, 0px));
-  margin-bottom: calc(-1 * var(--gap-grid-y, 0px));
-  --gap-grid-x: 0px;
-}
-.demo_state .embla_auto_height .embla_viewport {
-  transition: height 0.3s;
-}
-.demo_state .embla_auto_height .embla_container {
-  align-items: flex-start;
-}
-.demo_state .embla_button {
-  display: block;
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  width: var(--height-button);
-  height: var(--height-button);
-  padding: 0;
-  border: 1px solid var(--button-border, #222);
-  border-radius: var(--radius-regular, 10px);
-  background-color: var(--button-base, #222);
-  color: var(--button-text, #fff);
-  transition: 0.2s;
-  cursor: pointer;
-  z-index: 5;
-  --height-button: 2.5rem;
-}
-.demo_state .embla_button:focus-visible {
-  outline: 2px solid var(--button-border-active, #000);
-  outline-offset: 2px;
-}
-.demo_state .embla_button:before {
-  content: "";
-  display: block;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0.5rem;
-  height: 0.75rem;
-  margin: -0.375rem 0 0 -0.25rem;
-  background-color: currentColor;
-  -webkit-mask: var(--button-arrow, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 12'%3E%3Cpath d='m1 1 5 5-5 5' fill='none' stroke='black' stroke-width='1.5'/%3E%3C/svg%3E")) 50% 50% no-repeat;
-  mask: var(--button-arrow, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 12'%3E%3Cpath d='m1 1 5 5-5 5' fill='none' stroke='black' stroke-width='1.5'/%3E%3C/svg%3E")) 50% 50% no-repeat;
-}
-@media (hover: hover) {
-  .demo_state .embla_button:hover {
-    border-color: var(--button-border-active, #000);
-    background-color: var(--button-base-active, #000);
-    color: var(--button-text-active, #fff);
-  }
-}
-.demo_state .embla_button:disabled {
-  border-color: var(--button-border-disabled, #eee);
-  background-color: var(--button-base-disabled, #eee);
-  color: var(--button-text-disabled, #aaa);
-  cursor: default;
-}
-.demo_state .embla_prev {
-  right: auto;
-  left: 0;
-}
-.demo_state .embla_prev:before {
-  transform: scaleX(-1);
-}
-.demo_state .embla_play {
-  right: auto;
-  left: calc(var(--height-button) + 0.5rem);
-}
-.demo_state .embla_play:before {
-  width: 0.625rem;
-  margin-left: -0.3125rem;
-  -webkit-mask: none;
-  mask: none;
-  clip-path: polygon(0 0, 100% 50%, 0 100%);
-}
-.demo_state .embla.is_playing .embla_play:before {
-  background: linear-gradient(90deg, currentColor 35%, transparent 35% 65%, currentColor 65%);
-  clip-path: none;
-}
-.demo_state .embla_dots {
-  display: flex;
-  position: relative;
-  align-items: center;
-  width: 7.5rem;
-  height: var(--height-button);
-  margin: var(--gap-grid-y, 20px) auto 0;
-  overflow: hidden;
-  z-index: 3;
-  --height-button: 2.5rem;
-}
-.demo_state .embla_dot {
-  display: flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: none;
-  color: var(--button-text-disabled, #767676);
-  translate: calc(var(--better-shift, 0) * 1.5rem);
-  transition: translate 0.2s;
-  cursor: pointer;
-}
-.demo_state .embla_dot:focus-visible {
-  outline: 2px solid var(--button-border-active, #000);
-  outline-offset: -2px;
-}
-.demo_state .embla_dot:before {
-  content: "";
-  display: block;
-  width: 0.875rem;
-  height: 0.875rem;
-  border-radius: 50%;
-  background: currentColor;
-  transition: transform 0.2s;
-  transform: scale(0);
-  will-change: transform;
-}
-.demo_state .embla_dot.is_last:before, .demo_state .embla_dot.is_first:before {
-  transform: scale(0.333);
-}
-.demo_state .embla_dot.is_prev:before, .demo_state .embla_dot.is_next:before {
-  transform: scale(0.666);
-}
-.demo_state .embla_dot.is_current:before {
-  background-color: var(--button-base, #222);
-  transform: scale(1);
-}
-@media (hover: hover) {
-  .demo_state .embla_dot:hover {
-    color: var(--button-base-active, #000);
-  }
-}
-.demo_state .embla_vertical .embla_button {
-  top: auto;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  width: auto;
-  height: 30px;
-  margin: 0;
-}
-.demo_state .embla_vertical .embla_button:before {
-  transform: rotate(90deg);
-}
-.demo_state .embla_vertical .embla_prev {
-  top: 0;
-  bottom: auto;
-}
-.demo_state .embla_vertical .embla_prev:before {
-  transform: rotate(-90deg);
-}
-.demo_state .embla_vertical .embla_dots {
-  position: absolute;
-  top: 50%;
-  right: 0;
-  flex-direction: column;
-  width: var(--height-button);
-  height: 7.5rem;
-  margin: 0;
-  transform: translateY(-50%);
-}
-.demo_state .embla_vertical .embla_dot {
+.demo_classes .embla_vertical .embla_dot {
   translate: 0 calc(var(--better-shift, 0) * 1.5rem);
 }
 
@@ -1999,6 +1855,38 @@ pre {
   border-radius: var(--radius-regular);
   scale: calc(1 - 0.25 * var(--distance));
   opacity: calc(1 - 0.6 * var(--distance));
+}
+
+@media (min-width: 769px) {
+  .demo_responsive .items.carousel {
+    flex-wrap: wrap;
+  }
+}
+.demo_tablist,
+.demo_buttons,
+.demo_controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 8px;
+}
+
+.demo_tablist .button[aria-selected=false] {
+  border-color: var(--color-border);
+  background: none;
+  color: var(--color-heading);
+}
+
+.demo_controls {
+  justify-content: center;
+  margin: 16px 0 0;
+  gap: 16px;
+}
+.demo_controls .demo_counter {
+  min-width: 4em;
+  margin: 0;
+  text-align: center;
 }
 
 .demo_counter {
