@@ -24,7 +24,23 @@
 
 ## Install
 
-Install the package from npm. Then import the script and the stylesheet:
+Load the minified script and the stylesheet from jsDelivr. The script adds the global `BetterCarousel` function.
+
+```html
+<link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/gh/TwistedAndy/better-carousel@v1.0.0/dist/better-carousel.css"
+  integrity="sha384-3ROtqpAC1ZPhSpDul73SGiTOv1L5kTr/08sUr6FPY6S79RIDi7mpI22ttbuxI/w8"
+  crossorigin="anonymous"
+/>
+<script
+  src="https://cdn.jsdelivr.net/gh/TwistedAndy/better-carousel@v1.0.0/dist/better-carousel.min.js"
+  integrity="sha384-c07capt5gSP/u/29MrkOEgCGW7Igro6cgxxf+xcsoNU8vmYtVkOELryyxkxbLe9i"
+  crossorigin="anonymous"
+></script>
+```
+
+Or install the package from npm, and import the script and the stylesheet with a bundler:
 
 ```sh
 npm install better-carousel
@@ -33,13 +49,6 @@ npm install better-carousel
 ```js
 import BetterCarousel from 'better-carousel'
 import 'better-carousel/css'
-```
-
-Or add the files to the page with a `link` tag and a `script` tag. The script adds the global `BetterCarousel` function.
-
-```html
-<link rel="stylesheet" href="dist/better-carousel.css" />
-<script src="dist/better-carousel.min.js"></script>
 ```
 
 | File | Format | Use |
