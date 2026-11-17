@@ -1,12 +1,29 @@
 /*
- * Entry point: the BetterCarousel function and its static members defaults, get() and initAll().
+ * Entry point: the BetterCarousel function, its features, and its static members defaults, get() and initAll().
  */
 
-import BetterCarousel, { find } from './scripts/carousel.js';
+import { autoplay, autoScroll } from './scripts/autoplay.js';
+import carousel, { find } from './scripts/carousel.js';
+import { drag, focus, wheel } from './scripts/input.js';
 import { readBoxes } from './scripts/layout.js';
+import { nav, sync } from './scripts/navigation.js';
 import { resolve } from './scripts/options.js';
 
-// The site defaults. They merge over the library defaults. carousel.js reads them each time that it makes a carousel.
+// The features. Their event handlers run in this order.
+const features = [drag, wheel, focus, nav, autoplay, autoScroll, sync];
+
+/**
+ * Make a carousel, or get the carousel of an element that has one.
+ *
+ * @param {HTMLElement} element The container of the slides, or its viewport.
+ * @param {object} [options]
+ * @returns {object} The carousel API.
+ */
+export default function BetterCarousel(element, options = {}) {
+	return carousel(element, options, BetterCarousel.defaults, features);
+}
+
+// The site defaults. They merge over the library defaults.
 BetterCarousel.defaults = {};
 
 /**
@@ -30,5 +47,3 @@ BetterCarousel.initAll = (selector, options) => {
 	readBoxes(elements.filter((element) => !find(element) && resolve(element, BetterCarousel.defaults, options).lazy));
 	return elements.map((element) => BetterCarousel(element, options));
 };
-
-export default BetterCarousel;

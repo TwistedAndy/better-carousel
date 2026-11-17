@@ -5,18 +5,18 @@
 export const defaults = {
 	axis: 'auto',
 	align: 'auto',
-	direction: 'auto',
+	dir: 'auto',
 	loop: false,
 	dragFree: false,
-	friction: 1,
+	dragFriction: 1,
 	containScroll: 'trimSnaps',
-	slidesToScroll: 1,
+	slidesPerSnap: 1,
 	skipSnaps: true,
 	dragThreshold: 10,
 	duration: 400,
 	startSnap: 0,
 	lazy: false,
-	draggable: true,
+	drag: true,
 	wheel: true,
 	resize: true,
 	slideChanges: true,
@@ -26,7 +26,7 @@ export const defaults = {
 	breakpoints: {},
 	container: null,
 	slides: null,
-	wrap: true,
+	wrapper: true,
 	arrows: true,
 	dots: true,
 	labels: { carousel: 'Carousel', slide: '%d of %n', prev: 'Previous slide', next: 'Next slide', dot: 'Go to slide %d', play: 'Start the slide show', pause: 'Stop the slide show' },
@@ -41,47 +41,41 @@ export const defaults = {
 	offset: false
 };
 
-// The defaults of the "autoplay" option
-export const autoplayDefaults = { delay: 4000, stopOnInteraction: true, stopOnMouseEnter: false, stopOnFocusIn: true, stopOnLastSnap: false, playOnInit: true, instant: false, timer: null };
-
-// The defaults of the "autoScroll" option
-export const autoScrollDefaults = { speed: 120, direction: 'forward', startDelay: 1000, stopOnInteraction: true, stopOnMouseEnter: false, stopOnFocusIn: true, playOnInit: true };
-
 // The class names of a prefix. The root class is the prefix, such as "better" or "embla".
 const names = (prefix) => ({
 	root: prefix,
 	viewport: prefix + '_viewport',
 	container: prefix + '_container',
-	dynamic: prefix + '_dynamic',
+	fit: prefix + '_fit',
 	horizontal: prefix + '_horizontal',
 	vertical: prefix + '_vertical',
 	autoHeight: prefix + '_auto_height',
 	button: prefix + '_button',
-	prev: prefix + '_prev',
-	next: prefix + '_next',
+	prevButton: prefix + '_prev',
+	nextButton: prefix + '_next',
 	dots: prefix + '_dots',
 	dot: prefix + '_dot',
-	play: prefix + '_play',
+	playButton: prefix + '_play',
 	clone: 'clone',
-	active: 'active',
+	selected: 'selected',
 	inView: '',
 	dragging: 'dragging',
 	playing: 'playing',
 	first: 'first',
-	before: 'prev',
+	prev: 'prev',
 	current: 'current',
-	after: 'next',
+	next: 'next',
 	last: 'last'
 });
 
 // The state classes get the "state" prefix
-const states = ['active', 'inView', 'dragging', 'playing', 'first', 'before', 'current', 'after', 'last'];
+const states = ['selected', 'inView', 'dragging', 'playing', 'first', 'prev', 'current', 'next', 'last'];
 
 /**
  * Get the class names from the "classes" and "state" options.
  *
  * @param {string|object|null} classes A prefix, such as 'embla', or an object with the names to change. The default prefix is 'better'.
- * The object can have a "prefix" key for the names that it does not change: { prefix: 'embla', active: 'selected' }.
+ * The object can have a "prefix" key for the names that it does not change: { prefix: 'embla', selected: 'snapped' }.
  * @param {string} state The prefix of the state classes.
  * @returns {object}
  */
@@ -151,16 +145,4 @@ export function breakpoints(base, change) {
 		options: merge(base, ...list.filter(([query]) => query.matches).map(([, value]) => value)),
 		remove: () => list.forEach(([query]) => query.removeEventListener('change', change))
 	};
-}
-
-/**
- * Merge the value of the "autoplay" or the "autoScroll" option over the defaults of the feature.
- *
- * @param {object} base The defaults.
- * @param {string} key The setting that a number sets: 'delay' or 'speed'.
- * @param {boolean|number|object} value true, a number or an object.
- * @returns {object}
- */
-export function settings(base, key, value) {
-	return { ...base, ...(typeof value === 'number' ? { [key]: value } : value) };
 }

@@ -1,16 +1,17 @@
 /*
  * Navigation: the arrows, the dots, and the link to another carousel (the sync option).
  *
- * Each feature takes the context of a carousel (see carousel.js) and returns an object with remove().
+ * Each feature takes the context of a carousel (see carousel.js). It returns nothing if its option is off, or an object with remove().
  */
 
+import { find } from './carousel.js';
 import { create, optionElement, setAttribute, setClass } from './markup.js';
 
 /**
  * Make the arrows and the dots of a carousel. They update on the carousel events.
  *
  * @param {object} context What the features share. See carousel.js.
- * @returns {{remove: () => void}} remove() removes the arrows and the dots.
+ * @returns {{remove: () => void}|undefined} remove() removes the arrows and the dots.
  */
 export function nav(context) {
 	const { api, root, cls, options } = context,
@@ -23,9 +24,13 @@ export function nav(context) {
 
 	let marks = new Map();
 
+	if (!arrows && !box) {
+		return;
+	}
+
 	if (arrows) {
 		[['prev', 'goToPrev'], ['next', 'goToNext']].forEach(([key, method]) => {
-			const button = create('button', cls.button + ' ' + cls[key]);
+			const button = create('button', cls.button + ' ' + cls[key + 'Button']);
 			button.type = 'button';
 			button.setAttribute('aria-label', labels[key]);
 			button.setAttribute('aria-controls', context.container.id);
@@ -36,7 +41,7 @@ export function nav(context) {
 
 	function update() {
 		const fit = api.isFit(),
-			count = fit ? 0 : api.snapList().length,
+			count = fit ? 0 : api.snapProgress().length,
 			selected = api.selectedSnap();
 
 		buttons.forEach((button, index) => {
@@ -75,7 +80,7 @@ export function nav(context) {
 			dot.setAttribute('aria-controls', context.container.id);
 			// The window of the dots hides the dots out of the zoom: keep them out of the tab order
 			dot.tabIndex = -1;
-			dot.addEventListener('click', () => api.goTo(index));
+			dot.addEventListener('click', () => api.goToSnap(index));
 			dots.push(dot);
 			list.append(dot);
 		}
@@ -87,7 +92,7 @@ export function nav(context) {
 		// The zoom effect: the 5 dots around the selected dot get state classes
 		const next = new Map();
 
-		['first', 'before', 'current', 'after', 'last'].forEach((key, offset) => {
+		['first', 'prev', 'current', 'next', 'last'].forEach((key, offset) => {
 			if (dots[selected + offset - 2]) {
 				next.set(selected + offset - 2, cls[key]);
 			}
@@ -116,13 +121,10 @@ export function nav(context) {
 		}
 	}
 
-	const names = ['init', 'reinit', 'resize', 'select', 'slideschanged'];
-
-	names.forEach((name) => api.on(name, update));
+	['init', 'reinit', 'resize', 'select', 'slideschanged'].forEach((name) => context.on(name, update));
 
 	return {
 		remove() {
-			names.forEach((name) => api.off(name, update));
 			buttons.forEach((button) => button.remove());
 			list?.remove();
 		}
@@ -134,13 +136,17 @@ export function nav(context) {
  * that the other carousel selects. Only a click on a slide of this carousel selects that slide in the other carousel: a drag does not.
  *
  * @param {object} context What the features share. See carousel.js. The "sync" option is the other carousel, its container or a selector.
- * @returns {{remove: () => void}} remove() disconnects the carousels.
+ * @returns {{remove: () => void}|undefined} remove() disconnects the carousels.
  */
 export function sync(context) {
 	const { api, container } = context,
 		target = context.options.sync;
 
 	let other = null;
+
+	if (!target) {
+		return;
+	}
 
 	// Show the slide that the other carousel selects
 	function show(instant) {
@@ -162,21 +168,19 @@ export function sync(context) {
 		if (other) {
 			return;
 		}
-		other = target?.goTo ? target : context.find(typeof target === 'string' ? optionElement(target, context.root) : target);
+		other = target.goToSnap ? target : find(typeof target === 'string' ? optionElement(target, context.root) : target);
 		if (other) {
 			other.on('select', show);
 			show(true);
 		}
 	}
 
-	api.on('init', connect);
-	api.on('reinit', connect);
+	context.on('init', connect);
+	context.on('reinit', connect);
 	container.addEventListener('click', click);
 
 	return {
 		remove() {
-			api.off('init', connect);
-			api.off('reinit', connect);
 			other?.off('select', show);
 			container.removeEventListener('click', click);
 		}

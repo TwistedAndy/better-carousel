@@ -47,16 +47,16 @@ await helpers();
 for (const [id, key, skip] of [['start', 'start', 'last'], ['center', 'center', 'both'], ['end', 'end', 'first']]) {
 	const errors = await page.evaluate((id, key, skip) => {
 		const carousel = window.byId(id),
-			count = carousel.snapList().length,
+			count = carousel.snapProgress().length,
 			list = [];
 		for (let index = 0; index < count; index++) {
 			if ((skip !== 'first' && skip && index === count - 1) || (skip !== 'last' && skip && index === 0)) {
 				continue;
 			}
-			carousel.goTo(index, true);
+			carousel.goToSnap(index, true);
 			list.push(Math.abs(window.box(carousel)[key]));
 		}
-		carousel.goTo(0, true);
+		carousel.goToSnap(0, true);
 		return list;
 	}, id, key, skip);
 	check(key + ' alignment at each snap', errors.length > 1 && errors.every((value) => value <= 0.5), errors.map((value) => value.toFixed(2)).join(', '));
@@ -66,8 +66,8 @@ for (const [id, key, skip] of [['start', 'start', 'last'], ['center', 'center', 
 {
 	const value = await page.evaluate(() => {
 		const carousel = window.byId('center'),
-			list = carousel.snapList().map((snap, index) => (carousel.goTo(index, true), carousel.selectedSlide()));
-		carousel.goTo(0, true);
+			list = carousel.snapProgress().map((snap, index) => (carousel.goToSnap(index, true), carousel.selectedSlide()));
+		carousel.goToSnap(0, true);
 		return list.join();
 	});
 	check('center trimSnaps: active slides 1 to 6', value === '1,2,3,4,5,6', value);
@@ -79,7 +79,7 @@ for (const [id, key, skip] of [['start', 'start', 'last'], ['center', 'center', 
 		const carousel = window.byId('center');
 		carousel.goToSlide(0, true);
 		const result = [carousel.selectedSnap(), carousel.selectedSlide()].join();
-		carousel.goTo(0, true);
+		carousel.goToSnap(0, true);
 		return result;
 	});
 	check('goToSlide(0) in a merged snap', value === '0,0', value);
@@ -89,9 +89,9 @@ for (const [id, key, skip] of [['start', 'start', 'last'], ['center', 'center', 
 {
 	const value = await page.evaluate(() => {
 		const carousel = window.byId('vertical');
-		carousel.goTo(2, true);
+		carousel.goToSnap(2, true);
 		const result = window.box(carousel);
-		carousel.goTo(0, true);
+		carousel.goToSnap(0, true);
 		return result;
 	});
 	check('vertical: axis y and start alignment', !value.x && Math.abs(value.start) <= 0.5, JSON.stringify(value));
@@ -108,13 +108,13 @@ for (const [id, key, skip] of [['start', 'start', 'last'], ['center', 'center', 
 		return {
 			fit: carousel.isFit(),
 			moved: carousel.containerNode().style.translate + nodes.map((node) => node.style.translate).join(''),
-			draggable: carousel.rootNode().classList.contains('better_dynamic'),
+			fitClass: carousel.rootNode().classList.contains('better_fit'),
 			left: first.left - view.left,
 			right: view.right - last.right
 		};
 	}));
 	const [start, center, end] = value;
-	check('fit mode: no translate and no dynamic class', value.every((item) => item.fit && !item.moved && !item.draggable));
+	check('fit mode: no translate and the fit class', value.every((item) => item.fit && !item.moved && item.fitClass));
 	check('fit mode: start, center and end follow the CSS', Math.abs(start.left) <= 0.5 && Math.abs(center.left - center.right) <= 0.5 && Math.abs(end.right) <= 0.5, JSON.stringify(value.map((item) => [item.left, item.right])));
 }
 
@@ -125,16 +125,16 @@ for (const [id, key, skip] of [['start', 'start', 'last'], ['center', 'center', 
 	const value = await page.evaluate(() => {
 		const carousel = window.byId('autocenter'),
 			list = [];
-		carousel.snapList().forEach((snap, index) => {
-			carousel.goTo(index, true);
+		carousel.snapProgress().forEach((snap, index) => {
+			carousel.goToSnap(index, true);
 			const slide = carousel.slideNodes()[carousel.selectedSlide()];
-			if (index > 0 && index < carousel.snapList().length - 1) {
+			if (index > 0 && index < carousel.snapProgress().length - 1) {
 				list.push(Math.abs(window.box(carousel).center));
 			}
 			return slide;
 		});
 		const widths = carousel.slideNodes().map((node) => Math.round(node.getBoundingClientRect().width));
-		carousel.goTo(0, true);
+		carousel.goToSnap(0, true);
 		return { list, widths };
 	});
 	check('dynamic widths: images change the widths and the center stays exact', value.widths[3] > 400 && value.list.every((item) => item <= 0.5), JSON.stringify(value));
@@ -144,7 +144,7 @@ for (const [id, key, skip] of [['start', 'start', 'last'], ['center', 'center', 
 {
 	const before = await page.evaluate(() => {
 		const carousel = window.byId('switch');
-		carousel.goTo(2, true);
+		carousel.goToSnap(2, true);
 		return window.box(carousel);
 	});
 	await page.setViewport({ width: 600, height: 900 });
@@ -156,7 +156,7 @@ for (const [id, key, skip] of [['start', 'start', 'last'], ['center', 'center', 
 
 	const center = await page.evaluate(() => {
 		const carousel = window.byId('center');
-		carousel.goTo(2, true);
+		carousel.goToSnap(2, true);
 		return window.box(carousel).center;
 	});
 	check('resize to 600 px: center alignment', Math.abs(center) <= 0.5, center.toFixed(2));
@@ -164,28 +164,28 @@ for (const [id, key, skip] of [['start', 'start', 'last'], ['center', 'center', 
 	await frames();
 }
 
-// reInit() keeps the selected slide, and an added slide changes the snaps
+// reinit() keeps the selected slide, and an added slide changes the snaps
 {
 	const value = await page.evaluate(async () => {
 		const carousel = window.byId('start');
-		carousel.goTo(3, true);
-		carousel.reInit({ align: 'center' });
+		carousel.goToSnap(3, true);
+		carousel.reinit({ align: 'center' });
 		await new Promise((resolve) => carousel.on('reinit', resolve));
 		const slide = carousel.selectedSlide(),
 			center = window.box(carousel).center,
-			count = carousel.snapList().length,
+			count = carousel.snapProgress().length,
 			node = carousel.slideNodes()[0].cloneNode(true);
 		carousel.containerNode().append(node);
 		await new Promise((resolve) => carousel.on('slideschanged', resolve));
-		const added = carousel.snapList().length - count;
+		const added = carousel.snapProgress().length - count;
 		node.remove();
 		await new Promise((resolve) => carousel.on('slideschanged', resolve));
-		carousel.reInit({ align: 'auto' });
+		carousel.reinit({ align: 'auto' });
 		await new Promise((resolve) => carousel.on('reinit', resolve));
-		carousel.goTo(0, true);
+		carousel.goToSnap(0, true);
 		return { slide, center, added };
 	});
-	check('reInit() keeps the slide and applies the options', value.slide === 3 && Math.abs(value.center) <= 0.5, JSON.stringify(value));
+	check('reinit() keeps the slide and applies the options', value.slide === 3 && Math.abs(value.center) <= 0.5, JSON.stringify(value));
 	check('an added slide adds a snap', value.added === 1);
 }
 
@@ -198,7 +198,7 @@ for (const [id, key, skip] of [['start', 'start', 'last'], ['center', 'center', 
 		const before = host.innerHTML,
 			carousel = window.BetterCarousel(host.firstElementChild);
 		await new Promise((resolve) => carousel.on('init', resolve));
-		carousel.goTo(1, true);
+		carousel.goToSnap(1, true);
 		const during = host.innerHTML;
 		carousel.destroy();
 		const after = host.innerHTML;
@@ -278,7 +278,7 @@ const idle = async (id) => {
 
 const scrollTo = (id) => page.evaluate((id) => {
 	document.getElementById(id).scrollIntoView({ block: 'center', behavior: 'instant' });
-	window.byId(id).goTo(0, true);
+	window.byId(id).goToSnap(0, true);
 }, id);
 
 // A mouse drag: a slow drag ends with a stop, a flick ends at full speed. The index selects a carousel in a section with more than one.
@@ -286,7 +286,7 @@ const mouseDrag = async (id, distance, flick, index = 0) => {
 	await page.evaluate((id, index) => {
 		const carousel = window.byId(id, index);
 		carousel.rootNode().scrollIntoView({ block: 'center', behavior: 'instant' });
-		carousel.goTo(0, true);
+		carousel.goToSnap(0, true);
 	}, id, index);
 	const start = await state(id, index),
 		done = settle(id, index);
@@ -318,9 +318,9 @@ const mouseDrag = async (id, distance, flick, index = 0) => {
 		one = await mouseDrag('start', -400, true);
 	check('dragFree: a flick stops between the snaps', !normal.aligned && normal.first < -400, JSON.stringify(normal));
 
-	// The same flick glides less with friction: 3. The speed of a flick changes from run to run, so compare only the order.
+	// The same flick glides less with dragFriction: 3. The speed of a flick changes from run to run, so compare only the order.
 	const slower = await mouseDrag('free', -400, true, 1);
-	check('friction: 3 makes the glide after the same flick shorter', slower.first > normal.first && slower.first < -400, JSON.stringify({ normal: normal.first, slower: slower.first }));
+	check('dragFriction: 3 makes the glide after the same flick shorter', slower.first > normal.first && slower.first < -400, JSON.stringify({ normal: normal.first, slower: slower.first }));
 	check('dragFree snap: a flick stops at a snap after more than one snap', snap.aligned && snap.snap > 1, JSON.stringify(snap));
 	check('skipSnaps false: a flick goes one snap only', skip.aligned && skip.snap === 1, JSON.stringify(skip));
 	check('default skipSnaps true: a flick passes more than one snap', one.aligned && one.snap > 1, JSON.stringify(one));
@@ -395,7 +395,7 @@ const mouseDrag = async (id, distance, flick, index = 0) => {
 		// No arrows and dots: their CSS transitions are not part of this check
 		await page.evaluate(async () => {
 			const carousel = window.byId('start');
-			carousel.reInit({ arrows: false, dots: false });
+			carousel.reinit({ arrows: false, dots: false });
 			await new Promise((resolve) => carousel.on('reinit', resolve));
 		});
 		await page.tracing.start({ categories: ['devtools.timeline', 'disabled-by-default-devtools.timeline', 'blink.animations'] });
@@ -403,7 +403,7 @@ const mouseDrag = async (id, distance, flick, index = 0) => {
 			const carousel = window.byId('start');
 			for (let index = 0; index < 10; index++) {
 				if (index === 5) {
-					carousel.goTo(0, true);
+					carousel.goToSnap(0, true);
 				}
 				carousel.goToNext();
 				await new Promise((resolve) => setTimeout(resolve, 450));
@@ -459,7 +459,7 @@ await page.evaluate(() => {
 {
 	const counts = await page.evaluate(() => ['loop', 'loopcenter', 'clones', 'gallery'].map((id) => {
 		const carousel = window.byId(id);
-		return [id, carousel.containerNode().children.length, carousel.slideNodes().length, carousel.snapList().length];
+		return [id, carousel.containerNode().children.length, carousel.slideNodes().length, carousel.snapProgress().length];
 	}));
 	const map = Object.fromEntries(counts.map(([id, ...rest]) => [id, rest]));
 	check('clone counts: none for 10 and 8 slides and the grid, one copy for 3 wide slides', map.loop[0] === 10 && map.loopcenter[0] === 8 && map.gallery[0] === 20 && map.clones[0] === 6 && map.clones[2] === 3, JSON.stringify(map));
@@ -480,7 +480,7 @@ for (const [id, limit] of [['loop', 21], ['loopcenter', 21], ['clones', 21], ['g
 		}
 		await new Promise((resolve) => setTimeout(resolve, 900));
 		const result = stop();
-		return { ...result, slides: [...slides].sort((a, b) => a - b), snaps: [...snaps].sort((a, b) => a - b), count: carousel.slideNodes().length, dots: carousel.snapList().length, snap: carousel.selectedSnap() };
+		return { ...result, slides: [...slides].sort((a, b) => a - b), snaps: [...snaps].sort((a, b) => a - b), count: carousel.slideNodes().length, dots: carousel.snapProgress().length, snap: carousel.selectedSnap() };
 	}, id);
 	check(id + ': 30 next and prev calls show no gap on any frame', value.gap <= limit && value.frames > 60, 'largest gap ' + value.gap.toFixed(1) + ' px in ' + value.frames + ' frames');
 	check(id + ': snaps and slides are original indexes', value.slides.every((item) => item < value.count) && value.snaps.every((item) => item < value.dots), JSON.stringify(value));
@@ -530,7 +530,7 @@ for (const [id, limit] of [['loop', 21], ['clones', 21]]) {
 		const carousel = window.byId('embla'),
 			root = carousel.rootNode(),
 			names = (node) => node ? node.className : null;
-		carousel.goTo(0, true);
+		carousel.goToSnap(0, true);
 		return {
 			root: names(root),
 			viewport: names(carousel.viewportNode()),
@@ -541,7 +541,7 @@ for (const [id, limit] of [['loop', 21], ['clones', 21]]) {
 			active: names(carousel.slideNodes()[0])
 		};
 	});
-	check('embla preset: the class names of the old wrapper', value.root === 'embla embla_horizontal embla_dynamic' && value.viewport === 'embla_viewport' && value.container && value.buttons.join() === 'embla_button embla_prev,embla_button embla_next' && value.dots === 'embla_dots' && value.dot.startsWith('embla_dot') && value.active === 'item is_active', JSON.stringify(value));
+	check('embla preset: the class names of the old wrapper', value.root === 'embla embla_horizontal' && value.viewport === 'embla_viewport' && value.container && value.buttons.join() === 'embla_button embla_prev,embla_button embla_next' && value.dots === 'embla_dots' && value.dot.startsWith('embla_dot') && value.active === 'item is_selected', JSON.stringify(value));
 }
 
 {
@@ -549,7 +549,7 @@ for (const [id, limit] of [['loop', 21], ['clones', 21]]) {
 	const value = await page.evaluate(async () => {
 		const carousel = window.byId('embla'),
 			dots = [...carousel.rootNode().querySelectorAll('.embla_dot')];
-		carousel.goTo(6, true);
+		carousel.goToSnap(6, true);
 		await new Promise((resolve) => setTimeout(resolve, 300));
 		let changes = 0;
 		const observer = new MutationObserver((list) => {
@@ -585,12 +585,12 @@ for (const [id, limit] of [['loop', 21], ['clones', 21]]) {
 {
 	const value = await page.evaluate(() => {
 		const carousel = window.byId('embla');
-		carousel.goTo(1, true);
+		carousel.goToSnap(1, true);
 		const result = [carousel.slideNodes()[1].className, carousel.rootNode().querySelector('.is_current')?.className];
-		carousel.goTo(0, true);
+		carousel.goToSnap(0, true);
 		return result;
 	});
-	check('state prefix: is_active and is_current', value[0] === 'item is_active' && value[1] === 'embla_dot is_current', JSON.stringify(value));
+	check('state prefix: is_selected and is_current', value[0] === 'item is_selected' && value[1] === 'embla_dot is_current', JSON.stringify(value));
 }
 
 {
@@ -610,7 +610,7 @@ for (const [id, limit] of [['loop', 21], ['clones', 21]]) {
 	const value = await page.evaluate(() => {
 		const main = window.byId('product'),
 			thumbs = window.byId('product', 1);
-		return { main: main.selectedSlide(), thumbs: thumbs.selectedSlide(), active: thumbs.slideNodes().findIndex((node) => node.classList.contains('active')), mainBox: Math.abs(window.box(main).start) };
+		return { main: main.selectedSlide(), thumbs: thumbs.selectedSlide(), active: thumbs.slideNodes().findIndex((node) => node.classList.contains('selected')), mainBox: Math.abs(window.box(main).start) };
 	});
 	check('sync: a click on thumbnail 4 selects photo 4 and marks the thumbnail', value.main === 3 && value.thumbs === 3 && value.active === 3 && value.mainBox <= 0.5, JSON.stringify(value));
 
@@ -618,7 +618,7 @@ for (const [id, limit] of [['loop', 21], ['clones', 21]]) {
 	await idle('product');
 	const next = await page.evaluate(() => {
 		const thumbs = window.byId('product', 1);
-		return { thumbs: thumbs.selectedSlide(), active: thumbs.slideNodes().findIndex((node) => node.classList.contains('active')), center: Math.abs(window.box(thumbs).center) };
+		return { thumbs: thumbs.selectedSlide(), active: thumbs.slideNodes().findIndex((node) => node.classList.contains('selected')), center: Math.abs(window.box(thumbs).center) };
 	});
 	check('sync: the next photo moves the thumbnails to its centered thumbnail', next.thumbs === 4 && next.active === 4 && next.center <= 0.5, JSON.stringify(next));
 
@@ -639,7 +639,7 @@ for (const [id, limit] of [['loop', 21], ['clones', 21]]) {
 	const dragged = await page.evaluate(() => {
 		const main = window.byId('product'),
 			thumbs = window.byId('product', 1);
-		return { main: main.selectedSlide(), thumbs: thumbs.selectedSlide(), snap: thumbs.selectedSnap(), active: thumbs.slideNodes().findIndex((node) => node.classList.contains('active')) };
+		return { main: main.selectedSlide(), thumbs: thumbs.selectedSlide(), snap: thumbs.selectedSnap(), active: thumbs.slideNodes().findIndex((node) => node.classList.contains('selected')) };
 	});
 	check('sync: a drag on the thumbnails does not change the photo or the marked thumbnail', dragged.main === 4 && dragged.thumbs === 4 && dragged.active === 4 && dragged.snap === 0, JSON.stringify(dragged));
 }
@@ -652,7 +652,7 @@ for (const [id, limit] of [['loop', 21], ['clones', 21]]) {
 			link = window.byId('drag').slideNodes()[0],
 			id = carousel.containerNode().id,
 			buttons = [...root.querySelectorAll(':scope > button')];
-		carousel.goTo(0, true);
+		carousel.goToSnap(0, true);
 		return {
 			root: [root.getAttribute('role'), root.getAttribute('aria-roledescription'), root.getAttribute('aria-label')].join(),
 			slide: [slide.getAttribute('role'), slide.getAttribute('aria-roledescription'), slide.getAttribute('aria-label')].join(),
@@ -748,15 +748,15 @@ for (const [id, limit] of [['loop', 21], ['clones', 21]]) {
 	await scrollTo('start');
 	await page.evaluate(async () => {
 		const carousel = window.byId('start');
-		carousel.reInit({ skipSnaps: 1, arrows: true, dots: true });
+		carousel.reinit({ skipSnaps: 1, arrows: true, dots: true });
 		await new Promise((resolve) => carousel.on('reinit', resolve));
-		carousel.goTo(0, true);
+		carousel.goToSnap(0, true);
 	});
 	const limited = await mouseDrag('start', -500, true);
 	check('skipSnaps: 1: a long flick goes one snap only', limited.snap === 1 && limited.aligned, JSON.stringify(limited));
 	await page.evaluate(async () => {
 		const carousel = window.byId('start');
-		carousel.reInit({ skipSnaps: true });
+		carousel.reinit({ skipSnaps: true });
 		await new Promise((resolve) => carousel.on('reinit', resolve));
 	});
 }
@@ -774,12 +774,12 @@ for (const [id, limit] of [['loop', 21], ['clones', 21]]) {
 		await wait(700);
 		return page.evaluate((id) => {
 			const carousel = window.byId(id);
-			return { snap: carousel.selectedSnap(), last: carousel.snapList().length - 1, scroll: Math.round(scrollY), aligned: Math.abs(carousel.scrollProgress() - carousel.snapList()[carousel.selectedSnap()]) < 0.002 };
+			return { snap: carousel.selectedSnap(), last: carousel.snapProgress().length - 1, scroll: Math.round(scrollY), aligned: Math.abs(carousel.progress() - carousel.snapProgress()[carousel.selectedSnap()]) < 0.002 };
 		}, id);
 	};
 	const reset = (id, snap = 0) => page.evaluate((id, snap) => {
 		document.getElementById(id).scrollIntoView({ block: 'center', behavior: 'instant' });
-		window.byId(id).goTo(snap, true);
+		window.byId(id).goToSnap(snap, true);
 		return Math.round(scrollY);
 	}, id, snap);
 
@@ -808,7 +808,7 @@ for (const [id, limit] of [['loop', 21], ['clones', 21]]) {
 
 	await page.evaluate(async () => {
 		const carousel = window.byId('start');
-		carousel.reInit({ wheel: 'both' });
+		carousel.reinit({ wheel: 'both' });
 		await new Promise((resolve) => carousel.on('reinit', resolve));
 	});
 	top = await reset('start');
@@ -818,7 +818,7 @@ for (const [id, limit] of [['loop', 21], ['clones', 21]]) {
 
 // Autoplay, auto scroll, auto height
 
-// Scroll to a carousel with no goTo(): a goTo() is an interaction, and it stops the autoplay and the auto scroll
+// Scroll to a carousel with no goToSnap(): a goToSnap() is an interaction, and it stops the autoplay and the auto scroll
 const show = (id) => page.evaluate((id) => document.getElementById(id).scrollIntoView({ block: 'center', behavior: 'instant' }), id);
 
 // Autoplay
@@ -837,7 +837,7 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 	await page.evaluate(() => {
 		const carousel = window.byId('autoplay');
 		window.autoplayOptions = carousel.options().autoplay;
-		carousel.reInit({ autoplay: { ...window.autoplayOptions, delay: 300 } });
+		carousel.reinit({ autoplay: { ...window.autoplayOptions, delay: 300 } });
 		return new Promise((resolve) => carousel.on('reinit', resolve));
 	});
 	await wait(700);
@@ -846,7 +846,7 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 
 	// Slide 3 has data-delay 6000
 	await page.evaluate(() => {
-		window.byId('autoplay').goTo(2, true);
+		window.byId('autoplay').goToSnap(2, true);
 		window.byId('autoplay').autoplay.play();
 	});
 	await wait(700);
@@ -855,7 +855,7 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 
 	// Out of view: the autoplay pauses
 	await page.evaluate(() => {
-		window.byId('autoplay').goTo(0, true);
+		window.byId('autoplay').goToSnap(0, true);
 		window.byId('autoplay').autoplay.play();
 		// The page has scroll-behavior: smooth, and a smooth scroll can still run when the test scrolls back
 		scrollTo({ top: document.body.scrollHeight, behavior: 'instant' });
@@ -869,7 +869,7 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 
 	// The keyboard focus in the root pauses it
 	await page.evaluate(() => {
-		window.byId('autoplay').goTo(0, true);
+		window.byId('autoplay').goToSnap(0, true);
 		window.byId('autoplay').autoplay.play();
 		window.byId('autoplay').rootNode().querySelector('.better_next').focus({ focusVisible: true });
 	});
@@ -894,7 +894,7 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 	// The demo options again, for the timer bar check in the examples
 	await page.evaluate(() => {
 		const carousel = window.byId('autoplay');
-		carousel.reInit({ autoplay: window.autoplayOptions });
+		carousel.reinit({ autoplay: window.autoplayOptions });
 		return new Promise((resolve) => carousel.on('reinit', resolve));
 	});
 
@@ -974,18 +974,18 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 	const after = await page.evaluate(() => window.byId('logos').autoScroll.isPlaying());
 	check('auto scroll: a drag stops it (stopOnInteraction)', !after, String(after));
 
-	// With stopOnInteraction: false, an instant goTo() pauses it, and it plays again after startDelay
+	// With stopOnInteraction: false, an instant goToSnap() pauses it, and it plays again after startDelay
 	const again = await page.evaluate(async () => {
 		const carousel = window.byId('logos');
-		carousel.reInit({ autoScroll: { speed: 60, stopOnInteraction: false, startDelay: 300 } });
+		carousel.reinit({ autoScroll: { speed: 60, stopOnInteraction: false, startDelay: 300 } });
 		await new Promise((resolve) => carousel.on('reinit', resolve));
 		await new Promise((resolve) => setTimeout(resolve, 500));
-		carousel.goTo(2, true);
+		carousel.goToSnap(2, true);
 		const stopped = carousel.containerNode().getAnimations().length;
 		await new Promise((resolve) => setTimeout(resolve, 600));
 		return { stopped, playing: carousel.autoScroll.isPlaying(), animations: carousel.containerNode().getAnimations().length };
 	});
-	check('auto scroll: an instant goTo() with stopOnInteraction: false starts it again after startDelay', again.stopped === 0 && again.playing && again.animations === 1, JSON.stringify(again));
+	check('auto scroll: an instant goToSnap() with stopOnInteraction: false starts it again after startDelay', again.stopped === 0 && again.playing && again.animations === 1, JSON.stringify(again));
 }
 
 // Auto height
@@ -1000,12 +1000,12 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 		let resized = 0;
 		const count = () => resized++;
 		carousel.on('resize', count);
-		carousel.goTo(1);
+		carousel.goToSnap(1);
 		await new Promise((resolve) => setTimeout(resolve, 100));
 		const middle = viewport.getBoundingClientRect().height;
 		await new Promise((resolve) => setTimeout(resolve, 600));
 		const last = Math.round(parseFloat(viewport.style.height));
-		carousel.goTo(0);
+		carousel.goToSnap(0);
 		await new Promise((resolve) => setTimeout(resolve, 700));
 		carousel.off('resize', count);
 		return { first, wide: slide(0), last, square: slide(1), middle, resized, transition: getComputedStyle(viewport).transitionProperty };
@@ -1021,15 +1021,15 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 		const carousel = window.byId(id),
 			get = new Function('carousel', 'return (' + read + ')(carousel)'),
 			rest = get(carousel);
-		carousel.goTo(1);
+		carousel.goToSnap(1);
 		await new Promise((resolve) => setTimeout(resolve, 100));
 		const middle = get(carousel);
 		await new Promise((resolve) => carousel.on('settle', resolve));
 		const end = get(carousel);
-		carousel.goTo(carousel.snapList().length - 1, true);
+		carousel.goToSnap(carousel.snapProgress().length - 1, true);
 		const last = get(carousel);
-		carousel.goTo(0, true);
-		return { count: carousel.slideNodes().length, snap: carousel.snapList()[1], rest, middle, end, last };
+		carousel.goToSnap(0, true);
+		return { count: carousel.slideNodes().length, snap: carousel.snapProgress()[1], rest, middle, end, last };
 	}, id, read.toString());
 
 	await scrollTo('progress-and-offset');
@@ -1052,9 +1052,9 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 	const counter = await page.evaluate(async () => {
 		const carousel = window.byId('callbacks'),
 			text = document.querySelector('#callbacks .demo_counter');
-		carousel.goTo(1, true);
+		carousel.goToSnap(1, true);
 		const after = text.textContent;
-		carousel.goTo(0, true);
+		carousel.goToSnap(0, true);
 		return [after, text.textContent, carousel.slideNodes().map((slide) => +slide.style.opacity)];
 	});
 	check('examples: the timer bar animates, the scale example fades the side photos, and the callbacks example writes the counter', timer === 1 && scaled[0] > 0.99 && scaled[1] < 0.5 && counter[0] === 'Snap 2.0, 14%' && counter[1] === 'Snap 1.0, 0%' && counter[2][0] === 1 && counter[2].some((value) => value > 0.3 && value < 1), JSON.stringify({ timer, scaled, counter }));
@@ -1076,11 +1076,11 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 			offset: (state) => {
 				result.indexes.add(state.index);
 				result.visible.push(state.visible);
-				result.slide = result.slide || state.slide.parentNode === carousel.containerNode();
+				result.slide = result.slide || state.node.parentNode === carousel.containerNode();
 			}
 		});
 		await new Promise((resolve) => carousel.on('init', resolve));
-		carousel.goTo(2);
+		carousel.goToSnap(2);
 		await new Promise((resolve) => carousel.on('settle', resolve));
 		const settled = result.snaps.length;
 		await new Promise((resolve) => setTimeout(resolve, 200));
@@ -1145,12 +1145,12 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 		next.click();
 		await new Promise((resolve) => carousel.on('settle', resolve));
 		const second = right(1);
-		carousel.goTo(3, true);
+		carousel.goToSnap(3, true);
 		// The dots move with a transition of 0.2 s
 		await new Promise((resolve) => setTimeout(resolve, 300));
 		const dots = root.querySelector('.better_dots').getBoundingClientRect(),
 			current = root.querySelector('.better_dot[aria-current="true"]').getBoundingClientRect();
-		carousel.goTo(0, true);
+		carousel.goToSnap(0, true);
 		return { first, second, prev: prev.left > next.getBoundingClientRect().left, dot: Math.round((current.left + current.right) / 2 - (dots.left + dots.right) / 2) };
 	});
 	check('right to left: the first slide is at the right, the next button shows the next slide there, the previous button is at the right, and the current dot is in the center', Math.abs(rtl.first) <= 1 && Math.abs(rtl.second) <= 1 && rtl.prev && Math.abs(rtl.dot) <= 1, JSON.stringify(rtl));
@@ -1158,13 +1158,13 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 	await scrollTo('groups');
 	const groups = await page.evaluate(() => {
 		const carousel = window.byId('groups'),
-			count = carousel.snapList().length;
+			count = carousel.snapProgress().length;
 		carousel.goToNext(true);
 		const slide = carousel.selectedSlide();
-		carousel.goTo(0, true);
+		carousel.goToSnap(0, true);
 		return { count, slide };
 	});
-	check('slidesToScroll: auto: one snap for each page of 4 slides', groups.count === 3 && groups.slide === 4, JSON.stringify(groups));
+	check('slidesPerSnap: auto: one snap for each page of 4 slides', groups.count === 3 && groups.slide === 4, JSON.stringify(groups));
 
 	await scrollTo('contain');
 	const contain = await page.evaluate(() => {
@@ -1172,7 +1172,7 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 			keep = window.byId('contain', 1),
 			box = free.viewportNode().getBoundingClientRect(),
 			slide = free.slideNodes()[0].getBoundingClientRect();
-		return { center: Math.round((slide.left + slide.right) / 2 - (box.left + box.right) / 2), snaps: [free.snapList().length, keep.snapList().length], same: keep.snapList()[0] === keep.snapList()[1] };
+		return { center: Math.round((slide.left + slide.right) / 2 - (box.left + box.right) / 2), snaps: [free.snapProgress().length, keep.snapProgress().length], same: keep.snapProgress()[0] === keep.snapProgress()[1] };
 	});
 	check('containScroll: false centers the first slide, and keepSnaps keeps a snap for each slide', Math.abs(contain.center) <= 1 && contain.snaps.join() === '7,7' && contain.same, JSON.stringify(contain));
 
@@ -1182,7 +1182,7 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 			before = carousel.isFit();
 		document.getElementById('tab-photos').click();
 		await new Promise((resolve) => setTimeout(resolve, 300));
-		const after = { fit: carousel.isFit(), snaps: carousel.snapList().length, buttons: carousel.rootNode().querySelectorAll('.better_button').length };
+		const after = { fit: carousel.isFit(), snaps: carousel.snapProgress().length, buttons: carousel.rootNode().querySelectorAll('.better_button').length };
 		document.getElementById('tab-text').click();
 		return { before, ...after };
 	});
@@ -1214,28 +1214,37 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 			prev = box.querySelector('[data-prev]'),
 			next = box.querySelector('[data-next]'),
 			counter = box.querySelector('.demo_counter'),
-			count = carousel.snapList().length,
+			count = carousel.snapProgress().length,
 			first = [counter.textContent, prev.disabled, next.disabled];
 		next.click();
 		const second = [counter.textContent, prev.disabled];
-		carousel.goTo(count - 1, true);
+		carousel.goToSnap(count - 1, true);
 		const last = [counter.textContent, next.disabled];
-		carousel.goTo(0, true);
+		carousel.goToSnap(0, true);
 		return { count, first, second, last, arrows: carousel.rootNode().querySelectorAll('.better_button').length };
 	});
 	check('custom controls: the counter and the disabled buttons follow the carousel', custom.first.join() === '1 / ' + custom.count + ',true,false' && custom.second.join() === '2 / ' + custom.count + ',false' && custom.last.join() === custom.count + ' / ' + custom.count + ',true' && custom.arrows === 0, JSON.stringify(custom));
 
 	await scrollTo('images');
-	const images = await page.evaluate(() => {
+	const images = await page.evaluate(async () => {
 		const carousel = window.byId('images'),
-			list = () => carousel.slideNodes().map((slide) => slide.querySelector('img').hasAttribute('src')),
-			first = list();
-		carousel.goTo(carousel.snapList().length - 1, true);
-		const last = list();
-		carousel.goTo(0, true);
-		return { first, last };
+			photos = carousel.slideNodes().map((slide) => slide.querySelector('img')),
+			loaded = (index) => photos[index].complete && photos[index].naturalWidth > 0,
+			// Wait until the images of the slides in view load, for 3 s at most
+			inView = async () => {
+				for (let time = 0; time < 3000 && !carousel.slidesInView().every(loaded); time += 100) {
+					await new Promise((resolve) => setTimeout(resolve, 100));
+				}
+				return carousel.slidesInView().every(loaded);
+			},
+			first = await inView(),
+			far = loaded(photos.length - 1);
+		carousel.goToSnap(carousel.snapProgress().length - 1, true);
+		const last = await inView();
+		carousel.goToSnap(0, true);
+		return { lazy: photos.every((image) => image.loading === 'lazy'), first, far, last };
 	});
-	check('lazy images: the slides in view and the next slide load first, and the others load when they come near', images.first.filter(Boolean).length === 4 && !images.first[images.first.length - 1] && images.last.every(Boolean), JSON.stringify(images));
+	check('lazy images: loading="lazy" loads the images in view, and the last image only when it comes near', images.lazy && images.first && !images.far && images.last, JSON.stringify(images));
 
 	// Responsive options: a grid from 769 px, and a carousel under it
 	await page.evaluate(() => document.getElementById('breakpoints').scrollIntoView({ block: 'center', behavior: 'instant' }));
@@ -1254,7 +1263,7 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 {
 	await scrollTo('controls');
 	await page.evaluate(() => {
-		window.byId('controls').goTo(0, true);
+		window.byId('controls').goToSnap(0, true);
 		document.querySelector('#controls h2').setAttribute('tabindex', '-1');
 		document.querySelector('#controls h2').focus();
 	});
@@ -1284,7 +1293,7 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 	check('controls: an article slide keeps its own role', article === 'ARTICLE,,slide,2 of 6', article);
 
 	// A click on the field focuses it, and a drag that starts on it does not move the carousel
-	await page.evaluate(() => window.byId('controls').goTo(0, true));
+	await page.evaluate(() => window.byId('controls').goToSnap(0, true));
 	const field = await page.evaluate(() => {
 		const rect = document.querySelector('#controls input').getBoundingClientRect();
 		return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
@@ -1351,16 +1360,89 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 	const went = await page.evaluate(() => new Promise((resolve) => {
 		setTimeout(() => resolve({ timeout: true }), 3000);
 		const carousel = window.lazy.at(-1);
-		carousel.goTo(2, true);
+		carousel.goToSnap(2, true);
 		carousel.on('init', () => resolve({ started: !!carousel.rootNode(), snap: carousel.selectedSnap() }));
 	}));
-	check('lazy: goTo() starts a waiting carousel at that snap', went.started && went.snap === 2, JSON.stringify(went));
+	check('lazy: goToSnap() starts a waiting carousel at that snap', went.started && went.snap === 2, JSON.stringify(went));
 
 	await page.evaluate(() => document.querySelectorAll('.lazy_test')[9].scrollIntoView({ block: 'center', behavior: 'instant' }));
 	await frames();
 	await frames();
 	const scrolled = await page.evaluate(() => !!window.lazy.at(-3).rootNode());
 	check('lazy: a carousel starts when it comes near the screen', scrolled);
+}
+
+// Callbacks that stop a motion, auto height with dragFree, and the auto scroll location after pauses. Each carousel has 300 px slides
+// with a 10 px gap in a 600 px viewport.
+{
+	await page.setViewport({ width: 1200, height: 900 });
+	await page.goto(url, { waitUntil: 'load' });
+
+	const value = await page.evaluate(async () => {
+		const errors = [],
+			wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+			make = (heights, options) => {
+				const box = document.createElement('div'),
+					container = document.createElement('div');
+				box.style.width = '600px';
+				container.style.cssText = 'display: flex; gap: 10px; align-items: flex-start';
+				heights.forEach((height) => {
+					const slide = document.createElement('div');
+					slide.style.cssText = 'flex: 0 0 300px; height: ' + height + 'px';
+					container.append(slide);
+				});
+				box.append(container);
+				document.body.prepend(box);
+				return BetterCarousel(container, options);
+			};
+
+		// The auto height sets the viewport height in the ResizeObserver callback, and the browser sends a notice about it. It is not an error.
+		addEventListener('error', (event) => event.message.startsWith('ResizeObserver loop') || errors.push(event.message));
+
+		// A "progress" callback that destroys the carousel during a motion on the compositor
+		let calls = 0;
+		const destroyed = make(Array(6).fill(100), {
+			progress: () => {
+				if (++calls === 4) {
+					destroyed.destroy();
+				}
+			}
+		});
+		await wait(300);
+		destroyed.goToSnap(2);
+
+		// A "scroll" handler that jumps during a motion
+		const jumped = make(Array(6).fill(100), {});
+		await wait(300);
+		jumped.on('scroll', () => jumped.selectedSnap() && jumped.goToSnap(0, true));
+		jumped.goToSnap(2);
+		await wait(800);
+
+		// A wheel move of 100 px brings the 300 px slide into view, and the nearest snap stays 0
+		const tall = make([100, 100, 300, 100, 100, 100], { autoHeight: true, dragFree: true, wheel: 'both' });
+		await wait(300);
+		tall.viewportNode().dispatchEvent(new WheelEvent('wheel', { deltaX: 100, bubbles: true, cancelable: true }));
+		await wait(700);
+
+		// Six pauses of a loop auto scroll. The period is 6 * 310 px.
+		const looped = make(Array(6).fill(100), { loop: true, autoScroll: { speed: 2000, startDelay: 0, pauseOnHover: true } }),
+			root = looped.rootNode(),
+			translates = [];
+		await wait(500);
+		for (let index = 0; index < 6; index++) {
+			root.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'mouse' }));
+			await wait(100);
+			translates.push(parseFloat(looped.containerNode().style.translate));
+			root.dispatchEvent(new PointerEvent('pointerleave', { pointerType: 'mouse' }));
+			await wait(400);
+		}
+
+		return { errors, calls, jumped: jumped.selectedSnap(), height: tall.viewportNode().style.height, snap: tall.selectedSnap(), translates };
+	});
+
+	check('callbacks: a "progress" callback that destroys the carousel, and a "scroll" handler that jumps, cause no errors', !value.errors.length && value.calls === 4 && value.jumped === 0, JSON.stringify(value));
+	check('auto height: a dragFree wheel move that keeps the snap changes the height to the slides in view', value.height === '300px' && value.snap === 0, JSON.stringify(value));
+	check('auto scroll: the location stays in the first two periods after each pause', value.translates.every((translate) => translate > -2 * 1860 && translate <= 0), JSON.stringify(value.translates));
 }
 
 await browser.close();

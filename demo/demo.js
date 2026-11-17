@@ -17,8 +17,8 @@
 				progress: ({ progress, snap }) => {
 					counter.textContent = 'Snap ' + (snap + 1).toFixed(1) + ', ' + Math.round(progress * 100) + '%';
 				},
-				offset: ({ slide, visible }) => {
-					slide.style.opacity = 0.3 + 0.7 * visible;
+				offset: ({ node, visible }) => {
+					node.style.opacity = 0.3 + 0.7 * visible;
 				}
 			};
 		}
@@ -26,22 +26,6 @@
 
 	// The examples that use the API after the start. The key is the data-demo value.
 	const starts = {
-		// Load the images of the slides in view, and of one slide on each side
-		images(carousel) {
-			const load = () => {
-				const slides = carousel.slideNodes(),
-					list = carousel.slidesInView();
-				[list[0] - 1, ...list, list[list.length - 1] + 1].forEach((index) => {
-					const image = slides[index]?.querySelector('img[data-src]');
-					if (image) {
-						image.src = image.dataset.src;
-						image.removeAttribute('data-src');
-					}
-				});
-			};
-			carousel.on('init', load);
-			carousel.on('slidesinview', load);
-		},
 		// The buttons and the counter outside the carousel
 		custom(carousel, element) {
 			const box = element.closest('.demo'),
@@ -51,7 +35,7 @@
 				update = () => {
 					prev.disabled = !carousel.canGoToPrev();
 					next.disabled = !carousel.canGoToNext();
-					counter.textContent = (carousel.selectedSnap() + 1) + ' / ' + carousel.snapList().length;
+					counter.textContent = (carousel.selectedSnap() + 1) + ' / ' + carousel.snapProgress().length;
 				};
 			prev.addEventListener('click', () => carousel.goToPrev());
 			next.addEventListener('click', () => carousel.goToNext());
@@ -98,7 +82,7 @@
 		(carousel.rootNode().closest('.gallery_nav') || carousel.rootNode()).after(info);
 
 		const update = () => {
-			info.textContent = 'snap ' + carousel.selectedSnap() + ' of ' + carousel.snapList().length + ', slide ' + carousel.selectedSlide() + (carousel.isFit() ? ', fit' : '');
+			info.textContent = 'snap ' + carousel.selectedSnap() + ' of ' + carousel.snapProgress().length + ', slide ' + carousel.selectedSlide() + (carousel.isFit() ? ', fit' : '');
 		};
 
 		['init', 'reinit', 'select', 'resize'].forEach((name) => carousel.on(name, update));

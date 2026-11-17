@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { bezier, EASE, GLIDE, goToDuration, releaseDuration, releaseTarget, velocity } from '../src/scripts/motion.js';
+import { releaseDuration, releaseTarget, velocity } from '../src/scripts/input.js';
+import { bezier, EASE, GLIDE, snapDuration } from '../src/scripts/motion.js';
 
 // Find the easing value by a dense sample of the curve
 const sample = ([x1, y1, x2, y2], x) => {
@@ -29,22 +30,22 @@ test('easing', () => {
 });
 
 test('durations', () => {
-	assert.equal(goToDuration(400, 1), 400);
-	assert.equal(goToDuration(400, 2), 800);
-	assert.equal(goToDuration(400, 10), 800);
+	assert.equal(snapDuration(400, 1), 400);
+	assert.equal(snapDuration(400, 2), 800);
+	assert.equal(snapDuration(400, 10), 800);
 	assert.equal(releaseDuration(-300, -1, GLIDE, 400), 900);
 	assert.equal(releaseDuration(-300, 1, GLIDE, 400), 400);
 	assert.equal(releaseDuration(-300, -0.01, GLIDE, 400), 400);
 	assert.equal(releaseDuration(-10, -5, GLIDE, 400), 200);
 });
 
-test('release target: the friction divides the glide distance', () => {
+test('release target: the dragFriction divides the glide distance', () => {
 	const snaps = [0, -320, -640, -960, -1280, -1600].map((location) => ({ location })),
 		args = { snaps, min: -1600, max: 0, current: 0, from: 0, location: -100, velocity: -2, dragFree: true };
 
 	assert.deepEqual(releaseTarget(args), { location: -750, snap: 2 });
-	assert.deepEqual(releaseTarget({ ...args, friction: 2 }), { location: -425, snap: 1 });
-	assert.deepEqual(releaseTarget({ ...args, friction: 0.5 }), { location: -1400, snap: 4 });
+	assert.deepEqual(releaseTarget({ ...args, dragFriction: 2 }), { location: -425, snap: 1 });
+	assert.deepEqual(releaseTarget({ ...args, dragFriction: 0.5 }), { location: -1400, snap: 4 });
 });
 
 test('release target: a number in skipSnaps limits the snaps of one flick', () => {

@@ -950,7 +950,7 @@ pre {
   opacity: 0.45;
   transition: opacity 0.4s;
 }
-.hero_box .item.active {
+.hero_box .item.selected {
   opacity: 1;
 }
 .hero_box .item img {
@@ -1667,7 +1667,7 @@ pre {
   width: 160px;
   transition: width 0.3s;
 }
-.items_grow .item.active {
+.items_grow .item.selected {
   width: 320px;
 }
 .items_logos .item {
@@ -1795,10 +1795,10 @@ pre {
   opacity: 0.6;
   transition: opacity 0.2s;
 }
-.product_box .gallery_thumbs .item.active {
+.product_box .gallery_thumbs .item.selected {
   opacity: 1;
 }
-.product_box .gallery_thumbs .item.active:after {
+.product_box .gallery_thumbs .item.selected:after {
   content: "";
   position: absolute;
   inset: 0;

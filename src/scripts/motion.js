@@ -1,20 +1,14 @@
 /*
- * Motion: the easing, the durations, the target after a drag, and the motion engine.
+ * Motion: the easing, the duration of a goToSnap() motion, and the motion engine.
  */
 
-import { clamp, nearestSnap, snapIndex, targetLocation } from './geometry.js';
+import { steps } from './loop.js';
 
-// The easing of a goTo() motion
+// The easing of a goToSnap() motion
 export const EASE = [0.25, 1, 0.5, 1];
 
 // The easing of a glide after a free drag
 export const GLIDE = [0.2, 0.6, 0.35, 1];
-
-// The duration of the motion for one wheel event, in ms
-export const WHEEL = 180;
-
-// The time constant of the glide, in ms: the glide distance is velocity * MOMENTUM
-const MOMENTUM = 325;
 
 /**
  * Make a cubic Bézier easing function, the same as the CSS cubic-bezier().
@@ -64,132 +58,42 @@ export function bezier([x1, y1, x2, y2]) {
 }
 
 /**
- * Get the duration of a goTo() motion.
+ * Get the duration of a goToSnap() motion.
  *
  * @param {number} duration The duration for one snap, in ms.
  * @param {number} count The number of snaps to move.
  * @returns {number}
  */
-export function goToDuration(duration, count) {
+export function snapDuration(duration, count) {
 	return count > 1 ? Math.min(2 * duration, duration * (1 + Math.log2(count))) : duration;
-}
-
-/**
- * Get the duration of a motion after a release, so that the motion starts at the release velocity.
- *
- * @param {number} path The distance of the motion: target - location.
- * @param {number} velocity The release velocity, in px/ms.
- * @param {number[]} curve The easing of the motion.
- * @param {number} fallback The duration if the velocity is too low or in the other direction.
- * @returns {number}
- */
-export function releaseDuration(path, velocity, curve, fallback) {
-	if (Math.sign(path) !== Math.sign(velocity) || Math.abs(velocity) < 0.05) {
-		return fallback;
-	}
-	return clamp(Math.abs(path) * curve[1] / curve[0] / Math.abs(velocity), 200, 1200);
-}
-
-/**
- * Get the velocity from the last samples of a drag.
- *
- * @param {Array<number[]>} samples [location, time] pairs, the oldest first. A drag always has one sample or more.
- * @returns {number} px/ms
- */
-export function velocity(samples) {
-	const last = samples[samples.length - 1];
-
-	// The last sample is always in its own window, so find() always finds a sample
-	const first = samples.find((sample) => last[1] - sample[1] <= 100),
-		time = last[1] - first[1];
-
-	return time > 0 ? (last[0] - first[0]) / time : 0;
-}
-
-/**
- * Find the target of the motion after a drag.
- *
- * @param {object} args
- * @param {number} args.location The location at the release.
- * @param {number} args.from The location at the drag start.
- * @param {number} args.velocity The release velocity, in px/ms.
- * @param {number} args.current The selected snap at the drag start.
- * @param {Array<{location: number}>} args.snaps
- * @param {number} args.min
- * @param {number} args.max
- * @param {number} [args.period]
- * @param {boolean|number} [args.skipSnaps] true: go to the snap nearest to the projected location. A number: the same, but go at most this number of snaps.
- *     false: go at most one snap.
- * @param {boolean|string} [args.dragFree]
- * @param {number} [args.friction] The glide distance is divided by this number.
- * @returns {{location: number, snap: number}}
- */
-export function releaseTarget({ location, from, velocity, current, snaps, min, max, period, skipSnaps, dragFree, friction = 1 }) {
-	const count = snaps.length;
-
-	let projected = location + velocity * MOMENTUM / friction;
-
-	if (!period) {
-		projected = clamp(projected, min, max);
-	}
-
-	// A number in skipSnaps: keep the projected location between the snaps that are skipSnaps snaps before and after the start snap
-	if (typeof skipSnaps === 'number' && skipSnaps > 0 && skipSnaps < count - 1 + !period) {
-		const limit = (direction) => targetLocation(snaps[snapIndex(current + direction * skipSnaps, count, period)].location, from, period, direction);
-		projected = clamp(projected, limit(1), limit(-1));
-	}
-
-	if (dragFree === true) {
-		return { location: projected, snap: nearestSnap(snaps, projected, period) };
-	}
-
-	if (dragFree || skipSnaps) {
-		const snap = nearestSnap(snaps, projected, period);
-		return { location: targetLocation(snaps[snap].location, projected, period), snap };
-	}
-
-	const moved = location - from;
-
-	let direction = 0;
-
-	if (Math.abs(velocity) > 0.3) {
-		direction = velocity < 0 ? 1 : -1;
-	} else if (Math.abs(moved) > 20) {
-		direction = moved < 0 ? 1 : -1;
-	}
-
-	const snap = snapIndex(current + direction, count, period),
-		target = snaps[snap].location;
-
-	return {
-		location: period ? targetLocation(target, direction ? from : location, period, snap === current ? 0 : direction) : target,
-		snap
-	};
 }
 
 /**
  * Make the motion engine of a carousel. A motion runs as a Web Animations API animation of the container translate, on the compositor.
  * With raf set, it runs as a requestAnimationFrame loop instead, which calls frame() on each frame.
+ * A loop motion moves the container and the slides of a loop carousel at a constant speed, on the compositor, until it stops.
  *
  * @param {HTMLElement} element The container.
  * @param {(location: number) => string} css Get the CSS translate value of a location.
  * @param {(location: number) => void} frame Write a location.
- * @param {() => void} done Called when a motion ends.
- * @returns {{run: Function, retarget: Function, stop: Function, current: Function}}
+ * @param {() => void} done Called when a motion ends. A loop motion does not end.
+ * @param {((location: number) => void)|null} [tick] Called on each frame of a motion on the compositor, because such a motion runs no script.
+ * @returns {{run: Function, loop: Function, retarget: Function, stop: Function, current: Function, shifts: Function}}
  */
-export function animator(element, css, frame, done) {
+export function animator(element, css, frame, done, tick) {
 	let state = null;
 
-	const time = () => state.animation ? state.animation.currentTime || 0 : performance.now() - state.start,
+	const time = () => state.animations ? state.animations[0].currentTime || 0 : performance.now() - state.start,
 		current = () => state && state.from + (state.to - state.from) * state.ease(time() / state.duration);
 
-	function tick() {
-		if (time() >= state.duration) {
-			finish();
-		} else {
-			frame(current());
-			state.raf = requestAnimationFrame(tick);
+	// The frame loop: a requestAnimationFrame motion writes the location, and a motion on the compositor calls tick().
+	// The next frame starts before the callback, so that a callback that stops the motion also stops the loop.
+	function step() {
+		if (!state.animations && time() >= state.duration) {
+			return finish();
 		}
+		state.raf = requestAnimationFrame(step);
+		(state.animations ? tick : frame)(current());
 	}
 
 	function finish() {
@@ -207,7 +111,7 @@ export function animator(element, css, frame, done) {
 	function stop() {
 		const at = current();
 		if (state) {
-			state.animation?.cancel();
+			state.animations?.forEach((animation) => animation.cancel());
 			cancelAnimationFrame(state.raf);
 			state = null;
 		}
@@ -215,14 +119,48 @@ export function animator(element, css, frame, done) {
 	}
 
 	function animate(at) {
-		state.animation = element.animate([{ translate: css(state.from) }, { translate: css(state.to) }], { duration: state.duration, easing: 'cubic-bezier(' + state.curve + ')', fill: 'forwards' });
-		state.animation.currentTime = at;
-		state.animation.onfinish = finish;
+		const animation = element.animate([{ translate: css(state.from) }, { translate: css(state.to) }], { duration: state.duration, easing: 'cubic-bezier(' + state.curve + ')', fill: 'forwards' });
+		animation.currentTime = at;
+		animation.onfinish = finish;
+		state.animations = [animation];
+	}
+
+	/**
+	 * Start a motion. It stops the motion that runs.
+	 *
+	 * @param {object} next The state of the new motion. script: true runs it as a requestAnimationFrame loop.
+	 * @param {HTMLElement[]} [nodes] The slides of a loop motion.
+	 */
+	function start(next, nodes) {
+		stop();
+		state = next;
+		if (next.list) {
+			const timing = { duration: next.duration, iterations: Infinity },
+				begin = document.timeline.currentTime,
+				{ from, to, length, direction } = next;
+			next.animations = [
+				element.animate([{ translate: css(from) }, { translate: css(to) }], timing),
+				...nodes.map((node, index) => {
+					const { k, offset } = next.list[index],
+						before = css(k * length),
+						after = css((k + direction) * length);
+					return node.animate([{ translate: before }, { translate: before, offset }, { translate: after, offset }, { translate: after }], timing);
+				})
+			];
+			next.animations.forEach((animation) => animation.startTime = begin);
+		} else if (next.script) {
+			next.start = performance.now();
+		} else {
+			animate(0);
+		}
+		if (next.script || tick) {
+			next.raf = requestAnimationFrame(step);
+		}
 	}
 
 	return {
 		/**
-		 * Start a motion. It stops the motion that runs.
+		 * Start a motion to a location.
 		 *
 		 * @param {number} from
 		 * @param {number} to
@@ -230,39 +168,65 @@ export function animator(element, css, frame, done) {
 		 * @param {number[]} curve The cubic Bézier easing.
 		 * @param {boolean} raf Use a requestAnimationFrame loop.
 		 */
-		run(from, to, duration, curve, raf) {
-			stop();
-			state = { from, to, duration, curve, ease: bezier(curve) };
-			if (raf) {
-				state.start = performance.now();
-				state.raf = requestAnimationFrame(tick);
-			} else {
-				animate(0);
-			}
-		},
+		run: (from, to, duration, curve, raf) => start({ from, to, duration, curve, script: raf, ease: bezier(curve) }),
+
+		/**
+		 * Start a loop motion. The container moves by one period in each iteration, and each slide moves by one period
+		 * at the time when it leaves the visible area.
+		 *
+		 * @param {number} from
+		 * @param {number} direction 1 for forward, -1 for back.
+		 * @param {number} duration The time of one iteration, in ms.
+		 * @param {{slides: Array<{start: number, end: number}>, area: {start: number, size: number}, period: number}} geo
+		 * @param {HTMLElement[]} nodes All slides, clones included.
+		 */
+		loop: (from, direction, duration, geo, nodes) => start({
+			from,
+			to: from - direction * geo.period,
+			duration,
+			direction,
+			length: geo.period,
+			list: steps(geo.slides, from, geo.area.size, geo.period, direction, geo.area.start),
+			// The time in the iteration, from 0 to 1
+			ease: (value) => value % 1
+		}, nodes),
 
 		/**
 		 * Change the end of the motion that runs. The start, the time and the easing stay, so the motion does not jump.
 		 *
 		 * @param {number} to
-		 * @returns {boolean} false if no motion runs.
+		 * @returns {boolean} false if no motion runs, or if a loop motion runs: it has no end.
 		 */
 		retarget(to) {
-			if (!state) {
+			if (!state || state.list) {
 				return false;
 			}
-			if (to === state.to) {
-				return true;
-			}
-			state.to = to;
-			if (state.animation) {
-				const at = time();
-				state.animation.cancel();
-				animate(at);
+			if (to !== state.to) {
+				state.to = to;
+				if (state.animations) {
+					const at = time();
+					state.animations[0].cancel();
+					animate(at);
+				}
 			}
 			return true;
 		},
+
 		stop,
-		current
+		current,
+
+		/**
+		 * Get the translate values of the slides during a loop motion.
+		 *
+		 * @param {number} sign -1 for a right-to-left carousel.
+		 * @returns {number[]|null} The values in px, or null if no loop motion runs.
+		 */
+		shifts(sign) {
+			if (!state?.list) {
+				return null;
+			}
+			const phase = time() / state.duration % 1;
+			return state.list.map(({ k, offset }) => sign * (phase >= offset ? k + state.direction : k) * state.length);
+		}
 	};
 }

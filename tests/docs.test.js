@@ -1,14 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { defaults } from '../src/scripts/options.js';
 import { events, methods, options } from '../scripts/reference.js';
 import { writeDocs } from '../scripts/docs.mjs';
 
-// The code that has the public methods and emits the events
-const source = ['index.js', 'scripts/carousel.js', 'scripts/autoplay.js', 'scripts/input.js'].map((file) => readFileSync(new URL('../src/' + file, import.meta.url), 'utf8')).join('\n');
+// The code that has the public methods and emits the events: all source files
+const source = ['index.js', ...readdirSync(new URL('../src/scripts/', import.meta.url)).map((file) => 'scripts/' + file)].map((file) => readFileSync(new URL('../src/' + file, import.meta.url), 'utf8')).join('\n');
 
-// All names in code format of a text, such as "`goTo(index, instant)`" -> "goTo"
+// All names in code format of a text, such as "`goToSnap(index, instant)`" -> "goToSnap"
 const names = (list) => list.flatMap((item) => [...item.name.matchAll(/`(?:BetterCarousel\.)?(\w[\w:]*)/g)].map((match) => match[1]));
 
 test('docs: each option is in the reference, with its default value', () => {
@@ -19,7 +19,8 @@ test('docs: each option is in the reference, with its default value', () => {
 });
 
 test('docs: each event that the code emits is in the reference', () => {
-	const emitted = [...source.matchAll(/emit\('([\w:]+)'\)/g)].map((match) => match[1]);
+	// "interact" is for the features only: goToSnap(), a drag or a wheel step stops the autoplay and the auto scroll
+	const emitted = [...source.matchAll(/emit\('([\w:]+)'\)/g)].map((match) => match[1]).filter((name) => name !== 'interact');
 	const documented = names(events);
 	emitted.push('init', 'reinit', 'autoplay:play', 'autoplay:stop', 'autoscroll:play', 'autoscroll:stop');
 	assert.deepEqual([...new Set(emitted)].sort(), documented.sort());

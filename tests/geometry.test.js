@@ -1,13 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { alignOffset, columns, groups, inView, nearestSnap, progress, snapOfSlide, snapPosition, snaps, targetLocation } from '../src/scripts/geometry.js';
+import { alignOffset, columns, compute, groups, inView, nearestSnap, physicalSnap, progress, snapOfSlide, snapPosition, snaps, targetLocation } from '../src/scripts/geometry.js';
 
 // The %item model: 300 px slides with a 20 px right margin, in a 940 px viewport (3 slides)
 const row = (count, size = 300, gap = 20) => Array.from({ length: count }, (item, index) => ({ start: index * (size + gap), end: index * (size + gap) + size }));
 
 const view = 940;
 
-const base = { view, slidesToScroll: 1, containScroll: 'trimSnaps' };
+const base = { view, slidesPerSnap: 1, containScroll: 'trimSnaps' };
 
 test('center: the slide center is at the viewport center, with no half-gap offset', () => {
 	const slides = row(6),
@@ -97,12 +97,12 @@ test('2-row grid: columns, snaps, the top slide wins, and the trimmed end snap t
 	assert.deepEqual(result.snaps.map((snap) => snap.slide), [0, 1, 3, 5, 6]);
 });
 
-test('slidesToScroll: a number and auto', () => {
+test('slidesPerSnap: a number and auto', () => {
 	const slides = row(6);
 
-	assert.deepEqual(snaps({ ...base, slides, align: 'start', slidesToScroll: 2 }).snaps.map((snap) => snap.location), [0, -640, -960]);
+	assert.deepEqual(snaps({ ...base, slides, align: 'start', slidesPerSnap: 2 }).snaps.map((snap) => snap.location), [0, -640, -960]);
 	assert.equal(groups(columns(slides), view, 'auto').length, 2);
-	assert.deepEqual(snaps({ ...base, slides, align: 'start', slidesToScroll: 'auto' }).snaps.map((snap) => snap.location), [0, -960]);
+	assert.deepEqual(snaps({ ...base, slides, align: 'start', slidesPerSnap: 'auto' }).snaps.map((snap) => snap.location), [0, -960]);
 });
 
 test('loop snaps: no clamp and the last snap is not a copy of the first', () => {
@@ -148,4 +148,44 @@ test('snap position: the fraction between two snaps, clamped at the ends, and mo
 	// After the last snap, the motion goes to the first snap of the next period
 	assert.equal(snapPosition(loop, -1440, 1920), 5.5);
 	assert.equal(snapPosition(loop, 480, 1920), 5.5);
+});
+
+// The arguments of compute(): a horizontal row with a 20 px gap
+const layout = { axis: 'x', align: 'start', rtl: false, sign: 1, gap: 20 },
+	options = { loop: false, clones: 'auto', slidesPerSnap: 1, containScroll: 'trimSnaps', autoScroll: false },
+	rects = (count) => ({ view, slides: row(count), gap: 20 });
+
+test('compute: slides that fit get one snap at 0', () => {
+	const geo = compute(layout, rects(3), { start: 0, size: view }, 3, options);
+
+	assert.equal(geo.fit, true);
+	assert.deepEqual(geo.snaps, [{ location: 0, slide: 0 }]);
+	assert.deepEqual(geo.map, [0]);
+});
+
+test('compute: a loop with no clones gets the period and one logical snap for each snap', () => {
+	const geo = compute(layout, rects(6), { start: 0, size: view }, 6, { ...options, loop: true });
+
+	assert.equal(geo.period, 1920);
+	assert.equal(geo.snaps.length, 6);
+	assert.deepEqual(geo.logical, [0, 1, 2, 3, 4, 5]);
+	assert.deepEqual(geo.map, [0, 1, 2, 3, 4, 5]);
+});
+
+test('compute: a loop that needs clones asks for them, then maps each clone snap to its logical snap', () => {
+	const area = { start: 0, size: 1000 },
+		loop = { ...options, loop: true };
+
+	assert.deepEqual(compute(layout, rects(4), area, 4, loop), { copies: 1 });
+
+	const geo = compute(layout, rects(8), area, 4, loop);
+
+	assert.equal(geo.period, 2560);
+	assert.deepEqual(geo.logical, [0, 1, 2, 3]);
+	assert.deepEqual(geo.map, [0, 1, 2, 3, 0, 1, 2, 3]);
+	// A logical snap has two snaps: the one nearest to the location wins
+	assert.equal(physicalSnap(geo, 1, 0), 1);
+	assert.equal(physicalSnap(geo, 1, -1500), 5);
+	// A logical snap that is not in the map gives the nearest valid index
+	assert.equal(physicalSnap(geo, 20, 0), 7);
 });

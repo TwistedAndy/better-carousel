@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { classNames, defaults, merge, settings } from '../src/scripts/options.js';
+import { settings } from '../src/scripts/autoplay.js';
+import { classNames, defaults, merge } from '../src/scripts/options.js';
 
 test('class names: the root class is the prefix', () => {
 	assert.equal(classNames(null, '').root, 'better');
@@ -11,15 +12,16 @@ test('class names: the root class is the prefix', () => {
 	const slider = classNames('slider', '');
 	assert.equal(slider.root, 'slider');
 	assert.equal(slider.viewport, 'slider_viewport');
-	assert.equal(slider.next, 'slider_next');
+	assert.equal(slider.nextButton, 'slider_next');
+	assert.equal(slider.next, 'next');
 });
 
 test('class names: an object changes only its keys, on top of its prefix', () => {
-	const result = classNames({ prefix: 'embla', active: 'selected', dots: 'pager' }, 'is_');
+	const result = classNames({ prefix: 'embla', selected: 'snapped', dots: 'pager' }, 'is_');
 
 	assert.equal(result.root, 'embla');
 	assert.equal(result.dots, 'pager');
-	assert.equal(result.active, 'is_selected');
+	assert.equal(result.selected, 'is_snapped');
 	assert.equal(result.current, 'is_current');
 	assert.equal(result.button, 'embla_button');
 	assert.equal(classNames({ inView: 'visible' }, '').inView, 'visible');

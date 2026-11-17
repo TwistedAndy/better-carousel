@@ -6,6 +6,8 @@
  * In loop mode, the period is the length of one copy of the slides. Without loop, it is 0.
  */
 
+import { cloneCount } from './loop.js';
+
 /**
  * Keep a value between two limits.
  *
@@ -141,19 +143,19 @@ export function distance(a, b, period) {
  * @param {Array<{start: number, end: number}>} args.slides
  * @param {number} args.view The viewport size.
  * @param {string|Function} args.align
- * @param {number|string} args.slidesToScroll
+ * @param {number|string} args.slidesPerSnap
  * @param {string|boolean} args.containScroll 'trimSnaps', 'keepSnaps' or false.
  * @param {number} [args.period] The loop period, or 0 if the loop is off.
  * @returns {{snaps: Array<{location: number, slide: number}>, min: number, max: number}}
  * Each snap has its location and its active slide. min and max are the limits of the location if the loop is off.
  * With the loop, max is the location of the first snap, where the progress is 0.
  */
-export function snaps({ slides, view, align, slidesToScroll, containScroll, period = 0 }) {
+export function snaps({ slides, view, align, slidesPerSnap, containScroll, period = 0 }) {
 	const content = bounds(slides);
 
 	let max = -content.start || 0,
 		min = view - content.end,
-		list = groups(columns(slides), view, slidesToScroll).map((group, index) => alignOffset(align, view, group.end - group.start, index) - group.start);
+		list = groups(columns(slides), view, slidesPerSnap).map((group, index) => alignOffset(align, view, group.end - group.start, index) - group.start);
 
 	if (!period) {
 		if (containScroll) {
@@ -361,4 +363,67 @@ export function snapPosition(list, location, period) {
 		to = index < last ? list[index + 1].location : first - period;
 
 	return index + (to < from ? (from - at) / (from - to) : 0);
+}
+
+/**
+ * Compute the geometry of a carousel from the layout reads: the loop period, the snaps, and the logical snaps.
+ * With clones, a logical snap is a snap whose active slide is an original slide.
+ *
+ * @param {object} layout The result of readLayout().
+ * @param {{view: number, slides: Array<{start: number, end: number}>, gap: number}} rects The result of readRects(). The slides after the first count slides are clones.
+ * @param {{start: number, size: number}} area The result of visibleArea().
+ * @param {number} count The number of original slides.
+ * @param {object} options The options of the carousel.
+ * @returns {object} The geometry. If the carousel needs a different number of clones, only { copies }: the number of copies of all slides.
+ * map gives the logical snap of each snap.
+ */
+export function compute(layout, rects, area, count, options) {
+	const content = bounds(rects.slides.slice(0, count)),
+		fit = content.size <= rects.view + 1 && !(options.autoScroll && options.loop),
+		loop = options.loop && !fit && count,
+		// The loop period: the distance from the first slide start to the same point in the next copy of the slides
+		period = loop ? bounds(rects.slides).size + rects.gap : 0,
+		copies = loop && options.clones ? cloneCount(content.size + rects.gap, area.size, content.max) : 0;
+
+	if (copies * count !== rects.slides.length - count) {
+		return { copies };
+	}
+
+	const geo = { ...layout, ...rects, area, fit, count, period, min: 0, max: 0 };
+
+	if (fit) {
+		geo.snaps = [{ location: 0, slide: activeSlide(rects.slides, 0, rects.view, layout.align) }];
+	} else {
+		Object.assign(geo, snaps({ ...rects, align: layout.align, slidesPerSnap: options.slidesPerSnap, containScroll: options.containScroll, period }));
+	}
+
+	const list = geo.snaps.map((snap, index) => index).filter((index) => !copies || geo.snaps[index].slide < count);
+
+	geo.logical = list;
+	geo.map = geo.snaps.map((snap, index) => copies ? Math.max(0, list.findIndex((item) => geo.snaps[item].slide % count === snap.slide % count)) : index);
+
+	return geo;
+}
+
+/**
+ * Find the snap of a logical snap that is nearest to a location. With clones, a logical snap has more than one snap.
+ *
+ * @param {{snaps: Array<{location: number}>, map: number[], period: number}} geo The result of compute().
+ * @param {number} index The logical snap.
+ * @param {number} location
+ * @returns {number} The snap index.
+ */
+export function physicalSnap(geo, index, location) {
+	let best = -1,
+		gap = Infinity;
+
+	geo.snaps.forEach((snap, item) => {
+		const value = Math.abs(distance(snap.location, location, geo.period));
+		if (geo.map[item] === index && value < gap) {
+			gap = value;
+			best = item;
+		}
+	});
+
+	return best < 0 ? clamp(index, 0, geo.snaps.length - 1) : best;
 }

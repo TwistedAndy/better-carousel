@@ -9,7 +9,7 @@
  *
  * @param {HTMLElement} container
  * @param {object} options
- * @returns {{axis: string, align: string|Function, rtl: boolean, gap: number}}
+ * @returns {{axis: string, align: string|Function, rtl: boolean, sign: number, gap: number}} sign is -1 for a right-to-left carousel, else 1.
  */
 export function readLayout(container, options) {
 	const style = getComputedStyle(container),
@@ -33,10 +33,13 @@ export function readLayout(container, options) {
 		align = content === 'center' ? 'center' : content === 'flex-end' || content === 'end' || (axis === 'x' && content === 'right') ? 'end' : 'start';
 	}
 
+	const rtl = axis === 'x' && (options.dir === 'auto' ? style.direction === 'rtl' : options.dir === 'rtl');
+
 	return {
 		axis,
 		align,
-		rtl: axis === 'x' && (options.direction === 'auto' ? style.direction === 'rtl' : options.direction === 'rtl'),
+		rtl,
+		sign: rtl ? -1 : 1,
 		gap: parseFloat(axis === 'x' ? style.columnGap : style.rowGap) || 0
 	};
 }
@@ -54,7 +57,7 @@ export function readLayout(container, options) {
 export function readRects(viewport, nodes, layout, written) {
 	const box = viewport.getBoundingClientRect(),
 		x = layout.axis === 'x',
-		sign = layout.rtl ? -1 : 1,
+		sign = layout.sign,
 		known = written.axis === layout.axis,
 		shift = known ? written.container : 0;
 

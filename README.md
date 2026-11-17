@@ -4,7 +4,7 @@
 
 <p>A small, fast and accessible JavaScript carousel.<br />The CSS sets the layout, and the motion runs on the compositor, also on slow phones.</p>
 
-[![Gzip size](https://flat.badgen.net/static/gzip/11.3%20KB/green)](dist/better-carousel.min.js)
+[![Gzip size](https://flat.badgen.net/static/gzip/11.2%20KB/green)](dist/better-carousel.min.js)
 [![MIT license](https://flat.badgen.net/static/license/MIT/purple)](LICENSE)
 [![No dependencies](https://flat.badgen.net/static/dependencies/0/blue)](package.json)
 
@@ -16,7 +16,7 @@
 
 - **Layout from CSS** - Your CSS sets the sizes of the slides, the space between them, the axis and the alignment. One carousel can show 1 slide on a phone and 4 slides on a desktop.
 - **Smooth** - Each motion is a Web Animations API animation of `translate`. No script runs on each frame, also during the auto scroll.
-- **Small** - <!-- generated:gzip -->11.3 KB<!-- /generated --> gzip with loop, autoplay, auto scroll, auto height, sync and the mouse wheel.
+- **Small** - <!-- generated:gzip -->11.2 KB<!-- /generated --> gzip with loop, autoplay, auto scroll, auto height, sync and the mouse wheel.
 - **Loop** - The loop moves the original slides. It adds clones only if the slides are too few.
 - **Vertical and grid** - A column layout makes a vertical carousel. A CSS grid with more rows also works.
 - **Accessible** - WCAG 2.1 AA: names for the carousel, the slides and the buttons, the keyboard focus, a live region and reduced motion.
@@ -117,14 +117,14 @@ The library puts the container into a viewport and a root. Then it adds the arro
 | Slide | A child of the container, or an element that matches the `slides` selector. |
 | Snap | A position where the carousel can stop. A snap shows one slide or a group of slides. |
 | Selected snap | The snap that shows now. `selectedSnap()` gives its index. |
-| Selected slide | The slide at the selected snap. It gets the `active` class. `selectedSlide()` gives its index. |
+| Selected slide | The slide at the selected snap. It gets the `selected` class. `selectedSlide()` gives its index. |
 | Clone | A copy of a slide that the loop adds when the slides are too few. Clones are not in `slideNodes()`, and they have no index. |
 | Motion | A change of position with an animation. When a motion stops, the `settle` event occurs. |
 | Fit | All slides show in the viewport. The carousel does not move, and it does not show the arrows and the dots. |
 
-A carousel can have fewer snaps than slides. For example, `slidesToScroll: 2` puts two slides into each snap. Also, `containScroll: 'trimSnaps'` removes the snaps that show empty space at the ends. For this reason, the methods use two types of index:
+A carousel can have fewer snaps than slides. For example, `slidesPerSnap: 2` puts two slides into each snap. Also, `containScroll: 'trimSnaps'` removes the snaps that show empty space at the ends. For this reason, the methods use two types of index:
 
-- `goTo()`, `selectedSnap()` and `snapList()` use a snap index.
+- `goToSnap()`, `selectedSnap()` and `snapProgress()` use a snap index.
 - `goToSlide()`, `selectedSlide()`, `slidesInView()` and `slideNodes()` use a slide index.
 - `snapOfSlide(index)` gives the snap index of a slide.
 
@@ -285,10 +285,10 @@ export default function Carousel(props) {
 ### Rules for frameworks
 
 - Do not render other elements after the viewport in the root. The library adds the arrows and the dots at the end of the root. To put them in a different element, set the [`arrows`](#options) and [`dots`](#options) options.
-- To change the options, call `reInit(newOptions)`. The selected slide stays.
+- To change the options, call `reinit(newOptions)`. The selected slide stays.
 - With server-side rendering, start the carousel only in the browser: in `useEffect`, `onMounted` or `onMount`. The library needs the DOM.
 
-NOTE: When the framework adds or removes a slide, the carousel measures again. A `reInit()` call is not necessary.
+NOTE: When the framework adds or removes a slide, the carousel measures again. A `reinit()` call is not necessary.
 
 ## Options
 
@@ -312,7 +312,7 @@ BetterCarousel.defaults = { dragThreshold: 2 }
 BetterCarousel(element, {
   align: 'center',
   breakpoints: {
-    '(min-width: 1024px)': { draggable: false },
+    '(min-width: 1024px)': { drag: false },
   },
 })
 
@@ -323,7 +323,7 @@ BetterCarousel(element, {
   inViewThreshold: 0.5,  // A slide is in view when half of it shows
   resize: false,         // Do not measure again when a size changes
   slideChanges: false,   // Do not watch for added and removed slides
-  wrap: false,           // Add no root and viewport: the page has them
+  wrapper: false,        // Add no root and viewport: the page has them
 })
 ```
 
@@ -332,19 +332,19 @@ BetterCarousel(element, {
 | --- | --- | --- | --- |
 | `axis` | `'x'`, `'y'`, `'auto'` | `'auto'` | The axis of the motion. With `'auto'`, the CSS of the container sets the axis. ([example](https://twistedandy.github.io/better-carousel/#switch)) |
 | `align` | `'start'`, `'center'`, `'end'`, `'auto'`, `function` | `'auto'` | The position of the selected snap in the viewport. A function gets `(viewSize, snapSize, index)` and returns the offset in px. With `'auto'`, `justify-content` sets the alignment. ([example](https://twistedandy.github.io/better-carousel/#center)) |
-| `direction` | `'ltr'`, `'rtl'`, `'auto'` | `'auto'` | The text direction. With `'auto'`, the CSS `direction` sets it. ([example](https://twistedandy.github.io/better-carousel/#rtl)) |
+| `dir` | `'ltr'`, `'rtl'`, `'auto'` | `'auto'` | The text direction. With `'auto'`, the CSS `direction` sets it. ([example](https://twistedandy.github.io/better-carousel/#rtl)) |
 | `loop` | `boolean` | `false` | The first slide comes after the last slide. ([example](https://twistedandy.github.io/better-carousel/#loop)) |
 | `clones` | `'auto'`, `'fill'`, `false` | `'auto'` | `'auto'`: add clones only if the loop needs them. `'fill'`: add clones that fill the window. `false`: add no clones. ([example](https://twistedandy.github.io/better-carousel/#clones)) |
 | `dragFree` | `boolean`, `'snap'` | `false` | `true`: glide after a drag and stop at any position. `'snap'`: glide and stop at the nearest snap. ([example](https://twistedandy.github.io/better-carousel/#free)) |
-| `friction` | `number` | `1` | The length of the glide after a fast drag: the glide distance is divided by this number. `2`: half the distance. `0.5`: 2 times the distance. It also changes how many snaps a flick moves. The value must be more than 0. ([example](https://twistedandy.github.io/better-carousel/#free)) |
+| `dragFriction` | `number` | `1` | The length of the glide after a fast drag: the glide distance is divided by this number. `2`: half the distance. `0.5`: 2 times the distance. It also changes how many snaps a flick moves. The value must be more than 0. ([example](https://twistedandy.github.io/better-carousel/#free)) |
 | `containScroll` | `'trimSnaps'`, `'keepSnaps'`, `false` | `'trimSnaps'` | `'trimSnaps'`: no empty space at the ends. `'keepSnaps'`: no empty space, but keep a snap for each group. `false`: snaps can show empty space. ([example](https://twistedandy.github.io/better-carousel/#contain)) |
-| `slidesToScroll` | `number`, `'auto'` | `1` | The number of slides in one snap. `'auto'`: the slides that fit in the viewport. ([example](https://twistedandy.github.io/better-carousel/#groups)) |
+| `slidesPerSnap` | `number`, `'auto'` | `1` | The number of slides in one snap. `'auto'`: the slides that fit in the viewport. ([example](https://twistedandy.github.io/better-carousel/#groups)) |
 | `skipSnaps` | `boolean`, `number` | `true` | A fast flick can move more than one snap. `false`: one snap. A number: the maximum number of snaps. ([example](https://twistedandy.github.io/better-carousel/#skip)) |
 | `dragThreshold` | `number` | `10` | The distance in px that the pointer moves before a drag starts. |
 | `duration` | `number` | `400` | The duration of a motion by one snap, in ms. A longer motion takes more time, to a maximum of 2 times this value. ([example](https://twistedandy.github.io/better-carousel/#options-usage)) |
 | `startSnap` | `number` | `0` | The index of the snap at the start. ([example](https://twistedandy.github.io/better-carousel/#options-usage)) |
 | `lazy` | `boolean`, `number` | `false` | `true`: start when the carousel comes within one screen of the view. A number: the distance in px. ([example](https://twistedandy.github.io/better-carousel/#lazy)) |
-| `draggable` | `boolean` | `true` | Drag with the mouse, the pen and the finger. |
+| `drag` | `boolean` | `true` | Drag with the mouse, the pen and the finger. |
 | `wheel` | `boolean`, `'both'` | `true` | The mouse wheel moves a vertical carousel. `'both'`: also a horizontal carousel. `false`: the wheel does not move the carousel. ([example](https://twistedandy.github.io/better-carousel/#vertical)) |
 | `resize` | `boolean` | `true` | Measure again when a size changes. ([example](https://twistedandy.github.io/better-carousel/#options-usage)) |
 | `slideChanges` | `boolean` | `true` | Measure again when the page adds or removes a slide. ([example](https://twistedandy.github.io/better-carousel/#changes)) |
@@ -354,7 +354,7 @@ BetterCarousel(element, {
 | `breakpoints` | `object` | `{}` | The options for media queries: `{ '(min-width: 768px)': { loop: true } }`. ([example](https://twistedandy.github.io/better-carousel/#breakpoints)) |
 | `container` | `string` | `null` | The selector of the container, if the element is the root. |
 | `slides` | `string` | `null` | The selector of the slides. With `null`, all children of the container are slides. |
-| `wrap` | `boolean` | `true` | Add the root and the viewport if the page does not have them. ([example](https://twistedandy.github.io/better-carousel/#options-usage)) |
+| `wrapper` | `boolean` | `true` | Add the root and the viewport if the page does not have them. ([example](https://twistedandy.github.io/better-carousel/#options-usage)) |
 | `arrows` | `boolean`, `Element`, `string` | `true` | Add the arrows to the root. `false`: no arrows. An element or a selector: add the arrows to that element. ([example](https://twistedandy.github.io/better-carousel/#heading)) |
 | `dots` | `boolean`, `Element`, `string` | `true` | Add the dots. The values are the same as for `arrows`. ([example](https://twistedandy.github.io/better-carousel/#heading)) |
 | `labels` | `object` | English | The texts for screen readers: `carousel`, `slide` (`'%d of %n'`), `prev`, `next`, `dot` (`'Go to slide %d'`), `play`, `pause`. `%d` is the slide number, and `%n` is the number of slides. ([example](#accessibility)) |
@@ -365,7 +365,7 @@ BetterCarousel(element, {
 | `autoScroll` | `boolean`, `number`, `object` | `false` | Move the slides at a constant speed. `true`, a speed in px/s, or an object. ([example](https://twistedandy.github.io/better-carousel/#logos)) |
 | `autoHeight` | `boolean` | `false` | The viewport gets the height of the tallest slide in view. ([example](https://twistedandy.github.io/better-carousel/#height)) |
 | `progress` | `boolean`, `function` | `false` | Follow the progress, from 0 to 1. `true` sets `--better-progress` on the root. A function gets `{ progress, snap }` on each frame of a motion. See [Progress and offset](#progress-and-offset). |
-| `offset` | `boolean`, `function` | `false` | Follow the distance of each slide from its snap position, in slides. `true` sets `--better-offset` on each slide. A function gets `{ slide, index, offset, distance, size, visible }` for each slide on each frame of a motion. |
+| `offset` | `boolean`, `function` | `false` | Follow the distance of each slide from its snap position, in slides. `true` sets `--better-offset` on each slide. A function gets `{ node, index, offset, distance, size, visible }` for each slide on each frame of a motion. |
 <!-- /generated -->
 
 ### autoplay
@@ -385,8 +385,8 @@ BetterCarousel(element, {
   autoplay: {
     delay: 4000,               // ms on each slide, or an array with ms for each snap
     stopOnInteraction: true,   // A drag, an arrow or a dot stops the autoplay
-    stopOnMouseEnter: false,   // Pause while the mouse is on the carousel
-    stopOnFocusIn: true,       // Pause while the keyboard focus is in the carousel
+    pauseOnHover: false,   // Pause while the mouse is on the carousel
+    pauseOnFocus: true,       // Pause while the keyboard focus is in the carousel
     stopOnLastSnap: false,     // Stop at the last snap, if loop is false
     playOnInit: true,
     instant: false,            // Jump to the next slide with no motion
@@ -421,11 +421,11 @@ BetterCarousel(element, {
   loop: true,
   autoScroll: {
     speed: 120,                // px per second
-    direction: 'forward',      // or 'backward'
+    direction: 'next',         // or 'prev'
     startDelay: 1000,          // ms before the start, and after an interaction
     stopOnInteraction: true,
-    stopOnMouseEnter: false,
-    stopOnFocusIn: true,
+    pauseOnHover: false,
+    pauseOnFocus: true,
     playOnInit: true,
   },
 })
@@ -439,7 +439,7 @@ The `sync` option links two carousels, for example a gallery and its thumbnails:
 2. Use buttons for the thumbnails, so that the keyboard can select them.
 3. Set `sync` on the thumbnails carousel.
 
-The thumbnails follow the main gallery, and a click on a thumbnail selects its photo. A drag moves only the thumbnails. The thumbnail of the selected photo gets the `active` class. In this example, the `arrows` option puts the arrows of the main gallery next to the thumbnails.
+The thumbnails follow the main gallery, and a click on a thumbnail selects its photo. A drag moves only the thumbnails. The thumbnail of the selected photo gets the `selected` class. In this example, the `arrows` option puts the arrows of the main gallery next to the thumbnails.
 
 ```html
 <div class="items carousel gallery_main" data-carousel='{"dots":false,"arrows":".gallery_nav"}'>...</div>
@@ -517,9 +517,9 @@ BetterCarousel(element, {
   progress: ({ progress, snap }) => {
     bar.style.scale = progress + ' 1';
   },
-  // { slide, index, offset, distance, size, visible }, one call for each slide
-  offset: ({ slide, offset, visible }) => {
-    slide.style.opacity = 0.4 + 0.6 * visible;
+  // { node, index, offset, distance, size, visible }, one call for each slide
+  offset: ({ node, offset, visible }) => {
+    node.style.opacity = 0.4 + 0.6 * visible;
   },
 })
 ```
@@ -539,21 +539,21 @@ In loop mode, the progress goes from 1 back to 0. The auto scroll is a motion th
 | Method | Returns | Description |
 | --- | --- | --- |
 | `BetterCarousel(element, options)` | carousel | Start a carousel on a container or on its viewport. If the element has a carousel, return that carousel. |
-| `goTo(index, instant)` | - | Go to a snap. `index` is a snap index. With `instant` set to `true`, jump with no motion. |
+| `goToSnap(index, instant)` | - | Go to a snap. `index` is a snap index. With `instant` set to `true`, jump with no motion. |
 | `goToNext(instant)`, `goToPrev(instant)` | - | Go to the next or the previous snap. |
 | `goToSlide(index, instant)` | - | Go to the snap that shows a slide. `index` is a slide index. This slide becomes the selected slide. |
 | `canGoToNext()`, `canGoToPrev()` | `boolean` | `true` if a next or a previous snap exists. In a loop, `true` if not all slides fit. |
 | `selectedSnap()`, `previousSnap()` | `number` | The index of the selected snap, or of the snap before it. |
 | `selectedSlide()` | `number` | The index of the selected slide. With `sync`, the slide that is selected in the other carousel. |
 | `snapOfSlide(index)` | `number` | The index of the snap that shows a slide. |
-| `snapList()` | `number[]` | The progress of each snap, from 0 to 1. |
-| `scrollProgress()` | `number` | The progress now, from 0 to 1, also during a motion. |
+| `snapProgress()` | `number[]` | The progress of each snap, from 0 to 1. |
+| `progress()` | `number` | The progress now, from 0 to 1, also during a motion. |
 | `slidesInView()` | `number[]` | The indexes of the slides in view. |
 | `slideNodes()` | `HTMLElement[]` | The slides. The list does not include the clones. |
 | `rootNode()`, `viewportNode()`, `containerNode()` | `HTMLElement` | The root, the viewport and the container. |
 | `isFit()` | `boolean` | `true` if all slides fit in the viewport. |
 | `options()` | `object` | The options that apply now, after the breakpoints. |
-| `reInit(options)` | - | Merge new options and start again. The selected slide stays. |
+| `reinit(options)` | - | Merge new options and start again. The selected slide stays. |
 | `destroy()` | - | Stop the carousel and restore the markup. |
 | `on(name, handler)`, `off(name, handler)` | carousel | Add or remove an event handler. The handler gets `(carousel, name)`. |
 | `autoplay` | `object` | Only with the `autoplay` option: `play()`, `stop()`, `reset()` and `isPlaying()`. |
@@ -581,12 +581,12 @@ Add a handler with `on(name, handler)`, and remove it with `off(name, handler)`.
 | Event | When |
 | --- | --- |
 | `init` | The carousel measured the layout for the first time. |
-| `reinit` | A `reInit()` call or a breakpoint started the carousel again. |
+| `reinit` | A `reinit()` call or a breakpoint started the carousel again. |
 | `resize` | The layout changed. |
 | `select` | The selected snap changed. |
 | `scroll` | The position changed during a motion or a drag. |
 | `settle` | A motion stopped. |
-| `pointerdown`, `pointerup` | A drag started or stopped. |
+| `dragstart`, `dragend` | A drag started or stopped. |
 | `slidesinview` | The slides in view changed. |
 | `slideschanged` | The page added or removed a slide. |
 | `slidefocus` | A slide got the keyboard focus. |
@@ -630,7 +630,7 @@ The SCSS file uses `@import` and global variables, so it compiles with Dart Sass
 
 ```scss
 $better: 'embla';              // The class prefix: .embla, .embla_viewport, .embla_button
-$better-state: 'is_';          // The prefix of the state classes: .is_active, .is_current
+$better-state: 'is_';          // The prefix of the state classes: .is_selected, .is_current
 $better-look: false;           // Only the rules that the carousel needs
 $better-arrow: url(arrow.svg); // The default icon of the arrows. The --button-arrow variable comes first.
 
@@ -641,7 +641,7 @@ Then set the same names in the options: `{ classes: 'embla', state: 'is_' }`.
 
 ### Classes
 
-These are the default class names. A prefix in `classes` changes the first part of the names. The `state` prefix changes the state classes: `active`, `dragging`, `playing` and the classes of the dots.
+These are the default class names. A prefix in `classes` changes the first part of the names. The `state` prefix changes the state classes: `selected`, `dragging`, `playing` and the classes of the dots.
 
 <!-- generated:classes -->
 | Class | Element |
@@ -650,11 +650,11 @@ These are the default class names. A prefix in `classes` changes the first part 
 | `better_viewport` | The viewport |
 | `better_container` | The container |
 | `better_horizontal`, `better_vertical` | The axis, on the root |
-| `better_dynamic` | On the root, if not all slides fit |
+| `better_fit` | On the root, if all slides fit |
 | `better_auto_height` | On the root, with `autoHeight` |
 | `better_button`, `better_prev`, `better_next`, `better_play` | The buttons |
 | `better_dots`, `better_dot` | The dots |
-| `active` | The selected slide |
+| `selected` | The selected slide |
 | `clone` | A clone of a slide |
 | `dragging` | On the root, during a drag |
 | `playing` | On the root, while the autoplay or the auto scroll plays |
@@ -662,11 +662,11 @@ These are the default class names. A prefix in `classes` changes the first part 
 <!-- /generated -->
 
 ```js
-// .embla, .embla_viewport, .embla_button, .is_active
+// .embla, .embla_viewport, .embla_button, .is_selected
 BetterCarousel(element, { classes: 'embla', state: 'is_' })
 
 // Change one name
-BetterCarousel(element, { classes: { active: 'selected' } })
+BetterCarousel(element, { classes: { selected: 'snapped' } })
 ```
 
 ## Accessibility
@@ -703,9 +703,9 @@ The library is made for slow phones. A motion runs on the compositor, and a caro
 <!-- generated:sizes -->
 | File | Minified | Gzip | Brotli |
 | --- | --- | --- | --- |
-| `better-carousel.min.js` | 28.3 KB | 11.3 KB | 10.3 KB |
+| `better-carousel.min.js` | 28.0 KB | 11.2 KB | 10.3 KB |
 | `better-carousel.css` | 4.0 KB | 1.3 KB | 1.0 KB |
-| Total | 32.3 KB | 12.6 KB | 11.4 KB |
+| Total | 32.1 KB | 12.5 KB | 11.3 KB |
 <!-- /generated -->
 
 The same features in Embla 9 (the core, three plugins and a wrapper) are 12.6 KB gzip.
@@ -726,7 +726,7 @@ The same features in Embla 9 (the core, three plugins and a wrapper) are 12.6 KB
 
 ## Coming from Embla
 
-An option, a method or an event that is also in Embla 9 has the same name. This table gives the differences from Embla 9 and Embla 8.
+This table gives the names and the behavior that are different from Embla 9 and Embla 8. The other options, methods and events have the same names as in Embla.
 
 <!-- generated:embla -->
 | Embla | Embla name | Better Carousel |
@@ -734,14 +734,23 @@ An option, a method or an event that is also in Embla 9 has the same name. This 
 | 9 | Handler `(api, event)` | Handler `(carousel, name)`. The events have no `detail`. |
 | 9 | Autoplay `delay` as a function that gives one delay for each snap | Autoplay `delay` as an array with one delay for each snap |
 | 8 | Option `startIndex` | `startSnap` |
-| 8 | Options `watchDrag`, `watchResize`, `watchSlides`, `watchFocus` | `draggable`, `resize`, `slideChanges`, `focus` |
-| 8 | `scrollTo(index, jump)` | `goTo(index, instant)` |
+| 8 | Options `watchDrag`, `watchResize`, `watchSlides`, `watchFocus` | `drag`, `resize`, `slideChanges`, `focus` |
+| 9 | Option `draggable` | `drag` |
+| 8, 9 | Options `slidesToScroll`, `direction` | `slidesPerSnap`, `dir` |
+| 8, 9 | Autoplay and AutoScroll `stopOnMouseEnter`, `stopOnFocusIn` | `pauseOnHover`, `pauseOnFocus` |
+| 8, 9 | AutoScroll `direction: 'forward'`, `'backward'` | `direction: 'next'`, `'prev'` |
+| 8 | Autoplay `jump` | `instant` |
+| 8 | `scrollTo(index, jump)` | `goToSnap(index, instant)` |
+| 9 | `goTo(index, instant)` | `goToSnap(index, instant)` |
 | 8 | `scrollNext()`, `scrollPrev()` | `goToNext()`, `goToPrev()` |
 | 8 | `canScrollNext()`, `canScrollPrev()` | `canGoToNext()`, `canGoToPrev()` |
 | 8 | `selectedScrollSnap()`, `previousScrollSnap()` | `selectedSnap()`, `previousSnap()` |
-| 8 | `scrollSnapList()` | `snapList()` |
+| 8 | `scrollSnapList()` | `snapProgress()` |
+| 9 | `snapList()` | `snapProgress()` |
+| 8, 9 | `scrollProgress()`, `reInit()` | `progress()`, `reinit()` |
 | 8 | Events `reInit`, `slidesInView`, `slidesChanged`, `slideFocus` | `reinit`, `slidesinview`, `slideschanged`, `slidefocus` |
-| 8 | Events `pointerDown`, `pointerUp` | `pointerdown`, `pointerup` |
+| 8 | Events `pointerDown`, `pointerUp` | `dragstart`, `dragend` |
+| 9 | Events `pointerdown`, `pointerup` | `dragstart`, `dragend` |
 | 8, 9 | Plugins `Autoplay`, `AutoScroll`, `AutoHeight` | The options `autoplay`, `autoScroll`, `autoHeight` |
 | 8, 9 | `plugins().autoplay`, `plugins().autoScroll` | `carousel.autoplay`, `carousel.autoScroll` |
 | 8, 9 | Plugin `ClassNames` | The options `classes` and `state` |

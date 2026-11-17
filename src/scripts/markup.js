@@ -135,7 +135,7 @@ let uid = 0;
 
 /**
  * Find or make the root, the viewport and the container of a carousel. Then add their classes and the ARIA attributes of the
- * carousel pattern of the WAI-ARIA Authoring Practices. A new setup after reInit() uses the wrapper that the library made before.
+ * carousel pattern of the WAI-ARIA Authoring Practices. A new setup after reinit() uses the wrapper that the library made before.
  *
  * @param {HTMLElement} element The container of the slides, or its viewport.
  * @param {object} options
@@ -152,7 +152,7 @@ export function build(element, options, cls) {
 	let viewport = container.parentElement,
 		root = viewport.parentElement;
 
-	if (!made.has(viewport) && !viewport.classList.contains(cls.viewport) && options.wrap) {
+	if (!made.has(viewport) && !viewport.classList.contains(cls.viewport) && options.wrapper) {
 		root = create('div');
 		viewport = create('div');
 		made.add(root).add(viewport);

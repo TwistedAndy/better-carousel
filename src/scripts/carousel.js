@@ -1,18 +1,15 @@
 /*
  * Carousel: its state, its API, the setup, the measure pass, the render and the motion.
  *
- * The features in the other modules get their part of the carousel through the context object.
- * Each feature is a function that takes the context and returns an object with remove().
+ * The features get their part of the carousel through the context object. Each feature is a function that takes the context.
+ * It returns nothing if its option is off, or an object with remove(). remove() removes all that the feature added.
  */
 
-import { autoplay, autoScroll } from './autoplay.js';
-import { activeSlide, alignOffset, bounds, clamp, distance, inView, nearestSnap, progress, snapIndex, snapOfSlide, snapPosition, snaps, targetLocation } from './geometry.js';
-import { drag, wheel } from './input.js';
+import { alignOffset, clamp, compute, inView, nearestSnap, physicalSnap, progress, snapIndex, snapOfSlide, snapPosition, targetLocation } from './geometry.js';
 import { observeSize, readLayout, readRects, visibleArea, waitNear, windowSize } from './layout.js';
-import { cloneCount, normalize, pathFits, placement } from './loop.js';
+import { normalize, pathFits, placement } from './loop.js';
 import { addClass, build, cleanStyle, copySlides, labelSlides, readSlides, restore, setClass, setStyle } from './markup.js';
-import { animator, EASE, goToDuration } from './motion.js';
-import { nav, sync } from './navigation.js';
+import { animator, EASE, snapDuration } from './motion.js';
 import { breakpoints, classNames, merge, resolve } from './options.js';
 
 // The instance of each root, viewport and container
@@ -28,28 +25,32 @@ export const find = (element) => registry.get(element);
 
 /**
  * Make an event emitter. A handler gets (api, name), as in Embla.
+ * The handlers of the features run before the handlers of the page, and clear() removes them.
  *
  * @param {object} api
- * @returns {{on: Function, off: Function, emit: Function, has: Function}}
+ * @returns {{on: Function, off: Function, listen: Function, clear: Function, emit: Function, has: Function}}
  */
 function emitter(api) {
-	const map = {};
+	const user = {},
+		own = {},
+		add = (map, name, handler) => (map[name] ||= new Set()).add(handler);
 
 	return {
 		on(name, handler) {
-			(map[name] ||= new Set()).add(handler);
+			add(user, name, handler);
 			return api;
 		},
 		off(name, handler) {
-			map[name]?.delete(handler);
+			user[name]?.delete(handler);
 			return api;
 		},
+		listen: (name, handler) => add(own, name, handler),
+		clear: () => Object.values(own).forEach((set) => set.clear()),
 		emit(name) {
-			map[name]?.forEach((handler) => handler(api, name));
+			own[name]?.forEach((handler) => handler(api, name));
+			user[name]?.forEach((handler) => handler(api, name));
 		},
-		has(name) {
-			return !!map[name]?.size;
-		}
+		has: (name) => !!user[name]?.size
 	};
 }
 
@@ -57,10 +58,12 @@ function emitter(api) {
  * Make a carousel.
  *
  * @param {HTMLElement} element The container of the slides, or its viewport.
- * @param {object} [userOptions]
+ * @param {object} userOptions
+ * @param {object} defaults The site defaults.
+ * @param {Array<(context: object) => ({remove: () => void}|undefined)>} features
  * @returns {object} The carousel API.
  */
-export default function BetterCarousel(element, userOptions = {}) {
+export default function carousel(element, userOptions, defaults, features) {
 	const found = registry.get(element);
 
 	if (found) {
@@ -76,7 +79,7 @@ export default function BetterCarousel(element, userOptions = {}) {
 		slides = [],
 		clones = [],
 		nodes = [],
-		// The features: each has remove()
+		// The features that are on
 		parts = [];
 
 	// The observers and the measure state
@@ -101,18 +104,13 @@ export default function BetterCarousel(element, userOptions = {}) {
 		visible = [],
 		written = { axis: '', container: 0, slides: [] };
 
-	// The motion and the input
+	// The motion and the drag. A free motion, such as the auto scroll, has no snap: it selects the nearest snap when it stops.
 	let motion,
-		dragInput,
-		wheelInput,
-		// The frame loop of the "progress" and the "offset" options
-		raf = 0;
-
-	// The auto scroll, if the option is on
-	let auto = null;
+		dragging = false,
+		free = false;
 
 	const api = {
-		goTo: (index, instant) => go(physical(index), instant),
+		goToSnap: (index, instant) => go(physical(index), instant),
 		goToNext: (instant) => api.canGoToNext() && step(selected, 1, instant),
 		goToPrev: (instant) => api.canGoToPrev() && step(selected, -1, instant),
 		goToSlide: (index, instant) => go(physical(api.snapOfSlide(index)), instant, index),
@@ -122,8 +120,8 @@ export default function BetterCarousel(element, userOptions = {}) {
 		previousSnap: () => logical(previous),
 		selectedSlide,
 		snapOfSlide: (index) => geo ? logical(snapOfSlide(geo.snaps, geo.slides, index, geo.view, geo.align, geo.period)) : index,
-		snapList: () => geo ? geo.logical.map((index) => progress(geo.snaps[index].location, geo)) : [],
-		scrollProgress: () => geo ? progress(current(), geo) : 0,
+		snapProgress: () => geo ? geo.logical.map((index) => progress(geo.snaps[index].location, geo)) : [],
+		progress: () => geo ? progress(current(), geo) : 0,
 		slideNodes: () => slides.slice(),
 		slidesInView: () => visible.slice(),
 		rootNode: () => root,
@@ -131,7 +129,7 @@ export default function BetterCarousel(element, userOptions = {}) {
 		containerNode: () => container,
 		isFit: () => !geo || geo.fit,
 		options: () => options,
-		reInit,
+		reinit,
 		destroy: () => {
 			teardown(false);
 			events.emit('destroy');
@@ -142,7 +140,7 @@ export default function BetterCarousel(element, userOptions = {}) {
 		owner = { read: measure, write: measured, skip: heightOnly },
 		// The states that the "progress" and the "offset" callbacks get. Each call gets the same object, so a frame makes no garbage.
 		whole = { progress: 0, snap: 0 },
-		each = { slide: null, index: 0, offset: 0, distance: 0, size: 0, visible: 0 },
+		each = { node: null, index: 0, offset: 0, distance: 0, size: 0, visible: 0 },
 		/**
 		 * What the features share: the API, the events, and the state and the actions of the carousel.
 		 * setup() adds root, viewport, container, cls and options.
@@ -150,37 +148,38 @@ export default function BetterCarousel(element, userOptions = {}) {
 		context = {
 			api,
 			emit: events.emit,
-			// The carousel of an element
-			find,
+			// Listen to an event until the teardown
+			on: events.listen,
 
 			// The state
 			geo: () => geo,
 			nodes: () => nodes,
 			selected: () => selected,
-			dragging: () => dragInput.dragging(),
-			// The location at rest or at the end of the motion. During the auto scroll, the location now.
-			location: () => auto?.at() ?? location,
+			dragging: () => dragging,
+			// The location at rest or at the end of the motion. During a free motion, the location now.
+			location: () => free ? current() : location,
 			current,
 
 			// The actions
-			write,
 			hold,
-			css,
 			halt,
-			interrupt: () => auto?.interrupt(),
+			step,
+			scroll,
 			// Select a snap and move to a location
 			move: (index, target, duration, curve) => {
 				requested = -1;
 				move(index, target, duration, curve);
 			},
-			step,
-			watch,
-			// A linear motion to a location, without the snaps
-			glide: (from, to, duration) => {
-				const raf = events.has('scroll');
-				location = to;
-				motion.run(from, to, duration, [0, 0, 1, 1], raf);
-				watch(!raf);
+			// Start or end a drag, and set the "dragging" class. The start is an interaction, as goToSnap() is.
+			drag: (on) => {
+				dragging = on;
+				setClass(root, cls.dragging, on);
+				if (on) {
+					events.emit('interact');
+					events.emit('dragstart');
+				} else {
+					events.emit('dragend');
+				}
 			},
 			// Set the slide that the sync option follows
 			follow: (index) => {
@@ -191,11 +190,10 @@ export default function BetterCarousel(element, userOptions = {}) {
 	api.on = events.on;
 	api.off = events.off;
 
-	// The lazy option: a carousel that is not near the screen waits. A carousel near the screen starts now: a start after the first paint
-	// adds the arrows and the dots in view, and this moves the page (CLS).
-	const lazy = resolve(element, BetterCarousel.defaults, userOptions).lazy;
-
-	let waiting = lazy ? waitNear(element, lazy, reInit) : null;
+	// The options of the first setup. The lazy option: a carousel that is not near the screen waits. A carousel near the screen starts now:
+	// a start after the first paint adds the arrows and the dots in view, and this moves the page (CLS).
+	let resolved = resolve(element, defaults, userOptions),
+		waiting = resolved.lazy ? waitNear(element, resolved.lazy, reinit) : null;
 
 	if (waiting) {
 		registry.set(element, api);
@@ -206,10 +204,11 @@ export default function BetterCarousel(element, userOptions = {}) {
 	return api;
 
 	/**
-	 * Read the options, add the markup and start the observers. The first ResizeObserver callback measures the layout.
+	 * Read the options, add the markup, start the features and the observers. The first ResizeObserver callback measures the layout.
 	 */
 	function setup() {
-		media = breakpoints(resolve(element, BetterCarousel.defaults, userOptions), () => reInit());
+		media = breakpoints(resolved || resolve(element, defaults, userOptions), () => reinit());
+		resolved = null;
 		options = media.options;
 
 		if (!options.active) {
@@ -225,39 +224,22 @@ export default function BetterCarousel(element, userOptions = {}) {
 
 		slides = readSlides(container, options.slides);
 		nodes = slides;
+		selected = options.startSnap;
 
 		observe(true);
 
 		Object.assign(context, { root, viewport, container, cls, options });
 
-		motion = animator(container, css, frame, settle);
-		dragInput = drag(context);
-		wheelInput = wheel(context);
-		container.addEventListener('focusin', onFocus);
-		viewport.addEventListener('scroll', onScroll);
-		if (options.loop && options.clones === 'fill') {
-			addEventListener('resize', onWindow);
-		}
-
-		parts = [dragInput, wheelInput, nav(context)];
-
-		if (options.autoplay) {
-			api.autoplay = autoplay(context);
-			parts.push(api.autoplay);
-		}
-
-		if (options.autoScroll) {
-			auto = autoScroll(context);
-			api.autoScroll = auto.control;
-			parts.push(auto);
-		}
+		parts = features.map((feature) => feature(context)).filter(Boolean);
+		motion = animator(container, css, frame, settle, (options.progress || options.offset) && ((at) => track(at, motion.shifts(geo.sign) || written.slides)));
 
 		if (options.autoHeight) {
 			addClass(root, cls.autoHeight);
 		}
 
-		if (options.sync) {
-			parts.push(sync(context));
+		viewport.addEventListener('scroll', onScroll);
+		if (options.loop && options.clones === 'fill') {
+			addEventListener('resize', onWindow);
 		}
 
 		if (options.slideChanges) {
@@ -285,23 +267,19 @@ export default function BetterCarousel(element, userOptions = {}) {
 		}
 
 		motion.stop();
-		cancelAnimationFrame(raf);
 		parts.forEach((part) => part.remove());
+		events.clear();
 		parts = [];
 		followed = -1;
-		delete api.autoplay;
-		delete api.autoScroll;
-		auto = null;
-		setStyle(viewport, 'height', '');
+		dragging = free = false;
 		setClones(0);
-		container.removeEventListener('focusin', onFocus);
 		viewport.removeEventListener('scroll', onScroll);
 		removeEventListener('resize', onWindow);
 
 		for (const node of nodes) {
 			setStyle(node, 'translate', '');
 			node.style.removeProperty('--better-offset');
-			setClass(node, cls.active, false);
+			setClass(node, cls.selected, false);
 			setClass(node, cls.inView, false);
 			cleanStyle(node);
 		}
@@ -309,9 +287,10 @@ export default function BetterCarousel(element, userOptions = {}) {
 		setStyle(container, 'translate', '');
 		setStyle(container, 'willChange', '');
 		setStyle(viewport, 'touchAction', '');
+		setStyle(viewport, 'height', '');
 		root.style.removeProperty('--better-progress');
 
-		for (const name of ['horizontal', 'vertical', 'dynamic', 'dragging']) {
+		for (const name of ['horizontal', 'vertical', 'fit', 'dragging']) {
 			setClass(root, cls[name], false);
 		}
 
@@ -336,9 +315,10 @@ export default function BetterCarousel(element, userOptions = {}) {
 	 *
 	 * @param {object} [newOptions]
 	 */
-	function reInit(newOptions) {
+	function reinit(newOptions) {
 		if (newOptions) {
 			userOptions = merge(userOptions, newOptions);
+			resolved = null;
 		}
 		const keep = geo ? selectedSlide() : requested;
 		teardown(true);
@@ -404,34 +384,14 @@ export default function BetterCarousel(element, userOptions = {}) {
 		return index % slides.length;
 	}
 
-	// The logical snap of a physical snap. They are different only when the carousel has clones.
+	// The logical snap of a snap. They are different only when the carousel has clones.
 	function logical(index) {
 		return geo ? geo.map[index] ?? 0 : index;
 	}
 
-	/**
-	 * Find the physical snap of a logical snap that is nearest to the current location.
-	 *
-	 * @param {number} index The logical snap.
-	 * @returns {number}
-	 */
+	// The snap of a logical snap that is nearest to the current location
 	function physical(index) {
-		if (!geo) {
-			return index;
-		}
-
-		let best = -1,
-			gap = Infinity;
-
-		geo.snaps.forEach((snap, item) => {
-			const value = Math.abs(distance(snap.location, current(), geo.period));
-			if (geo.map[item] === index && value < gap) {
-				gap = value;
-				best = item;
-			}
-		});
-
-		return best < 0 ? clamp(index, 0, geo.snaps.length - 1) : best;
+		return geo ? physicalSnap(geo, index, current()) : index;
 	}
 
 	function selectedSlide() {
@@ -447,7 +407,7 @@ export default function BetterCarousel(element, userOptions = {}) {
 
 	// The location now, also during a motion
 	function current() {
-		return auto?.at() ?? motion.current() ?? location;
+		return motion.current() ?? location;
 	}
 
 	/**
@@ -456,11 +416,11 @@ export default function BetterCarousel(element, userOptions = {}) {
 	 * @returns {boolean} false if nothing changed.
 	 */
 	function measure() {
-		const sign = geo?.rtl ? -1 : 1,
-			moving = motion.current(),
+		const sign = geo?.sign || 1,
+			at = motion.current(),
 			layout = readLayout(container, options),
-			// The translate values that show now: the written values, or the values of a motion or of the auto scroll
-			rects = readRects(viewport, nodes, layout, auto?.shown(sign, written.axis) || (moving === null ? written : { ...written, container: sign * moving }));
+			// The translate values that show now: the written values, or the values of a motion
+			rects = readRects(viewport, nodes, layout, at === null ? written : { axis: written.axis, container: sign * at, slides: motion.shifts(sign) || written.slides });
 
 		// With clones: 'fill', the loop fills the window
 		lastWindow = options.loop && options.clones === 'fill' ? windowSize(layout.axis) : 0;
@@ -476,49 +436,23 @@ export default function BetterCarousel(element, userOptions = {}) {
 		signature = values;
 
 		const keep = ready ? selectedSlide() : requested,
-			count = slides.length,
-			originals = rects.slides.slice(0, count),
-			content = bounds(originals),
-			fit = content.size <= rects.view + 1 && !(options.autoScroll && options.loop),
-			from = location;
+			next = compute(layout, rects, area, slides.length, options);
 
-		let copies = 0,
-			length = 0;
-
-		if (options.loop && !fit && count) {
-			// The loop period: the distance from the first slide start to the same point in the next copy of the slides
-			const size = content.size + rects.gap,
-				all = bounds(rects.slides);
-			copies = options.clones ? cloneCount(size, area.size, content.max) : 0;
-			length = all.size + rects.gap;
-		}
-
-		if (copies * count !== clones.length) {
-			pending = copies;
+		if (!next.snaps) {
+			pending = next.copies;
 			return true;
 		}
 
-		geo = { ...layout, ...rects, area, fit, period: length, min: 0, max: 0 };
-
-		if (fit) {
-			geo.snaps = [{ location: 0, slide: activeSlide(rects.slides, 0, rects.view, layout.align) }];
-		} else {
-			Object.assign(geo, snaps({ ...rects, align: layout.align, slidesToScroll: options.slidesToScroll, containScroll: options.containScroll, period: length }));
-		}
-
-		// With clones, a logical snap is a snap whose active slide is an original slide
-		const list = geo.snaps.map((snap, index) => index).filter((index) => !clones.length || geo.snaps[index].slide < count);
-
-		geo.logical = list;
-		geo.map = geo.snaps.map((snap, index) => clones.length ? Math.max(0, list.findIndex((item) => original(geo.snaps[item].slide) === original(snap.slide))) : index);
+		geo = next;
 
 		const total = geo.snaps.length;
 
-		selected = keep >= 0 ? physical(api.snapOfSlide(keep)) : Math.min(total - 1, ready ? selected : physical(options.startSnap));
+		// Before the first measure pass, selected is the logical snap of the startSnap option or of goToSnap()
+		selected = keep >= 0 ? physical(api.snapOfSlide(keep)) : Math.min(total - 1, ready ? selected : physical(selected));
 		previous = Math.min(previous, total - 1);
 		requested = keep;
-		if (!context.dragging()) {
-			location = targetLocation(geo.snaps[selected].location, from, length);
+		if (!dragging) {
+			location = targetLocation(geo.snaps[selected].location, location, geo.period);
 		}
 
 		return true;
@@ -544,8 +478,8 @@ export default function BetterCarousel(element, userOptions = {}) {
 			return;
 		}
 
-		// The auto scroll starts again from its location with the new layout
-		if (auto?.control.isPlaying()) {
+		// A free motion stops where it is, and its feature starts it again on "resize"
+		if (free) {
 			halt();
 		}
 
@@ -556,11 +490,9 @@ export default function BetterCarousel(element, userOptions = {}) {
 			render(true);
 		} else {
 			motion.stop();
-			render(context.dragging());
+			render(dragging);
 		}
 		labelSlides(slides, options.labels.slide);
-
-		wheelInput.listen(options.wheel && !geo.fit && (geo.axis === 'y' || options.wheel === 'both'));
 
 		if (!options.resize) {
 			observe(false);
@@ -578,12 +510,10 @@ export default function BetterCarousel(element, userOptions = {}) {
 			changed = false;
 			events.emit('slideschanged');
 		}
-
-		auto?.resume();
 	}
 
 	/**
-	 * Write the location, the classes and the touch action.
+	 * Write the location, the classes, the touch action and the auto height.
 	 *
 	 * @param {boolean} [keep] Do not write the location, because a motion or a drag writes it.
 	 */
@@ -592,7 +522,7 @@ export default function BetterCarousel(element, userOptions = {}) {
 
 		setClass(root, cls.horizontal, x);
 		setClass(root, cls.vertical, !x);
-		setClass(root, cls.dynamic, !geo.fit);
+		setClass(root, cls.fit, geo.fit);
 		setStyle(viewport, 'touchAction', geo.fit ? '' : x ? 'pan-y pinch-zoom' : 'pan-x pinch-zoom');
 		setStyle(container, 'willChange', geo.fit ? '' : 'translate');
 
@@ -605,10 +535,10 @@ export default function BetterCarousel(element, userOptions = {}) {
 			setStyle(viewport, 'height', x ? Math.max(...inView(geo.slides, location, geo.view, 0, geo.period).map((index) => geo.slides[index].cross)) + 'px' : '');
 		}
 
-		const active = selectedSlide(),
+		const chosen = selectedSlide(),
 			list = [...new Set(inView(geo.slides, location, geo.view, options.inViewThreshold, geo.period).map(original))].sort((a, b) => a - b);
 
-		nodes.forEach((node, index) => setClass(node, cls.active, original(index) === active));
+		nodes.forEach((node, index) => setClass(node, cls.selected, original(index) === chosen));
 
 		if (list.join() !== visible.join()) {
 			visible = list;
@@ -625,7 +555,7 @@ export default function BetterCarousel(element, userOptions = {}) {
 	 */
 	function screen(value) {
 		const scale = devicePixelRatio || 1;
-		return Math.round(value * scale) / scale * (geo.rtl ? -1 : 1);
+		return Math.round(value * scale) / scale * geo.sign;
 	}
 
 	/**
@@ -639,7 +569,7 @@ export default function BetterCarousel(element, userOptions = {}) {
 	}
 
 	/**
-	 * Write the location as the translate of the container.
+	 * Write the location as the translate of the container, and give it to the "progress" and the "offset" options.
 	 *
 	 * @param {number} value
 	 */
@@ -653,16 +583,18 @@ export default function BetterCarousel(element, userOptions = {}) {
 		setStyle(container, 'translate', translate(written.container));
 		place(value, value);
 		if (options.progress || options.offset) {
-			track(value);
+			track(value, written.slides);
 		}
 	}
 
 	/**
 	 * Write the "progress" and the "offset" options for a location: the CSS variables, or the calls of the callbacks.
+	 * The motion engine also calls this function on each frame of a motion on the compositor.
 	 *
 	 * @param {number} at The location.
+	 * @param {number[]} shifts The loop shift of each slide on the screen, in px.
 	 */
-	function track(at) {
+	function track(at, shifts) {
 		if (options.progress === true) {
 			root.style.setProperty('--better-progress', progress(at, geo));
 		} else if (options.progress) {
@@ -674,45 +606,26 @@ export default function BetterCarousel(element, userOptions = {}) {
 		}
 
 		if (options.offset) {
-			// The shifts of the slides on the screen. Only the auto scroll changes them during a motion.
-			const sign = geo.rtl ? -1 : 1,
-				shifts = auto?.shown(sign, written.axis)?.slides || written.slides;
-
-			nodes.forEach((slide, index) => {
+			nodes.forEach((node, index) => {
 				const box = geo.slides[index],
 					size = box.end - box.start,
 					// The slide start on the screen, and its distance from its snap position
-					start = box.start + sign * (shifts[index] || 0) + at,
+					start = box.start + geo.sign * (shifts[index] || 0) + at,
 					delta = start - alignOffset(geo.align, geo.view, size, index),
 					offset = delta / (size + geo.gap);
 
 				if (options.offset === true) {
-					slide.style.setProperty('--better-offset', offset);
+					node.style.setProperty('--better-offset', offset);
 				} else {
-					each.slide = slide;
+					each.node = node;
 					each.index = original(index);
 					each.offset = offset;
-					each.distance = sign * delta;
+					each.distance = geo.sign * delta;
 					each.size = size;
 					each.visible = clamp((Math.min(start + size, geo.view) - Math.max(start, 0)) / size, 0, 1) || 0;
 					options.offset(each, api);
 				}
 			});
-		}
-	}
-
-	/**
-	 * Call track() on each frame while a motion on the compositor or the auto scroll plays. Such a motion runs no script, so the loop gets
-	 * its location. A requestAnimationFrame motion does not need the loop: it calls write() on each frame. The loop stops when no motion plays.
-	 *
-	 * @param {boolean|number} on false stops the loop. requestAnimationFrame gives a time, which is the same as true.
-	 */
-	function watch(on) {
-		cancelAnimationFrame(raf);
-		const at = on && (options.progress || options.offset) ? auto?.at() ?? motion.current() : null;
-		if (at !== null) {
-			track(at);
-			raf = requestAnimationFrame(watch);
 		}
 	}
 
@@ -751,7 +664,7 @@ export default function BetterCarousel(element, userOptions = {}) {
 	}
 
 	/**
-	 * Go to a snap.
+	 * Go to a snap. This is an interaction: it stops the autoplay and the auto scroll, or makes them wait.
 	 *
 	 * @param {number} index The snap index. physical() and step() give a valid index.
 	 * @param {boolean} [instant]
@@ -760,22 +673,20 @@ export default function BetterCarousel(element, userOptions = {}) {
 	 */
 	function go(index, instant, slide = -1, direction = 0) {
 		if (waiting) {
-			reInit();
+			reinit();
 		}
-		auto?.interrupt();
+		events.emit('interact');
+		requested = slide;
 		if (!geo) {
-			options.startSnap = index;
-			requested = slide;
+			selected = index;
 			return;
 		}
 
-		requested = slide;
-
 		const target = targetLocation(geo.snaps[index].location, current(), geo.period, direction),
-			step = Math.abs(index - selected),
-			count = geo.period ? Math.min(step, geo.snaps.length - step) : step;
+			span = Math.abs(index - selected),
+			count = geo.period ? Math.min(span, geo.snaps.length - span) : span;
 
-		move(index, target, instant ? 0 : goToDuration(options.duration, count), EASE);
+		move(index, target, instant ? 0 : snapDuration(options.duration, count), EASE);
 	}
 
 	/**
@@ -802,16 +713,37 @@ export default function BetterCarousel(element, userOptions = {}) {
 				place(from, target);
 			}
 			motion.run(from, target, duration, curve, raf);
-			watch(!raf);
 		}
 
 		if (picked) {
 			events.emit('select');
 		}
 
-		// settle() also starts the auto scroll again after a jump
 		if (jump) {
 			settle();
+		}
+	}
+
+	/**
+	 * Move at a constant speed, as a free motion. With the loop, the motion goes on until it stops. Without the loop, it goes to the end.
+	 * A free motion changes the classes only when it stops.
+	 *
+	 * @param {number} direction 1 for forward, -1 for back.
+	 * @param {number} speed px/ms
+	 */
+	function scroll(direction, speed) {
+		const from = halt(),
+			to = direction > 0 ? geo.min : geo.max;
+
+		if (geo.period) {
+			free = true;
+			// Start in the first period, so that the location does not grow after each pause
+			location = normalize(from, geo.period);
+			motion.loop(location, direction, geo.period / speed, geo, nodes);
+		} else if (Math.abs(to - from) > 1) {
+			free = true;
+			location = to;
+			motion.run(from, to, Math.abs(to - from) / speed, [0, 0, 1, 1], events.has('scroll'));
 		}
 	}
 
@@ -830,6 +762,14 @@ export default function BetterCarousel(element, userOptions = {}) {
 		return true;
 	}
 
+	// Select the snap that is nearest to the location
+	function pick() {
+		if (select(nearestSnap(geo.snaps, location, geo.period))) {
+			render(true);
+			events.emit('select');
+		}
+	}
+
 	/**
 	 * Write a location during a motion or a drag.
 	 *
@@ -844,56 +784,45 @@ export default function BetterCarousel(element, userOptions = {}) {
 	 * End a motion.
 	 */
 	function settle() {
+		if (free) {
+			free = false;
+			pick();
+		}
 		if (geo.period) {
 			location = normalize(location, geo.period);
 		}
 		render();
 		events.emit('settle');
-		auto?.settled();
 	}
 
 	/**
-	 * Stop the auto scroll and the motion where they are, and write that location.
+	 * Stop the motion where it is, and write that location. A free motion also selects the nearest snap.
 	 *
 	 * @returns {number} The location.
 	 */
 	function halt() {
-		const at = auto?.cancel();
-		if (at != null) {
-			hold(at);
+		const at = motion.stop();
+		if (at !== null) {
+			location = at;
+			write(at);
+			if (free) {
+				pick();
+			}
 		}
-		return location = motion.stop() ?? location;
+		free = false;
+		return location;
 	}
 
 	/**
 	 * Write a location without a motion, and select the snap that is nearest to it.
 	 *
 	 * @param {number} value
-	 * @param {boolean} [scroll] Emit "scroll", as during a motion.
+	 * @param {boolean} [moving] Emit "scroll", as during a motion.
 	 */
-	function hold(value, scroll) {
+	function hold(value, moving) {
 		location = value;
-		(scroll ? frame : write)(value);
-		if (select(nearestSnap(geo.snaps, value, geo.period))) {
-			render(true);
-			events.emit('select');
-		}
-	}
-
-	/**
-	 * Go to a slide that gets the keyboard focus, if it does not show fully.
-	 *
-	 * @param {FocusEvent} event
-	 */
-	function onFocus(event) {
-		const index = slides.findIndex((node) => node.contains(event.target));
-		if (!geo || index < 0 || performance.now() - dragInput.pressed() < 600) {
-			return;
-		}
-		if (options.focus && !inView(geo.slides, location, geo.view, 1, geo.period).map(original).includes(index)) {
-			api.goToSlide(index);
-		}
-		events.emit('slidefocus');
+		(moving ? frame : write)(value);
+		pick();
 	}
 
 	/**
