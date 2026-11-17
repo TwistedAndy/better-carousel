@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { alignOffset, columns, groups, inView, nearestSnap, progress, snapOfSlide, snaps, targetLocation } from '../src/scripts/geometry.js';
+import { alignOffset, columns, groups, inView, nearestSnap, progress, snapOfSlide, snapPosition, snaps, targetLocation } from '../src/scripts/geometry.js';
 
 // The %item model: 300 px slides with a 20 px right margin, in a 940 px viewport (3 slides)
 const row = (count, size = 300, gap = 20) => Array.from({ length: count }, (item, index) => ({ start: index * (size + gap), end: index * (size + gap) + size }));
@@ -110,6 +110,7 @@ test('loop snaps: no clamp and the last snap is not a copy of the first', () => 
 		result = snaps({ ...base, slides, align: 'center', period: 1920 });
 
 	assert.deepEqual(result.snaps.map((snap) => snap.location), [320, 0, -320, -640, -960, -1280]);
+	assert.equal(result.max, 320);
 	assert.deepEqual(result.snaps.map((snap) => snap.slide), [0, 1, 2, 3, 4, 5]);
 });
 
@@ -123,6 +124,9 @@ test('loop: target locations and the nearest snap modulo the period', () => {
 test('progress and slides in view', () => {
 	assert.equal(progress(-480, -960, 0), 0.5);
 	assert.equal(progress(-480, 0, 0, 1920), 0.25);
+	// With the loop, the progress starts at the first snap, also if its location is not 0
+	assert.equal(progress(-160, 0, 320, 1920), 0.25);
+	assert.equal(progress(320, 0, 320, 1920), 0);
 
 	const slides = row(6);
 
@@ -130,4 +134,18 @@ test('progress and slides in view', () => {
 	assert.deepEqual(inView(slides, -160, view, 1), [1, 2]);
 	assert.deepEqual(inView(slides, 0, view, 0, 1920), [0, 1, 2]);
 	assert.deepEqual(inView(slides, 320, view, 0, 1920), [0, 1, 5]);
+});
+
+test('snap position: the fraction between two snaps, clamped at the ends, and modulo the period in loop mode', () => {
+	const list = [0, -320, -640, -960].map((location) => ({ location })),
+		loop = [320, 0, -320, -640, -960, -1280].map((location) => ({ location }));
+
+	assert.equal(snapPosition(list, -160, 0), 0.5);
+	assert.equal(snapPosition(list, -960, 0), 3);
+	assert.equal(snapPosition(list, 100, 0), 0);
+	assert.equal(snapPosition(list, -1200, 0), 3);
+	assert.equal(snapPosition(loop, 160, 1920), 0.5);
+	// After the last snap, the motion goes to the first snap of the next period
+	assert.equal(snapPosition(loop, -1440, 1920), 5.5);
+	assert.equal(snapPosition(loop, 480, 1920), 5.5);
 });

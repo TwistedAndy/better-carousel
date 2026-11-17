@@ -17,6 +17,11 @@ export interface AutoplayOptions {
 	playOnInit?: boolean;
 	/** Jump to the next slide with no motion. @default false */
 	instant?: boolean;
+	/**
+	 * Show the time to the next slide. The carousel calls this function when the timer starts, with the delay in ms.
+	 * The function can return a function that the carousel calls when this timer ends or stops. @default null
+	 */
+	timer?: ((delay: number, carousel: Carousel) => (() => void) | void) | null;
 }
 
 /** The options of the auto scroll. */
@@ -35,6 +40,30 @@ export interface AutoScrollOptions {
 	stopOnFocusIn?: boolean;
 	/** Start with the carousel. @default true */
 	playOnInit?: boolean;
+}
+
+/** The state that the `progress` callback gets. The carousel uses the same object for each call: read the values during the call. */
+export interface ProgressState {
+	/** The progress, from 0 to 1. In loop mode, it goes from 1 back to 0. */
+	progress: number;
+	/** The position between the snaps: 2.4 is between snap 2 and snap 3. */
+	snap: number;
+}
+
+/** The state that the `offset` callback gets for a slide. The carousel uses the same object for each call: read the values during the call. */
+export interface OffsetState {
+	/** The slide, or a clone of it. */
+	slide: HTMLElement;
+	/** The slide index. A clone gives the index of its slide. */
+	index: number;
+	/** The distance from the snap position of the slide, in slides: 0 at the snap position, 1 for the next slide, -1 for the previous slide. */
+	offset: number;
+	/** The same distance in px, on the screen: a positive value is to the right or down. */
+	distance: number;
+	/** The size of the slide on the main axis, in px. */
+	size: number;
+	/** The part of the slide in the viewport, from 0 to 1. */
+	visible: number;
 }
 
 /** The texts for screen readers. `%d` is the slide number, and `%n` is the number of slides. */
@@ -165,6 +194,10 @@ export interface Options {
 	autoScroll?: boolean | number | AutoScrollOptions;
 	/** The viewport gets the height of the tallest slide in view. @default false @see {@link https://twistedandy.github.io/better-carousel/#height | example} */
 	autoHeight?: boolean;
+	/** Follow the progress, from 0 to 1. `true` sets `--better-progress` on the root. A function gets `{ progress, snap }` on each frame of a motion. See Progress and offset. @default false */
+	progress?: boolean | ((state: ProgressState, carousel: Carousel) => void);
+	/** Follow the distance of each slide from its snap position, in slides. `true` sets `--better-offset` on each slide. A function gets `{ slide, index, offset, distance, size, visible }` for each slide on each frame of a motion. @default false */
+	offset?: boolean | ((state: OffsetState, carousel: Carousel) => void);
 	// <!-- /generated -->
 }
 

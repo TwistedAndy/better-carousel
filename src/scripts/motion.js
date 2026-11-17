@@ -178,13 +178,19 @@ export function releaseTarget({ location, from, velocity, current, snaps, min, m
  * @param {(location: number) => string} css Get the CSS translate value of a location.
  * @param {(location: number) => void} frame Write a location.
  * @param {() => void} done Called when a motion ends.
+ * @param {(location: number) => void} [follow] Called on each frame of a Web Animations API motion, with the location now.
  * @returns {{run: Function, retarget: Function, stop: Function, current: Function}}
  */
-export function animator(element, css, frame, done) {
+export function animator(element, css, frame, done, follow) {
 	let state = null;
 
 	const time = () => state.animation ? state.animation.currentTime || 0 : performance.now() - state.start,
 		current = () => state && state.from + (state.to - state.from) * state.ease(state.duration > 0 ? time() / state.duration : 1);
+
+	function watch() {
+		follow(current());
+		state.raf = requestAnimationFrame(watch);
+	}
 
 	function tick() {
 		if (time() >= state.duration) {
@@ -241,6 +247,9 @@ export function animator(element, css, frame, done) {
 				state.raf = requestAnimationFrame(tick);
 			} else {
 				animate(0);
+				if (follow) {
+					watch();
+				}
 			}
 		},
 

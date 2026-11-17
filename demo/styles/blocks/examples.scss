@@ -249,6 +249,60 @@
 	margin: 0 auto;
 }
 
+// The examples of the autoplay timer, and of the "progress" and "offset" options
+.demo_bar {
+	height: 4px;
+	margin-bottom: 12px;
+	border-radius: 2px;
+	background: var(--color-primary);
+	transform-origin: left;
+	scale: 0 1;
+}
+
+.demo_progress .better_viewport::after {
+	content: "";
+	position: absolute;
+	inset: auto 0 0;
+	z-index: 3;
+	height: 4px;
+	background: var(--color-primary);
+	transform-origin: left;
+	scale: var(--better-progress, 0) 1;
+}
+
+.demo_parallax {
+
+	.better {
+		max-width: 640px;
+		margin: 0 auto;
+	}
+
+	.item > img {
+		scale: 1.3;
+		translate: calc(clamp(-1, var(--better-offset, 0), 1) * -10%) 0;
+	}
+
+}
+
+.demo .demo_scale .item {
+	--distance: min(1, max(var(--better-offset, 0), -1 * var(--better-offset, 0)));
+	background: none;
+	box-shadow: none;
+
+	& > img {
+		border-radius: var(--radius-regular);
+		scale: calc(1 - 0.25 * var(--distance));
+		opacity: calc(1 - 0.6 * var(--distance));
+	}
+
+}
+
+.demo_counter {
+	margin: 0 0 12px;
+	color: var(--color-muted);
+	font-variant-numeric: tabular-nums;
+}
+
 .demo_vertical .better {
 	height: 420px;
 }

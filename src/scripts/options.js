@@ -35,11 +35,13 @@ export const defaults = {
 	clones: 'auto',
 	autoplay: false,
 	autoScroll: false,
-	autoHeight: false
+	autoHeight: false,
+	progress: false,
+	offset: false
 };
 
 // The defaults of the "autoplay" option
-export const autoplayDefaults = { delay: 4000, stopOnInteraction: true, stopOnMouseEnter: false, stopOnFocusIn: true, stopOnLastSnap: false, playOnInit: true, instant: false };
+export const autoplayDefaults = { delay: 4000, stopOnInteraction: true, stopOnMouseEnter: false, stopOnFocusIn: true, stopOnLastSnap: false, playOnInit: true, instant: false, timer: null };
 
 // The defaults of the "autoScroll" option
 export const autoScrollDefaults = { speed: 120, direction: 'forward', startDelay: 1000, stopOnInteraction: true, stopOnMouseEnter: false, stopOnFocusIn: true, playOnInit: true };

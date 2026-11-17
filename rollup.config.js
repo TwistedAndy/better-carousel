@@ -9,8 +9,8 @@ const production = !process.env.ROLLUP_WATCH;
 const input = 'src/index.js';
 
 // The gzip size of the minified file must not be more than this value
-// 10.5 KB. The same features in Embla 9 (the core, 3 plugins and the theme wrapper) are 12.6 KB gzip.
-const budget = 11264;
+// 11.5 KB. The same features in Embla 9 (the core, 3 plugins and the theme wrapper) are 12.6 KB gzip.
+const budget = 11776;
 
 const terserOptions = {
 	ecma: 2020,

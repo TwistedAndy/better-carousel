@@ -140,19 +140,32 @@ export function autoplay(context) {
 		options = settings(autoplayDefaults, 'delay', context.options.autoplay);
 
 	let timer = 0,
-		own = false;
+		// The function that the "timer" callback returned for the timer
+		done = null,
+		// true while the autoplay goes to the next slide, so that its own "select" is not an interaction
+		self = false;
+
+	// Stop the timer, and call the function that the "timer" callback returned
+	function clear() {
+		clearTimeout(timer);
+		done?.();
+		done = null;
+	}
 
 	function reset() {
-		clearTimeout(timer);
+		clear();
 		if (!control.paused() && !api.isFit()) {
 			// The delay: data-delay on the selected slide, one value for each snap, or one value
-			const value = api.slideNodes()[api.selectedSlide()]?.dataset.delay || options.delay;
-			timer = setTimeout(next, +(Array.isArray(value) ? value[api.selectedSnap()] : value));
+			const value = api.slideNodes()[api.selectedSlide()]?.dataset.delay || options.delay,
+				delay = +(Array.isArray(value) ? value[api.selectedSnap()] : value);
+			timer = setTimeout(next, delay);
+			done = options.timer?.(delay, api);
 		}
 	}
 
 	function next() {
-		own = true;
+		clear();
+		self = true;
 		if (api.canGoToNext()) {
 			api.goToNext(options.instant);
 		} else if (options.stopOnLastSnap) {
@@ -160,13 +173,13 @@ export function autoplay(context) {
 		} else {
 			api.goTo(0, options.instant);
 		}
-		own = false;
+		self = false;
 	}
 
 	// A drag, an arrow, a dot or the keyboard stops the autoplay. With stopOnInteraction: false, the timer starts again at "settle".
 	function interact() {
-		if (!own) {
-			clearTimeout(timer);
+		if (!self) {
+			clear();
 			if (options.stopOnInteraction) {
 				control.stop();
 			}
@@ -175,7 +188,7 @@ export function autoplay(context) {
 
 	const control = controller(context, 'autoplay', options, {
 		play: reset,
-		stop: () => clearTimeout(timer),
+		stop: clear,
 		pause: reset,
 		events: [['settle', reset], ['select', interact], ['pointerdown', interact]]
 	});
@@ -195,7 +208,7 @@ export function autoplay(context) {
 export function autoScroll(context) {
 	const options = settings(autoScrollDefaults, 'speed', context.options.autoScroll);
 
-	// The motion of a loop: { from, direction, length, list, duration, animations }, or null
+	// The motion of a loop: { from, direction, length, list, duration, animations, raf }, or null
 	let scroll = null,
 		// The start delay
 		timer = 0;
@@ -206,8 +219,25 @@ export function autoScroll(context) {
 			wait(-1);
 			context.halt();
 		},
-		pause: (paused) => scroll ? scroll.animations.forEach((animation) => animation[paused ? 'pause' : 'play']()) : paused ? context.halt() : timer || run()
+		pause(paused) {
+			if (!scroll) {
+				return paused ? context.halt() : timer || run();
+			}
+			scroll.animations.forEach((animation) => animation[paused ? 'pause' : 'play']());
+			cancelAnimationFrame(scroll.raf);
+			if (!paused) {
+				follow();
+			}
+		}
 	});
+
+	// With the "progress" or the "offset" option, write their values on each frame while the loop motion plays
+	function follow() {
+		if (context.track) {
+			context.track(at());
+			scroll.raf = requestAnimationFrame(follow);
+		}
+	}
 
 	/**
 	 * Start the auto scroll after its delay.
@@ -262,6 +292,7 @@ export function autoScroll(context) {
 			]
 		};
 		scroll.animations.forEach((animation) => animation.startTime = start);
+		follow();
 	}
 
 	// The time in the iteration, from 0 to 1
@@ -311,6 +342,7 @@ export function autoScroll(context) {
 		cancel() {
 			const location = at();
 			scroll?.animations.forEach((animation) => animation.cancel());
+			cancelAnimationFrame(scroll?.raf);
 			scroll = null;
 			return location;
 		},

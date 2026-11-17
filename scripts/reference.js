@@ -45,7 +45,9 @@ export const options = [
 	{ name: 'sync', ts: "Carousel | Element | string | null", type: 'carousel, `Element`, `string`', default: null, text: 'Another carousel, its container or a selector. This carousel follows the selected slide of the other carousel. A click on a slide selects it in the other carousel.', example: 'product' },
 	{ name: 'autoplay', ts: "boolean | number | AutoplayOptions", type: '`boolean`, `number`, `object`', default: false, text: 'Go to the next slide after a delay. `true`, a delay in ms, or an object.', example: 'autoplay' },
 	{ name: 'autoScroll', ts: "boolean | number | AutoScrollOptions", type: '`boolean`, `number`, `object`', default: false, text: 'Move the slides at a constant speed. `true`, a speed in px/s, or an object.', example: 'logos' },
-	{ name: 'autoHeight', type: '`boolean`', default: false, text: 'The viewport gets the height of the tallest slide in view.', example: 'height' }
+	{ name: 'autoHeight', type: '`boolean`', default: false, text: 'The viewport gets the height of the tallest slide in view.', example: 'height' },
+	{ name: 'progress', ts: "boolean | ((state: ProgressState, carousel: Carousel) => void)", type: '`boolean`, `function`', default: false, text: 'Follow the progress, from 0 to 1. `true` sets `--better-progress` on the root. A function gets `{ progress, snap }` on each frame of a motion. See [Progress and offset](#progress-and-offset).' },
+	{ name: 'offset', ts: "boolean | ((state: OffsetState, carousel: Carousel) => void)", type: '`boolean`, `function`', default: false, text: 'Follow the distance of each slide from its snap position, in slides. `true` sets `--better-offset` on each slide. A function gets `{ slide, index, offset, distance, size, visible }` for each slide on each frame of a motion.' }
 ];
 
 export const methods = [

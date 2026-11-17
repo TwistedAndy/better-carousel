@@ -146,6 +146,7 @@ export function distance(a, b, period) {
  * @param {number} [args.period] The loop period, or 0 if the loop is off.
  * @returns {{snaps: Array<{location: number, slide: number}>, min: number, max: number}}
  * Each snap has its location and its active slide. min and max are the limits of the location if the loop is off.
+ * With the loop, max is the location of the first snap, where the progress is 0.
  */
 export function snaps({ slides, view, align, slidesToScroll, containScroll, period = 0 }) {
 	const content = bounds(slides);
@@ -192,7 +193,7 @@ export function snaps({ slides, view, align, slidesToScroll, containScroll, peri
 	return {
 		snaps: result,
 		min,
-		max
+		max: period ? list[0] : max
 	};
 }
 
@@ -300,13 +301,13 @@ export function targetLocation(target, location, period, direction = 0) {
  *
  * @param {number} location
  * @param {number} min
- * @param {number} max
+ * @param {number} max With the loop, the location of the first snap.
  * @param {number} [period]
  * @returns {number}
  */
 export function progress(location, min, max, period) {
 	if (period) {
-		const value = -location / period;
+		const value = (max - location) / period;
 		return value - Math.floor(value);
 	}
 	return max > min ? clamp((max - location) / (max - min), 0, 1) : 0;
@@ -336,4 +337,30 @@ export function inView(slides, location, view, threshold, period) {
 	});
 
 	return result;
+}
+
+/**
+ * Get the position of a location between the snaps, as a fractional snap index: 2.4 is between snap 2 and snap 3.
+ * In loop mode, a value after the last snap goes to the first snap again.
+ *
+ * @param {Array<{location: number}>} list The snaps.
+ * @param {number} location
+ * @param {number} [period]
+ * @returns {number}
+ */
+export function snapPosition(list, location, period) {
+	const last = list.length - 1,
+		first = list[0].location,
+		at = period ? first - ((first - location) % period + period) % period : clamp(location, list[last].location, first);
+
+	let index = 0;
+
+	while (index < last && list[index + 1].location >= at) {
+		index++;
+	}
+
+	const from = list[index].location,
+		to = index < last ? list[index + 1].location : first - period;
+
+	return index + (to < from ? (from - at) / (from - to) : 0);
 }

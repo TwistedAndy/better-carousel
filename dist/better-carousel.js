@@ -393,11 +393,13 @@ const defaults = {
 	clones: 'auto',
 	autoplay: false,
 	autoScroll: false,
-	autoHeight: false
+	autoHeight: false,
+	progress: false,
+	offset: false
 };
 
 // The defaults of the "autoplay" option
-const autoplayDefaults = { delay: 4000, stopOnInteraction: true, stopOnMouseEnter: false, stopOnFocusIn: true, stopOnLastSnap: false, playOnInit: true, instant: false };
+const autoplayDefaults = { delay: 4000, stopOnInteraction: true, stopOnMouseEnter: false, stopOnFocusIn: true, stopOnLastSnap: false, playOnInit: true, instant: false, timer: null };
 
 // The defaults of the "autoScroll" option
 const autoScrollDefaults = { speed: 120, direction: 'forward', startDelay: 1000, stopOnInteraction: true, stopOnMouseEnter: false, stopOnFocusIn: true, playOnInit: true };
@@ -659,19 +661,32 @@ function autoplay(context) {
 		options = settings(autoplayDefaults, 'delay', context.options.autoplay);
 
 	let timer = 0,
-		own = false;
+		// The function that the "timer" callback returned for the timer
+		done = null,
+		// true while the autoplay goes to the next slide, so that its own "select" is not an interaction
+		self = false;
+
+	// Stop the timer, and call the function that the "timer" callback returned
+	function clear() {
+		clearTimeout(timer);
+		done?.();
+		done = null;
+	}
 
 	function reset() {
-		clearTimeout(timer);
+		clear();
 		if (!control.paused() && !api.isFit()) {
 			// The delay: data-delay on the selected slide, one value for each snap, or one value
-			const value = api.slideNodes()[api.selectedSlide()]?.dataset.delay || options.delay;
-			timer = setTimeout(next, +(Array.isArray(value) ? value[api.selectedSnap()] : value));
+			const value = api.slideNodes()[api.selectedSlide()]?.dataset.delay || options.delay,
+				delay = +(Array.isArray(value) ? value[api.selectedSnap()] : value);
+			timer = setTimeout(next, delay);
+			done = options.timer?.(delay, api);
 		}
 	}
 
 	function next() {
-		own = true;
+		clear();
+		self = true;
 		if (api.canGoToNext()) {
 			api.goToNext(options.instant);
 		} else if (options.stopOnLastSnap) {
@@ -679,13 +694,13 @@ function autoplay(context) {
 		} else {
 			api.goTo(0, options.instant);
 		}
-		own = false;
+		self = false;
 	}
 
 	// A drag, an arrow, a dot or the keyboard stops the autoplay. With stopOnInteraction: false, the timer starts again at "settle".
 	function interact() {
-		if (!own) {
-			clearTimeout(timer);
+		if (!self) {
+			clear();
 			if (options.stopOnInteraction) {
 				control.stop();
 			}
@@ -694,7 +709,7 @@ function autoplay(context) {
 
 	const control = controller(context, 'autoplay', options, {
 		play: reset,
-		stop: () => clearTimeout(timer),
+		stop: clear,
 		pause: reset,
 		events: [['settle', reset], ['select', interact], ['pointerdown', interact]]
 	});
@@ -714,7 +729,7 @@ function autoplay(context) {
 function autoScroll(context) {
 	const options = settings(autoScrollDefaults, 'speed', context.options.autoScroll);
 
-	// The motion of a loop: { from, direction, length, list, duration, animations }, or null
+	// The motion of a loop: { from, direction, length, list, duration, animations, raf }, or null
 	let scroll = null,
 		// The start delay
 		timer = 0;
@@ -725,8 +740,25 @@ function autoScroll(context) {
 			wait(-1);
 			context.halt();
 		},
-		pause: (paused) => scroll ? scroll.animations.forEach((animation) => animation[paused ? 'pause' : 'play']()) : paused ? context.halt() : timer || run()
+		pause(paused) {
+			if (!scroll) {
+				return paused ? context.halt() : timer || run();
+			}
+			scroll.animations.forEach((animation) => animation[paused ? 'pause' : 'play']());
+			cancelAnimationFrame(scroll.raf);
+			if (!paused) {
+				follow();
+			}
+		}
 	});
+
+	// With the "progress" or the "offset" option, write their values on each frame while the loop motion plays
+	function follow() {
+		if (context.track) {
+			context.track(at());
+			scroll.raf = requestAnimationFrame(follow);
+		}
+	}
 
 	/**
 	 * Start the auto scroll after its delay.
@@ -781,6 +813,7 @@ function autoScroll(context) {
 			]
 		};
 		scroll.animations.forEach((animation) => animation.startTime = start);
+		follow();
 	}
 
 	// The time in the iteration, from 0 to 1
@@ -830,6 +863,7 @@ function autoScroll(context) {
 		cancel() {
 			const location = at();
 			scroll?.animations.forEach((animation) => animation.cancel());
+			cancelAnimationFrame(scroll?.raf);
 			scroll = null;
 			return location;
 		},
@@ -999,6 +1033,7 @@ function distance(a, b, period) {
  * @param {number} [args.period] The loop period, or 0 if the loop is off.
  * @returns {{snaps: Array<{location: number, slide: number}>, min: number, max: number}}
  * Each snap has its location and its active slide. min and max are the limits of the location if the loop is off.
+ * With the loop, max is the location of the first snap, where the progress is 0.
  */
 function snaps({ slides, view, align, slidesToScroll, containScroll, period = 0 }) {
 	const content = bounds(slides);
@@ -1045,7 +1080,7 @@ function snaps({ slides, view, align, slidesToScroll, containScroll, period = 0 
 	return {
 		snaps: result,
 		min,
-		max
+		max: period ? list[0] : max
 	};
 }
 
@@ -1153,13 +1188,13 @@ function targetLocation(target, location, period, direction = 0) {
  *
  * @param {number} location
  * @param {number} min
- * @param {number} max
+ * @param {number} max With the loop, the location of the first snap.
  * @param {number} [period]
  * @returns {number}
  */
 function progress(location, min, max, period) {
 	if (period) {
-		const value = -location / period;
+		const value = (max - location) / period;
 		return value - Math.floor(value);
 	}
 	return max > min ? clamp((max - location) / (max - min), 0, 1) : 0;
@@ -1189,6 +1224,32 @@ function inView(slides, location, view, threshold, period) {
 	});
 
 	return result;
+}
+
+/**
+ * Get the position of a location between the snaps, as a fractional snap index: 2.4 is between snap 2 and snap 3.
+ * In loop mode, a value after the last snap goes to the first snap again.
+ *
+ * @param {Array<{location: number}>} list The snaps.
+ * @param {number} location
+ * @param {number} [period]
+ * @returns {number}
+ */
+function snapPosition(list, location, period) {
+	const last = list.length - 1,
+		first = list[0].location,
+		at = period ? first - ((first - location) % period + period) % period : clamp(location, list[last].location, first);
+
+	let index = 0;
+
+	while (index < last && list[index + 1].location >= at) {
+		index++;
+	}
+
+	const from = list[index].location,
+		to = index < last ? list[index + 1].location : first - period;
+
+	return index + (to < from ? (from - at) / (from - to) : 0);
 }
 
 /*
@@ -1370,13 +1431,19 @@ function releaseTarget({ location, from, velocity, current, snaps, min, max, per
  * @param {(location: number) => string} css Get the CSS translate value of a location.
  * @param {(location: number) => void} frame Write a location.
  * @param {() => void} done Called when a motion ends.
+ * @param {(location: number) => void} [follow] Called on each frame of a Web Animations API motion, with the location now.
  * @returns {{run: Function, retarget: Function, stop: Function, current: Function}}
  */
-function animator(element, css, frame, done) {
+function animator(element, css, frame, done, follow) {
 	let state = null;
 
 	const time = () => state.animation ? state.animation.currentTime || 0 : performance.now() - state.start,
 		current = () => state && state.from + (state.to - state.from) * state.ease(state.duration > 0 ? time() / state.duration : 1);
+
+	function watch() {
+		follow(current());
+		state.raf = requestAnimationFrame(watch);
+	}
 
 	function tick() {
 		if (time() >= state.duration) {
@@ -1433,6 +1500,9 @@ function animator(element, css, frame, done) {
 				state.raf = requestAnimationFrame(tick);
 			} else {
 				animate(0);
+				if (follow) {
+					watch();
+				}
 			}
 		},
 
@@ -2236,6 +2306,9 @@ function BetterCarousel(element, userOptions = {}) {
 
 	const events = emitter(api),
 		owner = { read: measure, write: measured },
+		// The states that the "progress" and the "offset" callbacks get. Each call gets the same object, so a frame makes no garbage.
+		whole = { progress: 0, snap: 0 },
+		each = { slide: null, index: 0, offset: 0, distance: 0, size: 0, visible: 0 },
 		/**
 		 * What the features share: the API, the events, and the state and the actions of the carousel.
 		 * setup() adds root, viewport, container, cls and options.
@@ -2319,9 +2392,10 @@ function BetterCarousel(element, userOptions = {}) {
 
 		observe(true);
 
-		Object.assign(context, { root, viewport, container, cls, options });
+		// With the "progress" or the "offset" option, the features call track() on each frame of a motion
+		Object.assign(context, { root, viewport, container, cls, options, track: options.progress || options.offset ? track : null });
 
-		motion = animator(container, css, frame, settle);
+		motion = animator(container, css, frame, settle, context.track);
 		dragInput = drag(context);
 		wheelInput = wheel(context);
 		container.addEventListener('focusin', onFocus);
@@ -2390,6 +2464,7 @@ function BetterCarousel(element, userOptions = {}) {
 
 		for (const node of nodes) {
 			setStyle(node, 'translate', '');
+			node.style.removeProperty('--better-offset');
 			setClass(node, cls.active, false);
 			setClass(node, cls.inView, false);
 			cleanStyle(node);
@@ -2398,8 +2473,10 @@ function BetterCarousel(element, userOptions = {}) {
 		setStyle(container, 'translate', '');
 		setStyle(container, 'willChange', '');
 		setStyle(viewport, 'touchAction', '');
+		root.style.removeProperty('--better-progress');
 		cleanStyle(container);
 		cleanStyle(viewport);
+		cleanStyle(root);
 
 		for (const name of ['horizontal', 'vertical', 'dynamic', 'dragging']) {
 			setClass(root, cls[name], false);
@@ -2725,6 +2802,51 @@ function BetterCarousel(element, userOptions = {}) {
 		written.container = screen(value);
 		setStyle(container, 'translate', translate(written.container));
 		place(value, value);
+		context.track?.(value);
+	}
+
+	/**
+	 * Write the "progress" and the "offset" options for a location: the CSS variables, or the calls of the callbacks.
+	 *
+	 * @param {number} at The location.
+	 */
+	function track(at) {
+		if (options.progress === true) {
+			root.style.setProperty('--better-progress', progress(at, geo.min, geo.max, geo.period));
+		} else if (options.progress) {
+			const value = snapPosition(geo.snaps, at, geo.period),
+				snap = Math.floor(value);
+			whole.progress = progress(at, geo.min, geo.max, geo.period);
+			whole.snap = logical(snap) + value - snap;
+			options.progress(whole, api);
+		}
+
+		if (options.offset) {
+			// The shifts of the slides on the screen. Only the auto scroll changes them during a motion.
+			const sign = geo.rtl ? -1 : 1,
+				shifts = auto?.shown(sign, written.axis)?.slides || written.slides;
+
+			nodes.forEach((slide, index) => {
+				const box = geo.slides[index],
+					size = box.end - box.start,
+					// The slide start on the screen, and its distance from its snap position
+					start = box.start + sign * (shifts[index] || 0) + at,
+					delta = start - alignOffset(geo.align, geo.view, size, index),
+					offset = delta / (size + geo.gap);
+
+				if (options.offset === true) {
+					slide.style.setProperty('--better-offset', offset);
+				} else {
+					each.slide = slide;
+					each.index = original(index);
+					each.offset = offset;
+					each.distance = sign * delta;
+					each.size = size;
+					each.visible = clamp((Math.min(start + size, geo.view) - Math.max(start, 0)) / size, 0, 1) || 0;
+					options.offset(each, api);
+				}
+			});
+		}
 	}
 
 	/**

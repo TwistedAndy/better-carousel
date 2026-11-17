@@ -2,7 +2,32 @@
 (() => {
 	'use strict';
 
-	const carousels = window.carousels = BetterCarousel.initAll('.items.carousel');
+	// The examples with function options, which data-carousel cannot hold. The key is the data-demo value.
+	const demos = {
+		timer(element) {
+			const bar = element.closest('.demo').querySelector('.demo_bar');
+			return { autoplay: { delay: 3000, timer: (delay) => {
+				const animation = bar.animate([{ scale: '0 1' }, { scale: '1 1' }], delay);
+				return () => animation.cancel();
+			} } };
+		},
+		callbacks(element) {
+			const counter = element.closest('.demo').querySelector('.demo_counter');
+			return {
+				progress: ({ progress, snap }) => {
+					counter.textContent = 'Snap ' + (snap + 1).toFixed(1) + ', ' + Math.round(progress * 100) + '%';
+				},
+				offset: ({ slide, visible }) => {
+					slide.style.opacity = 0.3 + 0.7 * visible;
+				}
+			};
+		}
+	};
+
+	const carousels = window.carousels = [
+		...BetterCarousel.initAll('.items.carousel:not([data-demo])'),
+		...[...document.querySelectorAll('.items.carousel[data-demo]')].map((element) => BetterCarousel(element, demos[element.dataset.demo](element)))
+	];
 
 	// All carousels are ready after their first measure pass
 	window.ready = Promise.all(carousels.map((carousel) => new Promise((resolve) => carousel.on('init', resolve))));

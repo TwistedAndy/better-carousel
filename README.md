@@ -4,7 +4,7 @@
 
 <p>A small, fast and accessible JavaScript carousel.<br />The CSS sets the layout, and the motion runs on the compositor, also on slow phones.</p>
 
-[![Gzip size](https://flat.badgen.net/static/gzip/10.7%20KB/green)](dist/better-carousel.min.js)
+[![Gzip size](https://flat.badgen.net/static/gzip/11.2%20KB/green)](dist/better-carousel.min.js)
 [![MIT license](https://flat.badgen.net/static/license/MIT/purple)](LICENSE)
 [![No dependencies](https://flat.badgen.net/static/dependencies/0/blue)](package.json)
 
@@ -16,7 +16,7 @@
 
 - **Layout from CSS** - Your CSS sets the sizes of the slides, the space between them, the axis and the alignment. One carousel can show 1 slide on a phone and 4 slides on a desktop.
 - **Smooth** - Each motion is a Web Animations API animation of `translate`. No script runs on each frame, also during the auto scroll.
-- **Small** - <!-- generated:gzip -->10.7 KB<!-- /generated --> gzip with loop, autoplay, auto scroll, auto height, sync and the mouse wheel.
+- **Small** - <!-- generated:gzip -->11.2 KB<!-- /generated --> gzip with loop, autoplay, auto scroll, auto height, sync and the mouse wheel.
 - **Loop** - The loop moves the original slides. It adds clones only if the slides are too few.
 - **Vertical and grid** - A column layout makes a vertical carousel. A CSS grid with more rows also works.
 - **Accessible** - WCAG 2.1 AA: names for the carousel, the slides and the buttons, the keyboard focus, a live region and reduced motion.
@@ -351,6 +351,8 @@ BetterCarousel(element, {
 | `autoplay` | `boolean`, `number`, `object` | `false` | Go to the next slide after a delay. `true`, a delay in ms, or an object. ([example](#autoplay)) |
 | `autoScroll` | `boolean`, `number`, `object` | `false` | Move the slides at a constant speed. `true`, a speed in px/s, or an object. ([example](https://twistedandy.github.io/better-carousel/#logos)) |
 | `autoHeight` | `boolean` | `false` | The viewport gets the height of the tallest slide in view. ([example](https://twistedandy.github.io/better-carousel/#height)) |
+| `progress` | `boolean`, `function` | `false` | Follow the progress, from 0 to 1. `true` sets `--better-progress` on the root. A function gets `{ progress, snap }` on each frame of a motion. See [Progress and offset](#progress-and-offset). |
+| `offset` | `boolean`, `function` | `false` | Follow the distance of each slide from its snap position, in slides. `true` sets `--better-offset` on each slide. A function gets `{ slide, index, offset, distance, size, visible }` for each slide on each frame of a motion. |
 <!-- /generated -->
 
 ### autoplay
@@ -375,9 +377,27 @@ BetterCarousel(element, {
     stopOnLastSnap: false,     // Stop at the last snap, if loop is false
     playOnInit: true,
     instant: false,            // Jump to the next slide with no motion
+    timer: null,               // A function that shows the time to the next slide
   },
 })
 ```
+
+To show the time to the next slide, set `timer` to a function. The carousel calls it when the timer starts, with the delay in ms and the carousel. The function can return a cleanup function. The carousel calls the cleanup function when this timer ends or stops, for example at a pause. The library has no styles for a progress indicator.
+
+```js
+const bar = document.querySelector('.progress')
+
+BetterCarousel(element, {
+  autoplay: {
+    timer: (delay) => {
+      const animation = bar.animate([{ scale: '0 1' }, { scale: '1 1' }], delay)
+      return () => animation.cancel()
+    },
+  },
+})
+```
+
+An animation of `scale`, `translate` or `opacity` runs on the compositor: no script runs for each frame.
 
 ### autoScroll
 
@@ -419,6 +439,84 @@ The thumbnails follow the main gallery, and a click on a thumbnail selects its p
 ```
 
 The value of `sync` can be a selector, a container or a carousel. The library searches for a selector in the root of the carousel first, and then in each parent of the root. A carousel can follow only one other carousel.
+
+### progress and offset
+
+The `progress` and `offset` options give the position of the carousel on each frame of a motion. Use them for a progress bar, a parallax effect, or a fade. They are off by default, because a script runs on each frame while they are on.
+
+With `true`, the carousel sets CSS variables:
+
+- `--better-progress` on the root: the progress, from 0 to 1;
+- `--better-offset` on each slide: the distance from the snap position of the slide, in slides. The value is 0 at the snap position, 1 for the next slide and -1 for the previous slide.
+
+```html
+<div class="items carousel" data-carousel='{"progress":true,"offset":true}'>...</div>
+```
+
+A progress bar at the bottom of the slides:
+
+```css
+.better_viewport::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 3;
+  height: 4px;
+  background: currentColor;
+  transform-origin: left;
+  scale: var(--better-progress, 0) 1;
+}
+```
+
+Parallax: each photo is larger than its slide, and it moves slower than the slide.
+
+```css
+.better .item {
+  overflow: hidden;
+}
+
+.better .item img {
+  scale: 1.3;
+  translate: calc(clamp(-1, var(--better-offset, 0), 1) * -10%) 0;
+}
+```
+
+Scale and fade: the photos far from the selected snap are smaller and lighter.
+
+```css
+.better .item {
+  --distance: min(1, max(var(--better-offset, 0), -1 * var(--better-offset, 0)));
+}
+
+.better .item img {
+  scale: calc(1 - 0.25 * var(--distance));
+  opacity: calc(1 - 0.6 * var(--distance));
+}
+```
+
+Change an element in the slide, not the slide. The carousel measures the slides, and a `scale` on a slide changes its size for the carousel.
+
+A function gets a state object and the carousel. The carousel uses the same object for each call, so read the values during the call:
+
+```js
+BetterCarousel(element, {
+  // { progress, snap }: snap is the position between the snaps, for example 2.4
+  progress: ({ progress, snap }) => {
+    bar.style.scale = progress + ' 1';
+  },
+  // { slide, index, offset, distance, size, visible }, one call for each slide
+  offset: ({ slide, offset, visible }) => {
+    slide.style.opacity = 0.4 + 0.6 * visible;
+  },
+})
+```
+
+- `distance` is the same distance as `offset`, in px on the screen. A positive value is to the right or down.
+- `size` is the size of the slide on the main axis, in px.
+- `visible` is the part of the slide in the viewport, from 0 to 1.
+- `index` is the index of the slide. A clone gives the index of its slide.
+
+In loop mode, the progress goes from 1 back to 0. The auto scroll is a motion that does not stop: with these options, a script runs on each frame while it plays.
 
 ## Methods
 
@@ -576,9 +674,9 @@ The library is made for slow phones. A motion runs on the compositor, and a caro
 <!-- generated:sizes -->
 | File | Minified | Gzip | Brotli |
 | --- | --- | --- | --- |
-| `better-carousel.min.js` | 26.9 KB | 10.7 KB | 9.8 KB |
+| `better-carousel.min.js` | 28.3 KB | 11.2 KB | 10.2 KB |
 | `better-carousel.css` | 3.9 KB | 1.2 KB | 1.0 KB |
-| Total | 30.8 KB | 11.9 KB | 10.8 KB |
+| Total | 32.1 KB | 12.4 KB | 11.2 KB |
 <!-- /generated -->
 
 The same features in Embla 9 (the core, three plugins and a wrapper) are 12.6 KB gzip.
@@ -595,6 +693,7 @@ The same features in Embla 9 (the core, three plugins and a wrapper) are 12.6 KB
 - One `ResizeObserver` serves all carousels. It reads the layout of all carousels first, and then it writes. For this reason, the browser calculates the layout only one time.
 - The dots move with `translate` and change size with `transform`. A click on a dot causes no layout work.
 - The listeners for the autoplay and the mouse wheel exist only while they can do something.
+- The `progress` and `offset` options run a script on each frame of a motion. For this reason, they are off by default.
 
 ## Coming from Embla
 

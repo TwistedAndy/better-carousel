@@ -6,7 +6,7 @@
  */
 
 import { autoplay, autoScroll } from './autoplay.js';
-import { activeSlide, bounds, clamp, distance, inView, nearestSnap, progress, snapIndex, snapOfSlide, snaps, targetLocation } from './geometry.js';
+import { activeSlide, alignOffset, bounds, clamp, distance, inView, nearestSnap, progress, snapIndex, snapOfSlide, snapPosition, snaps, targetLocation } from './geometry.js';
 import { drag, wheel } from './input.js';
 import { observeSize, readLayout, readRects, visibleArea, waitNear, windowSize } from './layout.js';
 import { cloneCount, normalize, pathFits, placement } from './loop.js';
@@ -137,6 +137,9 @@ export default function BetterCarousel(element, userOptions = {}) {
 
 	const events = emitter(api),
 		owner = { read: measure, write: measured },
+		// The states that the "progress" and the "offset" callbacks get. Each call gets the same object, so a frame makes no garbage.
+		whole = { progress: 0, snap: 0 },
+		each = { slide: null, index: 0, offset: 0, distance: 0, size: 0, visible: 0 },
 		/**
 		 * What the features share: the API, the events, and the state and the actions of the carousel.
 		 * setup() adds root, viewport, container, cls and options.
@@ -220,9 +223,10 @@ export default function BetterCarousel(element, userOptions = {}) {
 
 		observe(true);
 
-		Object.assign(context, { root, viewport, container, cls, options });
+		// With the "progress" or the "offset" option, the features call track() on each frame of a motion
+		Object.assign(context, { root, viewport, container, cls, options, track: options.progress || options.offset ? track : null });
 
-		motion = animator(container, css, frame, settle);
+		motion = animator(container, css, frame, settle, context.track);
 		dragInput = drag(context);
 		wheelInput = wheel(context);
 		container.addEventListener('focusin', onFocus);
@@ -291,6 +295,7 @@ export default function BetterCarousel(element, userOptions = {}) {
 
 		for (const node of nodes) {
 			setStyle(node, 'translate', '');
+			node.style.removeProperty('--better-offset');
 			setClass(node, cls.active, false);
 			setClass(node, cls.inView, false);
 			cleanStyle(node);
@@ -299,8 +304,10 @@ export default function BetterCarousel(element, userOptions = {}) {
 		setStyle(container, 'translate', '');
 		setStyle(container, 'willChange', '');
 		setStyle(viewport, 'touchAction', '');
+		root.style.removeProperty('--better-progress');
 		cleanStyle(container);
 		cleanStyle(viewport);
+		cleanStyle(root);
 
 		for (const name of ['horizontal', 'vertical', 'dynamic', 'dragging']) {
 			setClass(root, cls[name], false);
@@ -626,6 +633,51 @@ export default function BetterCarousel(element, userOptions = {}) {
 		written.container = screen(value);
 		setStyle(container, 'translate', translate(written.container));
 		place(value, value);
+		context.track?.(value);
+	}
+
+	/**
+	 * Write the "progress" and the "offset" options for a location: the CSS variables, or the calls of the callbacks.
+	 *
+	 * @param {number} at The location.
+	 */
+	function track(at) {
+		if (options.progress === true) {
+			root.style.setProperty('--better-progress', progress(at, geo.min, geo.max, geo.period));
+		} else if (options.progress) {
+			const value = snapPosition(geo.snaps, at, geo.period),
+				snap = Math.floor(value);
+			whole.progress = progress(at, geo.min, geo.max, geo.period);
+			whole.snap = logical(snap) + value - snap;
+			options.progress(whole, api);
+		}
+
+		if (options.offset) {
+			// The shifts of the slides on the screen. Only the auto scroll changes them during a motion.
+			const sign = geo.rtl ? -1 : 1,
+				shifts = auto?.shown(sign, written.axis)?.slides || written.slides;
+
+			nodes.forEach((slide, index) => {
+				const box = geo.slides[index],
+					size = box.end - box.start,
+					// The slide start on the screen, and its distance from its snap position
+					start = box.start + sign * (shifts[index] || 0) + at,
+					delta = start - alignOffset(geo.align, geo.view, size, index),
+					offset = delta / (size + geo.gap);
+
+				if (options.offset === true) {
+					slide.style.setProperty('--better-offset', offset);
+				} else {
+					each.slide = slide;
+					each.index = original(index);
+					each.offset = offset;
+					each.distance = sign * delta;
+					each.size = size;
+					each.visible = clamp((Math.min(start + size, geo.view) - Math.max(start, 0)) / size, 0, 1) || 0;
+					options.offset(each, api);
+				}
+			});
+		}
 	}
 
 	/**

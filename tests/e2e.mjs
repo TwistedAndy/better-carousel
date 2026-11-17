@@ -862,6 +862,25 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 	await page.evaluate(() => window.byId('autoplay').rootNode().querySelector('.better_next').click());
 	const clicked = await read();
 	check('autoplay: an arrow click stops it', !clicked.playing, JSON.stringify(clicked));
+
+	// The timer callback gets the delay of each timer. Its cleanup function runs when the timer ends and when the autoplay stops.
+	const calls = await page.evaluate(async () => {
+		const element = document.createElement('div'),
+			list = [];
+		element.style.display = 'flex';
+		element.innerHTML = '<div style="flex: 0 0 50%">1</div><div style="flex: 0 0 50%">2</div><div style="flex: 0 0 50%">3</div>';
+		window.byId('autoplay').rootNode().after(element);
+		const carousel = BetterCarousel(element, { autoplay: { delay: 300, timer: (delay) => {
+			list.push(delay);
+			return () => list.push('end');
+		} } });
+		await new Promise((resolve) => setTimeout(resolve, 1000));
+		carousel.autoplay.stop();
+		carousel.destroy();
+		element.remove();
+		return list;
+	});
+	check('autoplay: the timer callback gets the delay, and its cleanup runs at the end of each timer and at the stop', calls.length >= 4 && calls.every((item, index) => item === (index % 2 ? 'end' : 300)) && calls.length % 2 === 0, JSON.stringify(calls));
 }
 
 // Auto scroll
@@ -951,6 +970,121 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 		return { first, wide: slide(0), last, square: slide(1), middle, transition: getComputedStyle(viewport).transitionProperty };
 	});
 	check('auto height: the viewport gets the height of the slide in view, with a transition', value.first === value.wide && value.last === value.square && value.wide < value.square && value.middle > value.wide && value.middle < value.square && value.transition.includes('height'), JSON.stringify(value));
+}
+
+// Progress and offset
+{
+	// Go to snap 1, and read the values at rest, during the motion and after it
+	const motion = (id, read) => page.evaluate(async (id, read) => {
+		const carousel = window.byId(id),
+			get = new Function('carousel', 'return (' + read + ')(carousel)'),
+			rest = get(carousel);
+		carousel.goTo(1);
+		await new Promise((resolve) => setTimeout(resolve, 100));
+		const middle = get(carousel);
+		await new Promise((resolve) => carousel.on('settle', resolve));
+		const end = get(carousel);
+		carousel.goTo(carousel.snapList().length - 1, true);
+		const last = get(carousel);
+		carousel.goTo(0, true);
+		return { count: carousel.slideNodes().length, snap: carousel.snapList()[1], rest, middle, end, last };
+	}, id, read.toString());
+
+	await scrollTo('progress-and-offset');
+	const bar = await motion('progress-and-offset', (carousel) => carousel.rootNode().style.getPropertyValue('--better-progress'));
+	check('progress: --better-progress is 0 at the start, changes during a motion, and is 1 at the last snap', bar.rest === '0' && +bar.middle > 0 && +bar.middle < bar.snap && Math.abs(bar.end - bar.snap) < 0.001 && +bar.last === 1, JSON.stringify(bar));
+
+	await scrollTo('parallax');
+	const offsets = await motion('parallax', (carousel) => carousel.slideNodes().map((slide) => Math.round(slide.style.getPropertyValue('--better-offset') * 100) / 100));
+	check('offset: --better-offset is 0 for the selected slide, 1 for the next and -1 for the previous', offsets.rest[0] === 0 && offsets.rest[1] === 1 && offsets.rest[offsets.count - 1] === -1, JSON.stringify(offsets.rest));
+	check('offset: --better-offset changes on each frame of a motion', offsets.middle[1] > 0 && offsets.middle[1] < 1 && offsets.end[1] === 0 && offsets.end[0] === -1, JSON.stringify([offsets.middle, offsets.end]));
+
+	// The examples: the timer bar animates while the autoplay plays, the photos far from the center are smaller, and the counter shows the snap
+	await scrollTo('timer');
+	await wait(300);
+	const timer = await page.evaluate(() => document.querySelector('#timer .demo_bar').getAnimations().length);
+	await scrollTo('scale');
+	const scaled = await page.evaluate(() => [...document.querySelectorAll('#scale .item > img')].map((image) => +getComputedStyle(image).opacity));
+	await scrollTo('callbacks');
+	const counter = await page.evaluate(async () => {
+		const carousel = window.byId('callbacks'),
+			text = document.querySelector('#callbacks .demo_counter');
+		carousel.goTo(1, true);
+		const after = text.textContent;
+		carousel.goTo(0, true);
+		return [after, text.textContent, carousel.slideNodes().map((slide) => +slide.style.opacity)];
+	});
+	check('examples: the timer bar animates, the scale example fades the side photos, and the callbacks example writes the counter', timer === 1 && scaled[0] > 0.99 && scaled[1] < 0.5 && counter[0] === 'Snap 2.0, 14%' && counter[1] === 'Snap 1.0, 0%' && counter[2][0] === 1 && counter[2].some((value) => value > 0.3 && value < 1), JSON.stringify({ timer, scaled, counter }));
+
+	// The callbacks get the state on each frame. destroy() removes the CSS variables.
+	const calls = await page.evaluate(async () => {
+		const element = document.createElement('div'),
+			result = { snaps: [], progress: [], indexes: new Set(), visible: [] };
+		element.style.display = 'flex';
+		element.innerHTML = '<div style="flex: 0 0 50%">1</div><div style="flex: 0 0 50%">2</div><div style="flex: 0 0 50%">3</div><div style="flex: 0 0 50%">4</div>';
+		window.byId('callbacks').rootNode().after(element);
+		const carousel = BetterCarousel(element, {
+			duration: 400,
+			progress: (state, api) => {
+				result.snaps.push(state.snap);
+				result.progress.push(state.progress);
+				result.api = api === carousel;
+			},
+			offset: (state) => {
+				result.indexes.add(state.index);
+				result.visible.push(state.visible);
+				result.slide = result.slide || state.slide.parentNode === carousel.containerNode();
+			}
+		});
+		await new Promise((resolve) => carousel.on('init', resolve));
+		carousel.goTo(2);
+		await new Promise((resolve) => carousel.on('settle', resolve));
+		const settled = result.snaps.length;
+		await new Promise((resolve) => setTimeout(resolve, 200));
+		result.idle = result.snaps.length - settled;
+		carousel.destroy();
+		const plain = BetterCarousel(element, { progress: true, offset: true });
+		await new Promise((resolve) => plain.on('init', resolve));
+		const root = plain.rootNode(),
+			set = root.style.getPropertyValue('--better-progress') !== '' && plain.slideNodes()[1].style.getPropertyValue('--better-offset') !== '';
+		plain.destroy();
+		const removed = root.style.getPropertyValue('--better-progress') === '' && !element.querySelector('[style*="--better-"]');
+		element.remove();
+		return {
+			api: result.api,
+			slide: result.slide,
+			last: result.snaps[result.snaps.length - 1],
+			fraction: result.snaps.some((snap) => snap > 0 && snap < 2 && snap % 1),
+			progress: result.progress[result.progress.length - 1],
+			indexes: [...result.indexes],
+			visible: result.visible.every((item) => item >= 0 && item <= 1),
+			frames: result.snaps.length,
+			idle: result.idle,
+			set,
+			removed
+		};
+	});
+	check('progress and offset: the callbacks get the state on each frame, and the last snap gives progress 1, and no calls at rest', calls.api && calls.slide && calls.last === 2 && calls.fraction && calls.progress === 1 && calls.indexes.length === 4 && calls.visible && calls.frames > 3 && calls.idle === 0, JSON.stringify(calls));
+	check('progress and offset: destroy() removes the CSS variables', calls.set && calls.removed, JSON.stringify(calls));
+
+	// The auto scroll in loop mode calls the callbacks on each frame while it plays, and not after the stop
+	const scroll = await page.evaluate(async () => {
+		const element = document.createElement('div'),
+			list = [];
+		element.style.display = 'flex';
+		element.innerHTML = '<div style="flex: 0 0 40%">1</div><div style="flex: 0 0 40%">2</div><div style="flex: 0 0 40%">3</div><div style="flex: 0 0 40%">4</div>';
+		window.byId('callbacks').rootNode().after(element);
+		const carousel = BetterCarousel(element, { loop: true, autoScroll: { speed: 600, startDelay: 0 }, progress: ({ progress }) => list.push(progress) });
+		await new Promise((resolve) => setTimeout(resolve, 600));
+		carousel.autoScroll.stop();
+		const stopped = list.length;
+		await new Promise((resolve) => setTimeout(resolve, 200));
+		const after = list.length - stopped;
+		carousel.destroy();
+		element.remove();
+		return { frames: stopped, after, moved: list.some((value) => value > 0.05) };
+	});
+	check('progress and offset: the auto scroll calls the callback on each frame, and not after the stop', scroll.frames > 10 && scroll.moved && scroll.after === 0, JSON.stringify(scroll));
 }
 
 // Controls in slides
