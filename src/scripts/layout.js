@@ -45,35 +45,62 @@ export function readLayout(container, options) {
 }
 
 /**
- * Read the slide boxes on the main axis, relative to the viewport start at location 0.
+ * Read the slide boxes on the main axis, relative to the inner edge of the viewport padding at location 0. The snaps align to this edge.
+ * The values are in the px of the carousel: in a parent with a CSS scale, such as a modal window that opens with a scale animation, the
+ * values do not change with a scale or a rotation of a parent.
+ * A slide with no box, such as a slide with display: none, is hidden. It gets no snap, and it stays at the end of the slide before it.
  *
  * @param {HTMLElement} viewport
  * @param {HTMLElement[]} nodes All slides, clones included.
  * @param {object} layout The result of readLayout().
  * @param {{axis: string, container: number, slides: number[]}} written The translate values that the library wrote, in px on the screen.
- * @returns {{view: number, slides: Array<{start: number, end: number, cross: number}>, gap: number}}
- * gap is the loop gap: the space between the last slide and the next copy of the first slide.
+ * @returns {{view: number, slides: Array<{start: number, end: number, cross: number, hidden: boolean}>, gap: number, scale: number, pad: {start: number, end: number}}}
+ * view is the viewport size without the padding. gap is the loop gap: the space between the last slide and the next copy of the first slide.
+ * scale is the screen px of one px of the carousel. pad is the viewport padding at the start and at the end.
  */
 export function readRects(viewport, nodes, layout, written) {
 	const box = viewport.getBoundingClientRect(),
 		x = layout.axis === 'x',
 		sign = layout.sign,
 		known = written.axis === layout.axis,
-		shift = known ? written.container : 0;
-
-	let first = 0,
-		last = 0;
+		shift = known ? written.container : 0,
+		width = viewport.offsetWidth,
+		height = viewport.offsetHeight,
+		// offsetWidth is a whole number: a difference of less than 1 px is not a transform
+		transformed = width && height && (Math.abs(box.width - width) >= 1 || Math.abs(box.height - height) >= 1),
+		// A scale s and a rotation by an angle a give a box of s(w cos a + h sin a) by s(w sin a + h cos a). The main axis gets s cos a.
+		scale = !transformed ? 1 : Math.abs(width - height) > 1 ? (width * box.width - height * box.height) / (width * width - height * height) : box.width / width,
+		view = !transformed ? (x ? box.width : box.height) : x ? width : height,
+		style = getComputedStyle(viewport),
+		[before, after] = x ? (layout.rtl ? ['Right', 'Left'] : ['Left', 'Right']) : ['Top', 'Bottom'],
+		pad = { start: parseFloat(style['padding' + before]) || 0, end: parseFloat(style['padding' + after]) || 0 };
 
 	const slides = nodes.map((node, index) => {
 		const rect = node.getBoundingClientRect(),
 			offset = sign * (shift + (known && written.slides[index] || 0)),
-			start = (x ? (layout.rtl ? box.right - rect.right : rect.left - box.left) : rect.top - box.top) - offset,
-			size = x ? rect.width : rect.height;
+			start = (x ? (layout.rtl ? box.right - rect.right : rect.left - box.left) : rect.top - box.top) / scale - pad.start - offset,
+			size = (x ? rect.width : rect.height) / scale;
 
-		return { start, end: start + size, cross: x ? rect.height : rect.width };
+		return { start, end: start + size, cross: (x ? rect.height : rect.width) / scale, hidden: !rect.width && !rect.height };
 	});
 
+	let edge = slides.find((slide) => !slide.hidden)?.start || 0;
+
+	for (const slide of slides) {
+		if (slide.hidden) {
+			slide.start = slide.end = edge;
+		} else {
+			edge = slide.end;
+		}
+	}
+
+	let first = Math.max(0, slides.findIndex((slide) => !slide.hidden)),
+		last = first;
+
 	slides.forEach((slide, index) => {
+		if (slide.hidden) {
+			return;
+		}
 		if (slide.start < slides[first].start) {
 			first = index;
 		}
@@ -90,9 +117,11 @@ export function readRects(viewport, nodes, layout, written) {
 	}
 
 	return {
-		view: x ? box.width : box.height,
+		view: view - pad.start - pad.end,
 		slides,
-		gap
+		gap,
+		scale,
+		pad
 	};
 }
 
@@ -107,46 +136,70 @@ export function windowSize(axis) {
 }
 
 /**
- * Get the part of the main axis where the loop must show slides, relative to the viewport start.
- * It is the viewport. With clones: 'fill', it is the window, so that the slides fill it when the viewport overflow shows.
+ * Get the part of the main axis where the loop must show slides, relative to the inner edge of the viewport padding.
+ * It is the viewport with its padding. With clones: 'fill', it is the window, so that the slides fill it when the viewport overflow shows.
  *
  * @param {HTMLElement} viewport
  * @param {{axis: string, rtl: boolean}} layout
- * @param {number} view The viewport size.
+ * @param {number} view The viewport size without the padding.
+ * @param {{start: number, end: number}} pad The viewport padding.
  * @param {number} [size] The window size on the main axis, for clones: 'fill'. Without it, the area is the viewport.
  * @returns {{start: number, size: number}}
  */
-export function visibleArea(viewport, layout, view, size) {
+export function visibleArea(viewport, layout, view, pad, size) {
 	if (!size) {
-		return { start: 0, size: view };
+		return { start: -pad.start, size: pad.start + view + pad.end };
 	}
 
 	const box = viewport.getBoundingClientRect(),
-		before = Math.max(0, Math.round(layout.axis === 'x' ? (layout.rtl ? size - box.right : box.left) : box.top));
+		before = Math.max(0, Math.round(layout.axis === 'x' ? (layout.rtl ? size - box.right : box.left) : box.top)) + pad.start;
 
-	return { start: -before, size: before + Math.max(view, Math.round(size - before)) };
+	return { start: -before, size: before + Math.max(view + pad.end, Math.round(size - before)) };
 }
 
 // One ResizeObserver for all carousels. Each callback first reads the layout of all carousels, then writes. In this way, the reads of one carousel do not
 // come after the writes of another carousel, and the browser does one layout for all of them.
-const owners = new WeakMap();
+const owners = new WeakMap(),
+	// The elements of each owner, and the last size of each element
+	watched = new WeakMap(),
+	sizes = new WeakMap();
 
 let resizer;
 
 /**
  * Watch the size of elements. The ResizeObserver callback calls owner.read() for each owner, and then owner.write() for each owner whose read() returned true.
- * An entry for which owner.skip() returns true does not count.
+ * An entry for which owner.skip() returns true does not count. An entry with the same size as the last entry of its element does not count:
+ * a new watch of an element after a write sends such an entry. observeSize() clears the last size, so its first entry always counts.
  *
  * @param {Element[]} nodes
  * @param {{read: () => boolean, write: () => void, skip: (entry: ResizeObserverEntry) => boolean}} [owner] Without an owner, stop the watch.
  */
 export function observeSize(nodes, owner) {
 	resizer ||= new ResizeObserver((entries) => {
-		const list = new Set(entries.filter((entry) => !owners.get(entry.target)?.skip(entry)).map((entry) => owners.get(entry.target)));
-		[...list].filter((item) => item && item.read()).forEach((item) => item.write());
+		const list = new Set(entries.filter((entry) => {
+			const { inlineSize, blockSize } = entry.borderBoxSize[0],
+				size = inlineSize + ',' + blockSize,
+				same = sizes.get(entry.target) === size;
+			sizes.set(entry.target, size);
+			return !same && !owners.get(entry.target)?.skip(entry);
+		}).map((entry) => owners.get(entry.target)));
+		const changed = [...list].filter((item) => item && item.read());
+		changed.forEach((item) => item.write());
+		// A write can change the size of an element that the observer watches, for example the auto height or the clones. If the observer has
+		// a change to report after its callback, the browser sends the "ResizeObserver loop" error to window.onerror. Stop the watch of these
+		// elements, and watch them again in the next frame. Then the first callback measures again and finds no change.
+		if (changed.length) {
+			changed.forEach((item) => watched.get(item)?.forEach((node) => resizer.unobserve(node)));
+			requestAnimationFrame(() => changed.forEach((item) => watched.get(item)?.forEach((node) => owners.get(node) === item && resizer.observe(node))));
+		}
 	});
 
+	if (owner) {
+		watched.set(owner, nodes);
+	}
+
 	for (const node of nodes) {
+		sizes.delete(node);
 		if (owner) {
 			owners.set(node, owner);
 			resizer.observe(node);

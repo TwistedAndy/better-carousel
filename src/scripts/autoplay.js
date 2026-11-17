@@ -102,10 +102,13 @@ function controller(context, key, options, hooks) {
 		} else if (!button.isConnected) {
 			root.append(button);
 		}
-		// Start at the first init, unless the user prefers less motion
+		// Start at the first init, unless the user prefers less motion. After a breakpoint change, the play state stays.
+		// A play() before the first init starts now, because the carousel had no size before.
 		if (first) {
 			first = false;
-			if (options.playOnInit && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+			if (playing) {
+				hooks.play();
+			} else if (context.playing?.[key] ?? (options.playOnInit && !matchMedia('(prefers-reduced-motion: reduce)').matches)) {
 				control.play();
 			}
 		}
@@ -233,8 +236,9 @@ export function autoScroll(context) {
 
 	const options = settings(autoScrollDefaults, 'speed', context.options.autoScroll);
 
-	// The start delay
-	let timer = 0;
+	// The start delay, and true while a pointer presses the viewport
+	let timer = 0,
+		pressed = false;
 
 	const control = controller(context, 'autoScroll', options, {
 		play: wait,
@@ -279,10 +283,40 @@ export function autoScroll(context) {
 	function run() {
 		timer = 0;
 		const geo = context.geo();
-		if (geo && !geo.fit && !context.dragging() && !control.paused()) {
+		if (geo && !geo.fit && !pressed && !context.dragging() && !control.paused()) {
 			context.scroll(options.direction === 'prev' ? -1 : 1, options.speed / 1000);
 		}
 	}
+
+	// A press stops the slides under the pointer. A release without a drag starts them again after the delay. A drag is an interaction.
+	const listen = (method) => ['pointerup', 'pointercancel'].forEach((name) => window[method](name, release));
+
+	function press(event) {
+		if (!event.button && control.isPlaying() && !pressed) {
+			pressed = true;
+			wait(-1);
+			context.halt();
+			listen('addEventListener');
+		}
+	}
+
+	function release() {
+		pressed = false;
+		listen('removeEventListener');
+		if (control.isPlaying() && !context.dragging()) {
+			wait();
+		}
+	}
+
+	const { viewport } = context,
+		remove = control.remove;
+
+	viewport.addEventListener('pointerdown', press);
+	control.remove = () => {
+		viewport.removeEventListener('pointerdown', press);
+		listen('removeEventListener');
+		remove();
+	};
 
 	return control;
 }

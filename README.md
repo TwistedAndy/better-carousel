@@ -4,7 +4,7 @@
 
 <p>A small, fast and accessible JavaScript carousel.<br />The CSS sets the layout, and the motion runs on the compositor, also on slow phones.</p>
 
-[![Gzip size](https://flat.badgen.net/static/gzip/11.6%20KB/green)](dist/better-carousel.min.js)
+[![Gzip size](https://flat.badgen.net/static/gzip/12.6%20KB/green)](dist/better-carousel.min.js)
 [![MIT license](https://flat.badgen.net/static/license/MIT/purple)](LICENSE)
 [![No dependencies](https://flat.badgen.net/static/dependencies/0/blue)](package.json)
 
@@ -16,7 +16,7 @@
 
 - **Layout from CSS** - Your CSS sets the sizes of the slides, the space between them, the axis and the alignment. One carousel can show 1 slide on a phone and 4 slides on a desktop.
 - **Smooth** - Each motion is a Web Animations API animation of `translate`. No script runs on each frame, also during the auto scroll.
-- **Small** - <!-- generated:gzip -->11.6 KB<!-- /generated --> gzip with loop, autoplay, auto scroll, auto height, sync and the mouse wheel.
+- **Small** - <!-- generated:gzip -->12.6 KB<!-- /generated --> gzip with loop, autoplay, auto scroll, auto height, sync and the mouse wheel.
 - **Loop** - The loop moves the original slides. It adds clones only if the slides are too few.
 - **Vertical and grid** - A column layout makes a vertical carousel. A CSS grid with more rows also works.
 - **Accessible** - WCAG 2.1 AA: names for the carousel, the slides and the buttons, the keyboard focus, a live region and reduced motion.
@@ -29,13 +29,13 @@ Load the minified script and the stylesheet from jsDelivr. The script adds the g
 ```html
 <link
   rel="stylesheet"
-  href="https://cdn.jsdelivr.net/gh/TwistedAndy/better-carousel@v1.0.0/dist/better-carousel.css"
+  href="https://cdn.jsdelivr.net/gh/TwistedAndy/better-carousel@v1.1.0/dist/better-carousel.css"
   integrity="sha384-3ROtqpAC1ZPhSpDul73SGiTOv1L5kTr/08sUr6FPY6S79RIDi7mpI22ttbuxI/w8"
   crossorigin="anonymous"
 />
 <script
-  src="https://cdn.jsdelivr.net/gh/TwistedAndy/better-carousel@v1.0.0/dist/better-carousel.min.js"
-  integrity="sha384-c07capt5gSP/u/29MrkOEgCGW7Igro6cgxxf+xcsoNU8vmYtVkOELryyxkxbLe9i"
+  src="https://cdn.jsdelivr.net/gh/TwistedAndy/better-carousel@v1.1.0/dist/better-carousel.min.js"
+  integrity="sha384-UjCkof+Hhn4+1TwAy29U/sKHOeabjJs4q+6SKn0GrTEDkuWVfGy0vkZncDkmjlzZ"
   crossorigin="anonymous"
 ></script>
 ```
@@ -127,7 +127,7 @@ The library puts the container into a viewport and a root. Then it adds the arro
 | Snap | A position where the carousel can stop. A snap shows one slide or a group of slides. |
 | Selected snap | The snap that shows now. `selectedSnap()` gives its index. |
 | Selected slide | The slide at the selected snap. It gets the `selected` class. `selectedSlide()` gives its index. |
-| Clone | A copy of a slide that the loop adds when the slides are too few. Clones are not in `slideNodes()`, and they have no index. |
+| Clone | A copy of a slide that the loop adds when the slides are too few. Clones are not in `slideNodes()`, and they have no index. A change in the content of a slide also changes its clones. |
 | Motion | A change of position with an animation. When a motion stops, the `settle` event occurs. |
 | Fit | All slides show in the viewport. The carousel does not move, and it does not show the arrows and the dots. |
 
@@ -150,8 +150,9 @@ The library does not set the size of the slides or the space between them. It re
 | `justify-content: flex-end` | The selected slide is at the end |
 | The margins of the slides and a negative margin of the container | The space between the slides. In a loop, also the space between the last slide and the first slide. |
 | `direction: rtl` | A right-to-left carousel |
+| The padding of the viewport | The snaps align to the inner edge of the padding. The padding shows parts of the slides next to the selected slide. |
 
-The carousel measures again when the CSS changes, when the page adds or removes a slide, and when an image loads. To add or remove a slide, change the elements in the container.
+The carousel measures again when the CSS changes, when the page adds or removes a slide, and when an image loads. A slide with `display: none` gets no snap. The `template`, `script` and `style` elements in the container are not slides. A CSS `scale` or `rotate` on a parent, such as the open animation of a modal window, does not change the snaps. To add or remove a slide, change the elements in the container.
 
 A carousel can start in a hidden element, such as a tab, an accordion or a modal window. It has no size, so it shows no arrows and no dots. When the element shows, the carousel measures and starts to move.
 
@@ -389,7 +390,7 @@ The autoplay pauses in these conditions:
 - The tab is hidden.
 - The carousel is out of view.
 
-If the user prefers reduced motion, the autoplay does not start. These are the default values:
+If the user prefers reduced motion, the autoplay does not start. A breakpoint change keeps the play state: a stopped autoplay stays stopped. These are the default values:
 
 ```js
 BetterCarousel(element, {
@@ -425,7 +426,7 @@ An animation of `scale`, `translate` or `opacity` runs on the compositor: no scr
 
 ### autoScroll
 
-The value is `true`, a speed in px/s, or an object. The motion is one animation on the compositor. The pause conditions are the same as for the autoplay. These are the default values:
+The value is `true`, a speed in px/s, or an object. The motion is one animation on the compositor. The pause conditions are the same as for the autoplay. A press on the slides also stops them. If the pointer does not drag, the motion starts again after `startDelay`. These are the default values:
 
 ```js
 BetterCarousel(element, {
@@ -717,9 +718,9 @@ The library is made for slow phones. A motion runs on the compositor, and a caro
 <!-- generated:sizes -->
 | File | Minified | Gzip | Brotli |
 | --- | --- | --- | --- |
-| `better-carousel.min.js` | 28.9 KB | 11.6 KB | 10.6 KB |
+| `better-carousel.min.js` | 31.6 KB | 12.6 KB | 11.5 KB |
 | `better-carousel.css` | 4.7 KB | 1.3 KB | 1.1 KB |
-| Total | 33.6 KB | 12.9 KB | 11.7 KB |
+| Total | 36.3 KB | 13.9 KB | 12.6 KB |
 <!-- /generated -->
 
 The [Comparison](#comparison) section gives the sizes and the runtime costs of other carousel libraries.

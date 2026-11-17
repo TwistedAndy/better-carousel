@@ -208,15 +208,18 @@ const controls = 'a[href],button,input,select,textarea,[tabindex],[role]';
 // The slides that can get the "group" role. An element with its own role, such as an article or a list item, does not permit "group".
 const generic = 'div,span,section';
 
+// The elements that never show, so they are not slides
+const skipped = new Set(['template', 'script', 'style']);
+
 /**
- * Get the slides of a container. The clones that the library made are not slides.
+ * Get the slides of a container. The clones that the library made, and the template, script and style elements, are not slides.
  *
  * @param {HTMLElement} container
  * @param {string} [selector] The "slides" option.
  * @returns {HTMLElement[]}
  */
 export function readSlides(container, selector) {
-	return [...(selector ? container.querySelectorAll(selector) : container.children)].filter((node) => !made.has(node));
+	return [...(selector ? container.querySelectorAll(selector) : container.children)].filter((node) => !made.has(node) && !skipped.has(node.localName));
 }
 
 /**
@@ -233,9 +236,7 @@ export function copySlides(slides, count, className) {
 	for (let copy = 0; copy < count; copy++) {
 		for (const node of slides) {
 			const clone = node.cloneNode(true);
-			for (const item of [clone, ...clone.querySelectorAll('[id]')]) {
-				item.removeAttribute('id');
-			}
+			removeIds(clone);
 			clone.setAttribute('aria-hidden', 'true');
 			clone.inert = true;
 			clone.style.translate = '';
@@ -247,6 +248,25 @@ export function copySlides(slides, count, className) {
 	}
 
 	return list;
+}
+
+// An id must be unique in the page, so a copy has no ids
+function removeIds(node) {
+	for (const item of [node, ...node.querySelectorAll('[id]')]) {
+		item.removeAttribute('id');
+	}
+}
+
+/**
+ * Copy the content of a slide into its clone again.
+ *
+ * @param {HTMLElement} clone
+ * @param {HTMLElement} node The slide.
+ */
+export function copyContent(clone, node) {
+	const copy = node.cloneNode(true);
+	removeIds(copy);
+	clone.replaceChildren(...copy.childNodes);
 }
 
 /**

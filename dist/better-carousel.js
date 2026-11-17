@@ -208,15 +208,18 @@ const controls = 'a[href],button,input,select,textarea,[tabindex],[role]';
 // The slides that can get the "group" role. An element with its own role, such as an article or a list item, does not permit "group".
 const generic = 'div,span,section';
 
+// The elements that never show, so they are not slides
+const skipped = new Set(['template', 'script', 'style']);
+
 /**
- * Get the slides of a container. The clones that the library made are not slides.
+ * Get the slides of a container. The clones that the library made, and the template, script and style elements, are not slides.
  *
  * @param {HTMLElement} container
  * @param {string} [selector] The "slides" option.
  * @returns {HTMLElement[]}
  */
 function readSlides(container, selector) {
-	return [...(selector ? container.querySelectorAll(selector) : container.children)].filter((node) => !made.has(node));
+	return [...(selector ? container.querySelectorAll(selector) : container.children)].filter((node) => !made.has(node) && !skipped.has(node.localName));
 }
 
 /**
@@ -233,9 +236,7 @@ function copySlides(slides, count, className) {
 	for (let copy = 0; copy < count; copy++) {
 		for (const node of slides) {
 			const clone = node.cloneNode(true);
-			for (const item of [clone, ...clone.querySelectorAll('[id]')]) {
-				item.removeAttribute('id');
-			}
+			removeIds(clone);
 			clone.setAttribute('aria-hidden', 'true');
 			clone.inert = true;
 			clone.style.translate = '';
@@ -247,6 +248,25 @@ function copySlides(slides, count, className) {
 	}
 
 	return list;
+}
+
+// An id must be unique in the page, so a copy has no ids
+function removeIds(node) {
+	for (const item of [node, ...node.querySelectorAll('[id]')]) {
+		item.removeAttribute('id');
+	}
+}
+
+/**
+ * Copy the content of a slide into its clone again.
+ *
+ * @param {HTMLElement} clone
+ * @param {HTMLElement} node The slide.
+ */
+function copyContent(clone, node) {
+	const copy = node.cloneNode(true);
+	removeIds(copy);
+	clone.replaceChildren(...copy.childNodes);
 }
 
 /**
@@ -370,10 +390,13 @@ function controller(context, key, options, hooks) {
 		} else if (!button.isConnected) {
 			root.append(button);
 		}
-		// Start at the first init, unless the user prefers less motion
+		// Start at the first init, unless the user prefers less motion. After a breakpoint change, the play state stays.
+		// A play() before the first init starts now, because the carousel had no size before.
 		if (first) {
 			first = false;
-			if (options.playOnInit && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+			if (playing) {
+				hooks.play();
+			} else if (context.playing?.[key] ?? (options.playOnInit && !matchMedia('(prefers-reduced-motion: reduce)').matches)) {
 				control.play();
 			}
 		}
@@ -501,8 +524,9 @@ function autoScroll(context) {
 
 	const options = settings(autoScrollDefaults, 'speed', context.options.autoScroll);
 
-	// The start delay
-	let timer = 0;
+	// The start delay, and true while a pointer presses the viewport
+	let timer = 0,
+		pressed = false;
 
 	const control = controller(context, 'autoScroll', options, {
 		play: wait,
@@ -547,10 +571,40 @@ function autoScroll(context) {
 	function run() {
 		timer = 0;
 		const geo = context.geo();
-		if (geo && !geo.fit && !context.dragging() && !control.paused()) {
+		if (geo && !geo.fit && !pressed && !context.dragging() && !control.paused()) {
 			context.scroll(options.direction === 'prev' ? -1 : 1, options.speed / 1000);
 		}
 	}
+
+	// A press stops the slides under the pointer. A release without a drag starts them again after the delay. A drag is an interaction.
+	const listen = (method) => ['pointerup', 'pointercancel'].forEach((name) => window[method](name, release));
+
+	function press(event) {
+		if (!event.button && control.isPlaying() && !pressed) {
+			pressed = true;
+			wait(-1);
+			context.halt();
+			listen('addEventListener');
+		}
+	}
+
+	function release() {
+		pressed = false;
+		listen('removeEventListener');
+		if (control.isPlaying() && !context.dragging()) {
+			wait();
+		}
+	}
+
+	const { viewport } = context,
+		remove = control.remove;
+
+	viewport.addEventListener('pointerdown', press);
+	control.remove = () => {
+		viewport.removeEventListener('pointerdown', press);
+		listen('removeEventListener');
+		remove();
+	};
 
 	return control;
 }
@@ -700,6 +754,9 @@ function bounds(slides) {
 		max = 0;
 
 	for (const slide of slides) {
+		if (slide.hidden) {
+			continue;
+		}
 		start = Math.min(start, slide.start);
 		end = Math.max(end, slide.end);
 		max = Math.max(max, slide.end - slide.start);
@@ -709,14 +766,14 @@ function bounds(slides) {
 }
 
 /**
- * Put the slides that start at the same position (1 px or less) into one column.
+ * Put the slides that start at the same position (1 px or less) into one column. A hidden slide is in no column.
  * In a flex row, one column has one slide. In a grid, a column can have more slides.
  *
  * @param {Array<{start: number, end: number}>} slides
  * @returns {Array<{start: number, end: number}>} The columns, sorted by start.
  */
 function columns(slides) {
-	const order = slides.map((slide, index) => index).sort((a, b) => slides[a].start - slides[b].start || a - b),
+	const order = slides.map((slide, index) => index).filter((index) => !slides[index].hidden).sort((a, b) => slides[a].start - slides[b].start || a - b),
 		list = [];
 
 	let column;
@@ -842,7 +899,7 @@ function snaps({ slides, view, align, slidesPerSnap, containScroll, period = 0 }
 /**
  * Find the slide whose anchor is nearest to the align point at a location.
  * The anchor is the start for 'start', the center for 'center' and the end for 'end'.
- * If two slides have the same distance, the lower index wins.
+ * If two slides have the same distance, the lower index wins. A hidden slide is never the active slide.
  *
  * @param {Array<{start: number, end: number}>} slides
  * @param {number} location
@@ -859,7 +916,7 @@ function activeSlide(slides, location, view, align, period, from = 0, to = slide
 
 	slides.forEach((slide, index) => {
 		const value = Math.abs(distance(slide.start + location, alignOffset(align, view, slide.end - slide.start, index), period));
-		if (index >= from && index < to && value < gap - 0.5) {
+		if (index >= from && index < to && !slide.hidden && value < gap - 0.5) {
 			gap = value;
 			best = index;
 		}
@@ -971,7 +1028,7 @@ function inView(slides, location, view, threshold, period) {
 			start = period ? distance(slide.start + location + size / 2, view / 2, period) + view / 2 - size / 2 : slide.start + location,
 			visible = Math.min(start + size, view) - Math.max(start, 0);
 
-		if (visible > 0 && visible >= threshold * size - 0.5) {
+		if (!slide.hidden && visible > 0 && visible >= threshold * size - 0.5) {
 			result.push(index);
 		}
 	});
@@ -1032,7 +1089,7 @@ function compute(layout, rects, area, count, options) {
 	const geo = { ...layout, ...rects, area, fit, count, period, min: 0, max: 0 };
 
 	if (fit) {
-		geo.snaps = [{ location: 0, slide: activeSlide(rects.slides, 0, rects.view, layout.align) }];
+		geo.snaps = [{ location: 0, slide: Math.max(0, activeSlide(rects.slides, 0, rects.view, layout.align)) }];
 	} else {
 		Object.assign(geo, snaps({ ...rects, align: layout.align, slidesPerSnap: options.slidesPerSnap, containScroll: options.containScroll, period }));
 	}
@@ -1115,35 +1172,62 @@ function readLayout(container, options) {
 }
 
 /**
- * Read the slide boxes on the main axis, relative to the viewport start at location 0.
+ * Read the slide boxes on the main axis, relative to the inner edge of the viewport padding at location 0. The snaps align to this edge.
+ * The values are in the px of the carousel: in a parent with a CSS scale, such as a modal window that opens with a scale animation, the
+ * values do not change with a scale or a rotation of a parent.
+ * A slide with no box, such as a slide with display: none, is hidden. It gets no snap, and it stays at the end of the slide before it.
  *
  * @param {HTMLElement} viewport
  * @param {HTMLElement[]} nodes All slides, clones included.
  * @param {object} layout The result of readLayout().
  * @param {{axis: string, container: number, slides: number[]}} written The translate values that the library wrote, in px on the screen.
- * @returns {{view: number, slides: Array<{start: number, end: number, cross: number}>, gap: number}}
- * gap is the loop gap: the space between the last slide and the next copy of the first slide.
+ * @returns {{view: number, slides: Array<{start: number, end: number, cross: number, hidden: boolean}>, gap: number, scale: number, pad: {start: number, end: number}}}
+ * view is the viewport size without the padding. gap is the loop gap: the space between the last slide and the next copy of the first slide.
+ * scale is the screen px of one px of the carousel. pad is the viewport padding at the start and at the end.
  */
 function readRects(viewport, nodes, layout, written) {
 	const box = viewport.getBoundingClientRect(),
 		x = layout.axis === 'x',
 		sign = layout.sign,
 		known = written.axis === layout.axis,
-		shift = known ? written.container : 0;
-
-	let first = 0,
-		last = 0;
+		shift = known ? written.container : 0,
+		width = viewport.offsetWidth,
+		height = viewport.offsetHeight,
+		// offsetWidth is a whole number: a difference of less than 1 px is not a transform
+		transformed = width && height && (Math.abs(box.width - width) >= 1 || Math.abs(box.height - height) >= 1),
+		// A scale s and a rotation by an angle a give a box of s(w cos a + h sin a) by s(w sin a + h cos a). The main axis gets s cos a.
+		scale = !transformed ? 1 : Math.abs(width - height) > 1 ? (width * box.width - height * box.height) / (width * width - height * height) : box.width / width,
+		view = !transformed ? (x ? box.width : box.height) : x ? width : height,
+		style = getComputedStyle(viewport),
+		[before, after] = x ? (layout.rtl ? ['Right', 'Left'] : ['Left', 'Right']) : ['Top', 'Bottom'],
+		pad = { start: parseFloat(style['padding' + before]) || 0, end: parseFloat(style['padding' + after]) || 0 };
 
 	const slides = nodes.map((node, index) => {
 		const rect = node.getBoundingClientRect(),
 			offset = sign * (shift + (known && written.slides[index] || 0)),
-			start = (x ? (layout.rtl ? box.right - rect.right : rect.left - box.left) : rect.top - box.top) - offset,
-			size = x ? rect.width : rect.height;
+			start = (x ? (layout.rtl ? box.right - rect.right : rect.left - box.left) : rect.top - box.top) / scale - pad.start - offset,
+			size = (x ? rect.width : rect.height) / scale;
 
-		return { start, end: start + size, cross: x ? rect.height : rect.width };
+		return { start, end: start + size, cross: (x ? rect.height : rect.width) / scale, hidden: !rect.width && !rect.height };
 	});
 
+	let edge = slides.find((slide) => !slide.hidden)?.start || 0;
+
+	for (const slide of slides) {
+		if (slide.hidden) {
+			slide.start = slide.end = edge;
+		} else {
+			edge = slide.end;
+		}
+	}
+
+	let first = Math.max(0, slides.findIndex((slide) => !slide.hidden)),
+		last = first;
+
 	slides.forEach((slide, index) => {
+		if (slide.hidden) {
+			return;
+		}
 		if (slide.start < slides[first].start) {
 			first = index;
 		}
@@ -1160,9 +1244,11 @@ function readRects(viewport, nodes, layout, written) {
 	}
 
 	return {
-		view: x ? box.width : box.height,
+		view: view - pad.start - pad.end,
 		slides,
-		gap
+		gap,
+		scale,
+		pad
 	};
 }
 
@@ -1177,46 +1263,70 @@ function windowSize(axis) {
 }
 
 /**
- * Get the part of the main axis where the loop must show slides, relative to the viewport start.
- * It is the viewport. With clones: 'fill', it is the window, so that the slides fill it when the viewport overflow shows.
+ * Get the part of the main axis where the loop must show slides, relative to the inner edge of the viewport padding.
+ * It is the viewport with its padding. With clones: 'fill', it is the window, so that the slides fill it when the viewport overflow shows.
  *
  * @param {HTMLElement} viewport
  * @param {{axis: string, rtl: boolean}} layout
- * @param {number} view The viewport size.
+ * @param {number} view The viewport size without the padding.
+ * @param {{start: number, end: number}} pad The viewport padding.
  * @param {number} [size] The window size on the main axis, for clones: 'fill'. Without it, the area is the viewport.
  * @returns {{start: number, size: number}}
  */
-function visibleArea(viewport, layout, view, size) {
+function visibleArea(viewport, layout, view, pad, size) {
 	if (!size) {
-		return { start: 0, size: view };
+		return { start: -pad.start, size: pad.start + view + pad.end };
 	}
 
 	const box = viewport.getBoundingClientRect(),
-		before = Math.max(0, Math.round(layout.axis === 'x' ? (layout.rtl ? size - box.right : box.left) : box.top));
+		before = Math.max(0, Math.round(layout.axis === 'x' ? (layout.rtl ? size - box.right : box.left) : box.top)) + pad.start;
 
-	return { start: -before, size: before + Math.max(view, Math.round(size - before)) };
+	return { start: -before, size: before + Math.max(view + pad.end, Math.round(size - before)) };
 }
 
 // One ResizeObserver for all carousels. Each callback first reads the layout of all carousels, then writes. In this way, the reads of one carousel do not
 // come after the writes of another carousel, and the browser does one layout for all of them.
-const owners = new WeakMap();
+const owners = new WeakMap(),
+	// The elements of each owner, and the last size of each element
+	watched = new WeakMap(),
+	sizes = new WeakMap();
 
 let resizer;
 
 /**
  * Watch the size of elements. The ResizeObserver callback calls owner.read() for each owner, and then owner.write() for each owner whose read() returned true.
- * An entry for which owner.skip() returns true does not count.
+ * An entry for which owner.skip() returns true does not count. An entry with the same size as the last entry of its element does not count:
+ * a new watch of an element after a write sends such an entry. observeSize() clears the last size, so its first entry always counts.
  *
  * @param {Element[]} nodes
  * @param {{read: () => boolean, write: () => void, skip: (entry: ResizeObserverEntry) => boolean}} [owner] Without an owner, stop the watch.
  */
 function observeSize(nodes, owner) {
 	resizer ||= new ResizeObserver((entries) => {
-		const list = new Set(entries.filter((entry) => !owners.get(entry.target)?.skip(entry)).map((entry) => owners.get(entry.target)));
-		[...list].filter((item) => item && item.read()).forEach((item) => item.write());
+		const list = new Set(entries.filter((entry) => {
+			const { inlineSize, blockSize } = entry.borderBoxSize[0],
+				size = inlineSize + ',' + blockSize,
+				same = sizes.get(entry.target) === size;
+			sizes.set(entry.target, size);
+			return !same && !owners.get(entry.target)?.skip(entry);
+		}).map((entry) => owners.get(entry.target)));
+		const changed = [...list].filter((item) => item && item.read());
+		changed.forEach((item) => item.write());
+		// A write can change the size of an element that the observer watches, for example the auto height or the clones. If the observer has
+		// a change to report after its callback, the browser sends the "ResizeObserver loop" error to window.onerror. Stop the watch of these
+		// elements, and watch them again in the next frame. Then the first callback measures again and finds no change.
+		if (changed.length) {
+			changed.forEach((item) => watched.get(item)?.forEach((node) => resizer.unobserve(node)));
+			requestAnimationFrame(() => changed.forEach((item) => watched.get(item)?.forEach((node) => owners.get(node) === item && resizer.observe(node))));
+		}
 	});
 
+	if (owner) {
+		watched.set(owner, nodes);
+	}
+
 	for (const node of nodes) {
+		sizes.delete(node);
 		if (owner) {
 			owners.set(node, owner);
 			resizer.observe(node);
@@ -1741,6 +1851,8 @@ function carousel(element, userOptions, defaults, features) {
 	// The observers and the measure state
 	let observed = [],
 		mutationObserver,
+		// Watches the content of the slides while the carousel has clones
+		copyObserver,
 		media = null,
 		ready = false,
 		started = false,
@@ -1767,8 +1879,9 @@ function carousel(element, userOptions, defaults, features) {
 
 	const api = {
 		goToSnap: (index, instant) => go(physical(index), instant),
-		goToNext: (instant) => api.canGoToNext() && step(selected, 1, instant),
-		goToPrev: (instant) => api.canGoToPrev() && step(selected, -1, instant),
+		// Before the first measure pass, keep the step in the selected snap
+		goToNext: (instant) => geo ? api.canGoToNext() && step(selected, 1, instant) : go(selected + 1, instant),
+		goToPrev: (instant) => geo ? api.canGoToPrev() && step(selected, -1, instant) : go(selected - 1, instant),
 		goToSlide: (index, instant) => go(physical(api.snapOfSlide(index)), instant, index),
 		canGoToNext: () => !!geo && !geo.fit && (!!geo.period || selected < geo.snaps.length - 1),
 		canGoToPrev: () => !!geo && !geo.fit && (!!geo.period || selected > 0),
@@ -1799,7 +1912,7 @@ function carousel(element, userOptions, defaults, features) {
 		each = { node: null, index: 0, offset: 0, distance: 0, size: 0, visible: 0 },
 		/**
 		 * What the features share: the API, the events, and the state and the actions of the carousel.
-		 * setup() adds root, viewport, container, cls and options.
+		 * setup() adds root, viewport, container, cls and options. reinit() adds playing: the play state of the autoplay and the auto scroll before a breakpoint change.
 		 */
 		context = {
 			api,
@@ -1977,6 +2090,8 @@ function carousel(element, userOptions, defaults, features) {
 			resolved = null;
 		}
 		const keep = geo ? selectedSlide() : requested;
+		// After a breakpoint change, the new autoplay and auto scroll keep the play state. New options start them again.
+		context.playing = newOptions ? null : { autoplay: api.autoplay?.isPlaying(), autoScroll: api.autoScroll?.isPlaying() };
 		teardown(true);
 		setup();
 		requested = keep;
@@ -1998,6 +2113,27 @@ function carousel(element, userOptions, defaults, features) {
 		nodes = slides.concat(clones);
 		written.slides.length = slides.length;
 		mutationObserver?.takeRecords();
+
+		copyObserver?.disconnect();
+		if (clones.length) {
+			copyObserver ||= new MutationObserver(onCopy);
+			slides.forEach((node) => copyObserver.observe(node, { childList: true, characterData: true, subtree: true, attributeFilter: ['class', 'src', 'srcset', 'href', 'value'] }));
+		}
+	}
+
+	/**
+	 * Copy a changed slide into its clones. The carousel writes the classes of the slides, so a change of a slide's own attributes does not count.
+	 *
+	 * @param {MutationRecord[]} records
+	 */
+	function onCopy(records) {
+		const changed = new Set(records.filter((record) => record.type !== 'attributes' || !slides.includes(record.target)).map(({ target }) => slides.find((node) => node.contains(target))));
+
+		changed.forEach((node) => {
+			for (let index = slides.indexOf(node); node && index < clones.length; index += slides.length) {
+				copyContent(clones[index], node);
+			}
+		});
 	}
 
 	/**
@@ -2027,8 +2163,15 @@ function carousel(element, userOptions, defaults, features) {
 		return same && options.autoHeight && geo?.axis === 'x';
 	}
 
+	// Keep the selected slide. If the page removed it, select the slide that is now at its index, or the last slide.
 	function onMutation() {
+		const old = ready ? selectedSlide() : -1,
+			node = slides[old];
 		slides = readSlides(container, options.slides);
+		if (old > -1) {
+			const index = slides.indexOf(node);
+			requested = index > -1 ? index : Math.min(old, slides.length - 1);
+		}
 		setClones(0);
 		nodes = slides;
 		changed = true;
@@ -2081,7 +2224,7 @@ function carousel(element, userOptions, defaults, features) {
 		// With clones: 'fill', the loop fills the window
 		lastWindow = options.loop && options.clones === 'fill' ? windowSize(layout.axis) : 0;
 
-		const area = visibleArea(viewport, layout, rects.view, lastWindow),
+		const area = visibleArea(viewport, layout, rects.view, rects.pad, lastWindow),
 			values = [layout.axis, layout.rtl, typeof layout.align === 'string' && layout.align, rects.view, rects.gap, area.start, area.size, ...rects.slides.flatMap((slide) => [slide.start, slide.end, slide.cross])];
 
 		// A change of less than 0.5 px is not a change. During a motion, the rects have small errors, because the browser and bezier() round the easing differently.
@@ -2091,7 +2234,8 @@ function carousel(element, userOptions, defaults, features) {
 
 		signature = values;
 
-		const keep = ready ? selectedSlide() : requested,
+		// After a change of the slides, onMutation() gives the slide to keep
+		const keep = ready && !changed ? selectedSlide() : requested,
 			next = compute(layout, rects, area, slides.length, options);
 
 		if (!next.snaps) {
@@ -2103,8 +2247,10 @@ function carousel(element, userOptions, defaults, features) {
 
 		const total = geo.snaps.length;
 
-		// Before the first measure pass, selected is the logical snap of the startSnap option or of goToSnap()
-		selected = keep >= 0 ? physical(api.snapOfSlide(keep)) : Math.min(total - 1, ready ? selected : physical(selected));
+		// Before the first measure pass, selected is the logical snap of the startSnap option, of goToSnap() or of goToNext().
+		// In loop mode, a step before the first snap goes to the last snap.
+		const count = geo.logical.length;
+		selected = keep >= 0 ? physical(api.snapOfSlide(keep)) : Math.min(total - 1, ready ? selected : physical(geo.period ? (selected % count + count) % count : Math.max(selected, 0)));
 		previous = Math.min(previous, total - 1);
 		requested = keep;
 		if (!dragging) {
@@ -2499,6 +2645,9 @@ function carousel(element, userOptions, defaults, features) {
 // The targets that keep their own pointer behavior
 const fields = 'input,textarea,select,[contenteditable]';
 
+// The pointerdown events that a carousel took for a drag
+const claimed = new WeakSet();
+
 // The duration of the motion for one wheel event, in ms
 const WHEEL = 180;
 
@@ -2627,9 +2776,12 @@ function drag(context) {
 
 		const geo = context.geo();
 
-		if (pointer !== null || event.button || !geo || geo.fit || event.target.closest(fields)) {
+		// In nested carousels, the inner carousel gets the press first and claims it
+		if (pointer !== null || event.button || !geo || geo.fit || claimed.has(event) || event.target.closest(fields)) {
 			return;
 		}
+
+		claimed.add(event);
 
 		// Stop the text selection and the native image drag
 		if (event.pointerType === 'mouse') {
@@ -2637,7 +2789,8 @@ function drag(context) {
 		}
 
 		pointer = event.pointerId;
-		axis = { x: geo.axis === 'x', sign: geo.sign };
+		// In a parent with a CSS scale, one px of the pointer is not one px of the carousel
+		axis = { x: geo.axis === 'x', sign: geo.sign, scale: geo.scale };
 		start = [event.clientX, event.clientY];
 		samples = [];
 		listen('addEventListener');
@@ -2656,8 +2809,8 @@ function drag(context) {
 			return end(event.type === 'pointerup');
 		}
 
-		const dx = event.clientX - start[0],
-			dy = event.clientY - start[1],
+		const dx = (event.clientX - start[0]) / axis.scale,
+			dy = (event.clientY - start[1]) / axis.scale,
 			main = axis.x ? dx * axis.sign : dy,
 			cross = axis.x ? dy : dx;
 
@@ -2744,6 +2897,31 @@ function drag(context) {
 }
 
 /**
+ * Find an element between a node and the viewport that can scroll in a direction.
+ *
+ * @param {Element} node The target of the wheel event.
+ * @param {Element} viewport
+ * @param {string} axis 'x' or 'y'.
+ * @param {number} delta The wheel delta on the axis.
+ * @returns {boolean}
+ */
+function scrolls(node, viewport, axis, delta) {
+	const [size, client, position, overflow] = axis === 'x' ? ['scrollWidth', 'clientWidth', 'scrollLeft', 'overflowX'] : ['scrollHeight', 'clientHeight', 'scrollTop', 'overflowY'];
+
+	for (; node && node !== viewport; node = node.parentElement) {
+		// Read the style only for an element with more content than space
+		if (node[size] > node[client] && /auto|scroll/.test(getComputedStyle(node)[overflow])) {
+			const at = Math.abs(node[position]);
+			if (delta > 0 ? at + node[client] < node[size] - 1 : at > 0) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+/**
  * Make the wheel input of a viewport: in a vertical carousel, and with wheel: 'both' also in a horizontal carousel. The carousel follows
  * the wheel distance with a short motion on the compositor. When the wheel stops, the carousel goes to a snap. At the first and the last
  * location, the page scrolls.
@@ -2760,9 +2938,12 @@ function wheel(context) {
 		return;
 	}
 
-	// The time of the last wheel event, and of the last event that moved the carousel
+	// The time and the delta size of the last wheel event, and true if the gesture moved the carousel
 	let time = 0,
-		moved = 0,
+		last = 0,
+		held = false,
+		// true while a gesture scrolls an element in a slide
+		inner = false,
 		// The timer that finds the end of a gesture
 		timer = 0,
 		// The selected snap at the gesture start, and the direction of the last step
@@ -2780,7 +2961,24 @@ function wheel(context) {
 
 		const now = event.timeStamp,
 			gesture = now - time < 200,
-			base = context.location(),
+			size = Math.abs(delta),
+			// A delta that does not grow is the inertia of the gesture, not a new push
+			inertia = gesture && size <= last;
+
+		last = size;
+		if (!gesture) {
+			held = false;
+		}
+
+		// An element in a slide that can scroll in the wheel direction scrolls, also for the rest of its gesture
+		if ((gesture && inner) || scrolls(event.target, viewport, side ? 'x' : 'y', side ? event.deltaX : delta)) {
+			inner = true;
+			time = now;
+			return;
+		}
+		inner = false;
+
+		const base = context.location(),
 			path = delta * (event.deltaMode === 1 ? 40 : event.deltaMode ? geo.view : 1);
 
 		let target = base - path;
@@ -2792,7 +2990,7 @@ function wheel(context) {
 
 		// At the end, the page scrolls. The inertia of a gesture that moved the carousel does not scroll the page.
 		if (Math.abs(target - base) < 0.5) {
-			if (gesture && now - moved < 1000) {
+			if (held && inertia) {
 				event.preventDefault();
 			}
 			return;
@@ -2804,7 +3002,7 @@ function wheel(context) {
 		if (!timer) {
 			snap = context.selected();
 		}
-		moved = now;
+		held = true;
 		direction = path > 0 ? 1 : -1;
 		context.move(nearestSnap(geo.snaps, target, geo.period), target, WHEEL, EASE);
 

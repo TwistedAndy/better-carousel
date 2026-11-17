@@ -1191,8 +1191,8 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 		await new Promise((resolve) => carousel.on('settle', resolve));
 		const second = right(1);
 		carousel.goToSnap(3, true);
-		// The dots move with a transition of 0.2 s
-		await new Promise((resolve) => setTimeout(resolve, 300));
+		// The dots move with a transition of 0.4 s
+		await new Promise((resolve) => setTimeout(resolve, 600));
 		const dots = root.querySelector('.better_dots').getBoundingClientRect(),
 			current = root.querySelector('.better_dot[aria-current="true"]').getBoundingClientRect();
 		carousel.goToSnap(0, true);

@@ -8,7 +8,7 @@
 import { alignOffset, clamp, compute, inView, nearestSnap, physicalSnap, progress, snapIndex, snapOfSlide, snapPosition, targetLocation } from './geometry.js';
 import { observeSize, readLayout, readRects, visibleArea, waitNear, windowSize } from './layout.js';
 import { normalize, pathFits, placement } from './loop.js';
-import { addClass, build, cleanStyle, copySlides, labelSlides, readSlides, restore, setClass, setStyle } from './markup.js';
+import { addClass, build, cleanStyle, copyContent, copySlides, labelSlides, readSlides, restore, setClass, setStyle } from './markup.js';
 import { animator, EASE, snapDuration } from './motion.js';
 import { breakpoints, classNames, merge, resolve } from './options.js';
 
@@ -85,6 +85,8 @@ export default function carousel(element, userOptions, defaults, features) {
 	// The observers and the measure state
 	let observed = [],
 		mutationObserver,
+		// Watches the content of the slides while the carousel has clones
+		copyObserver,
 		media = null,
 		ready = false,
 		started = false,
@@ -111,8 +113,9 @@ export default function carousel(element, userOptions, defaults, features) {
 
 	const api = {
 		goToSnap: (index, instant) => go(physical(index), instant),
-		goToNext: (instant) => api.canGoToNext() && step(selected, 1, instant),
-		goToPrev: (instant) => api.canGoToPrev() && step(selected, -1, instant),
+		// Before the first measure pass, keep the step in the selected snap
+		goToNext: (instant) => geo ? api.canGoToNext() && step(selected, 1, instant) : go(selected + 1, instant),
+		goToPrev: (instant) => geo ? api.canGoToPrev() && step(selected, -1, instant) : go(selected - 1, instant),
 		goToSlide: (index, instant) => go(physical(api.snapOfSlide(index)), instant, index),
 		canGoToNext: () => !!geo && !geo.fit && (!!geo.period || selected < geo.snaps.length - 1),
 		canGoToPrev: () => !!geo && !geo.fit && (!!geo.period || selected > 0),
@@ -143,7 +146,7 @@ export default function carousel(element, userOptions, defaults, features) {
 		each = { node: null, index: 0, offset: 0, distance: 0, size: 0, visible: 0 },
 		/**
 		 * What the features share: the API, the events, and the state and the actions of the carousel.
-		 * setup() adds root, viewport, container, cls and options.
+		 * setup() adds root, viewport, container, cls and options. reinit() adds playing: the play state of the autoplay and the auto scroll before a breakpoint change.
 		 */
 		context = {
 			api,
@@ -321,6 +324,8 @@ export default function carousel(element, userOptions, defaults, features) {
 			resolved = null;
 		}
 		const keep = geo ? selectedSlide() : requested;
+		// After a breakpoint change, the new autoplay and auto scroll keep the play state. New options start them again.
+		context.playing = newOptions ? null : { autoplay: api.autoplay?.isPlaying(), autoScroll: api.autoScroll?.isPlaying() };
 		teardown(true);
 		setup();
 		requested = keep;
@@ -342,6 +347,27 @@ export default function carousel(element, userOptions, defaults, features) {
 		nodes = slides.concat(clones);
 		written.slides.length = slides.length;
 		mutationObserver?.takeRecords();
+
+		copyObserver?.disconnect();
+		if (clones.length) {
+			copyObserver ||= new MutationObserver(onCopy);
+			slides.forEach((node) => copyObserver.observe(node, { childList: true, characterData: true, subtree: true, attributeFilter: ['class', 'src', 'srcset', 'href', 'value'] }));
+		}
+	}
+
+	/**
+	 * Copy a changed slide into its clones. The carousel writes the classes of the slides, so a change of a slide's own attributes does not count.
+	 *
+	 * @param {MutationRecord[]} records
+	 */
+	function onCopy(records) {
+		const changed = new Set(records.filter((record) => record.type !== 'attributes' || !slides.includes(record.target)).map(({ target }) => slides.find((node) => node.contains(target))));
+
+		changed.forEach((node) => {
+			for (let index = slides.indexOf(node); node && index < clones.length; index += slides.length) {
+				copyContent(clones[index], node);
+			}
+		});
 	}
 
 	/**
@@ -371,8 +397,15 @@ export default function carousel(element, userOptions, defaults, features) {
 		return same && options.autoHeight && geo?.axis === 'x';
 	}
 
+	// Keep the selected slide. If the page removed it, select the slide that is now at its index, or the last slide.
 	function onMutation() {
+		const old = ready ? selectedSlide() : -1,
+			node = slides[old];
 		slides = readSlides(container, options.slides);
+		if (old > -1) {
+			const index = slides.indexOf(node);
+			requested = index > -1 ? index : Math.min(old, slides.length - 1);
+		}
 		setClones(0);
 		nodes = slides;
 		changed = true;
@@ -425,7 +458,7 @@ export default function carousel(element, userOptions, defaults, features) {
 		// With clones: 'fill', the loop fills the window
 		lastWindow = options.loop && options.clones === 'fill' ? windowSize(layout.axis) : 0;
 
-		const area = visibleArea(viewport, layout, rects.view, lastWindow),
+		const area = visibleArea(viewport, layout, rects.view, rects.pad, lastWindow),
 			values = [layout.axis, layout.rtl, typeof layout.align === 'string' && layout.align, rects.view, rects.gap, area.start, area.size, ...rects.slides.flatMap((slide) => [slide.start, slide.end, slide.cross])];
 
 		// A change of less than 0.5 px is not a change. During a motion, the rects have small errors, because the browser and bezier() round the easing differently.
@@ -435,7 +468,8 @@ export default function carousel(element, userOptions, defaults, features) {
 
 		signature = values;
 
-		const keep = ready ? selectedSlide() : requested,
+		// After a change of the slides, onMutation() gives the slide to keep
+		const keep = ready && !changed ? selectedSlide() : requested,
 			next = compute(layout, rects, area, slides.length, options);
 
 		if (!next.snaps) {
@@ -447,8 +481,10 @@ export default function carousel(element, userOptions, defaults, features) {
 
 		const total = geo.snaps.length;
 
-		// Before the first measure pass, selected is the logical snap of the startSnap option or of goToSnap()
-		selected = keep >= 0 ? physical(api.snapOfSlide(keep)) : Math.min(total - 1, ready ? selected : physical(selected));
+		// Before the first measure pass, selected is the logical snap of the startSnap option, of goToSnap() or of goToNext().
+		// In loop mode, a step before the first snap goes to the last snap.
+		const count = geo.logical.length;
+		selected = keep >= 0 ? physical(api.snapOfSlide(keep)) : Math.min(total - 1, ready ? selected : physical(geo.period ? (selected % count + count) % count : Math.max(selected, 0)));
 		previous = Math.min(previous, total - 1);
 		requested = keep;
 		if (!dragging) {

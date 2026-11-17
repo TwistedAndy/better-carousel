@@ -10,6 +10,9 @@ import { EASE, GLIDE } from './motion.js';
 // The targets that keep their own pointer behavior
 const fields = 'input,textarea,select,[contenteditable]';
 
+// The pointerdown events that a carousel took for a drag
+const claimed = new WeakSet();
+
 // The duration of the motion for one wheel event, in ms
 const WHEEL = 180;
 
@@ -138,9 +141,12 @@ export function drag(context) {
 
 		const geo = context.geo();
 
-		if (pointer !== null || event.button || !geo || geo.fit || event.target.closest(fields)) {
+		// In nested carousels, the inner carousel gets the press first and claims it
+		if (pointer !== null || event.button || !geo || geo.fit || claimed.has(event) || event.target.closest(fields)) {
 			return;
 		}
+
+		claimed.add(event);
 
 		// Stop the text selection and the native image drag
 		if (event.pointerType === 'mouse') {
@@ -148,7 +154,8 @@ export function drag(context) {
 		}
 
 		pointer = event.pointerId;
-		axis = { x: geo.axis === 'x', sign: geo.sign };
+		// In a parent with a CSS scale, one px of the pointer is not one px of the carousel
+		axis = { x: geo.axis === 'x', sign: geo.sign, scale: geo.scale };
 		start = [event.clientX, event.clientY];
 		samples = [];
 		listen('addEventListener');
@@ -167,8 +174,8 @@ export function drag(context) {
 			return end(event.type === 'pointerup');
 		}
 
-		const dx = event.clientX - start[0],
-			dy = event.clientY - start[1],
+		const dx = (event.clientX - start[0]) / axis.scale,
+			dy = (event.clientY - start[1]) / axis.scale,
 			main = axis.x ? dx * axis.sign : dy,
 			cross = axis.x ? dy : dx;
 
@@ -255,6 +262,31 @@ export function drag(context) {
 }
 
 /**
+ * Find an element between a node and the viewport that can scroll in a direction.
+ *
+ * @param {Element} node The target of the wheel event.
+ * @param {Element} viewport
+ * @param {string} axis 'x' or 'y'.
+ * @param {number} delta The wheel delta on the axis.
+ * @returns {boolean}
+ */
+function scrolls(node, viewport, axis, delta) {
+	const [size, client, position, overflow] = axis === 'x' ? ['scrollWidth', 'clientWidth', 'scrollLeft', 'overflowX'] : ['scrollHeight', 'clientHeight', 'scrollTop', 'overflowY'];
+
+	for (; node && node !== viewport; node = node.parentElement) {
+		// Read the style only for an element with more content than space
+		if (node[size] > node[client] && /auto|scroll/.test(getComputedStyle(node)[overflow])) {
+			const at = Math.abs(node[position]);
+			if (delta > 0 ? at + node[client] < node[size] - 1 : at > 0) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+/**
  * Make the wheel input of a viewport: in a vertical carousel, and with wheel: 'both' also in a horizontal carousel. The carousel follows
  * the wheel distance with a short motion on the compositor. When the wheel stops, the carousel goes to a snap. At the first and the last
  * location, the page scrolls.
@@ -271,9 +303,12 @@ export function wheel(context) {
 		return;
 	}
 
-	// The time of the last wheel event, and of the last event that moved the carousel
+	// The time and the delta size of the last wheel event, and true if the gesture moved the carousel
 	let time = 0,
-		moved = 0,
+		last = 0,
+		held = false,
+		// true while a gesture scrolls an element in a slide
+		inner = false,
 		// The timer that finds the end of a gesture
 		timer = 0,
 		// The selected snap at the gesture start, and the direction of the last step
@@ -291,7 +326,24 @@ export function wheel(context) {
 
 		const now = event.timeStamp,
 			gesture = now - time < 200,
-			base = context.location(),
+			size = Math.abs(delta),
+			// A delta that does not grow is the inertia of the gesture, not a new push
+			inertia = gesture && size <= last;
+
+		last = size;
+		if (!gesture) {
+			held = false;
+		}
+
+		// An element in a slide that can scroll in the wheel direction scrolls, also for the rest of its gesture
+		if ((gesture && inner) || scrolls(event.target, viewport, side ? 'x' : 'y', side ? event.deltaX : delta)) {
+			inner = true;
+			time = now;
+			return;
+		}
+		inner = false;
+
+		const base = context.location(),
 			path = delta * (event.deltaMode === 1 ? 40 : event.deltaMode ? geo.view : 1);
 
 		let target = base - path;
@@ -303,7 +355,7 @@ export function wheel(context) {
 
 		// At the end, the page scrolls. The inertia of a gesture that moved the carousel does not scroll the page.
 		if (Math.abs(target - base) < 0.5) {
-			if (gesture && now - moved < 1000) {
+			if (held && inertia) {
 				event.preventDefault();
 			}
 			return;
@@ -315,7 +367,7 @@ export function wheel(context) {
 		if (!timer) {
 			snap = context.selected();
 		}
-		moved = now;
+		held = true;
 		direction = path > 0 ? 1 : -1;
 		context.move(nearestSnap(geo.snaps, target, geo.period), target, WHEEL, EASE);
 

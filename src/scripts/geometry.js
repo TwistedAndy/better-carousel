@@ -60,6 +60,9 @@ export function bounds(slides) {
 		max = 0;
 
 	for (const slide of slides) {
+		if (slide.hidden) {
+			continue;
+		}
 		start = Math.min(start, slide.start);
 		end = Math.max(end, slide.end);
 		max = Math.max(max, slide.end - slide.start);
@@ -69,14 +72,14 @@ export function bounds(slides) {
 }
 
 /**
- * Put the slides that start at the same position (1 px or less) into one column.
+ * Put the slides that start at the same position (1 px or less) into one column. A hidden slide is in no column.
  * In a flex row, one column has one slide. In a grid, a column can have more slides.
  *
  * @param {Array<{start: number, end: number}>} slides
  * @returns {Array<{start: number, end: number}>} The columns, sorted by start.
  */
 export function columns(slides) {
-	const order = slides.map((slide, index) => index).sort((a, b) => slides[a].start - slides[b].start || a - b),
+	const order = slides.map((slide, index) => index).filter((index) => !slides[index].hidden).sort((a, b) => slides[a].start - slides[b].start || a - b),
 		list = [];
 
 	let column;
@@ -202,7 +205,7 @@ export function snaps({ slides, view, align, slidesPerSnap, containScroll, perio
 /**
  * Find the slide whose anchor is nearest to the align point at a location.
  * The anchor is the start for 'start', the center for 'center' and the end for 'end'.
- * If two slides have the same distance, the lower index wins.
+ * If two slides have the same distance, the lower index wins. A hidden slide is never the active slide.
  *
  * @param {Array<{start: number, end: number}>} slides
  * @param {number} location
@@ -219,7 +222,7 @@ export function activeSlide(slides, location, view, align, period, from = 0, to 
 
 	slides.forEach((slide, index) => {
 		const value = Math.abs(distance(slide.start + location, alignOffset(align, view, slide.end - slide.start, index), period));
-		if (index >= from && index < to && value < gap - 0.5) {
+		if (index >= from && index < to && !slide.hidden && value < gap - 0.5) {
 			gap = value;
 			best = index;
 		}
@@ -331,7 +334,7 @@ export function inView(slides, location, view, threshold, period) {
 			start = period ? distance(slide.start + location + size / 2, view / 2, period) + view / 2 - size / 2 : slide.start + location,
 			visible = Math.min(start + size, view) - Math.max(start, 0);
 
-		if (visible > 0 && visible >= threshold * size - 0.5) {
+		if (!slide.hidden && visible > 0 && visible >= threshold * size - 0.5) {
 			result.push(index);
 		}
 	});
@@ -392,7 +395,7 @@ export function compute(layout, rects, area, count, options) {
 	const geo = { ...layout, ...rects, area, fit, count, period, min: 0, max: 0 };
 
 	if (fit) {
-		geo.snaps = [{ location: 0, slide: activeSlide(rects.slides, 0, rects.view, layout.align) }];
+		geo.snaps = [{ location: 0, slide: Math.max(0, activeSlide(rects.slides, 0, rects.view, layout.align)) }];
 	} else {
 		Object.assign(geo, snaps({ ...rects, align: layout.align, slidesPerSnap: options.slidesPerSnap, containScroll: options.containScroll, period }));
 	}
