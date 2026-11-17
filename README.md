@@ -4,7 +4,7 @@
 
 <p>A small, fast and accessible JavaScript carousel.<br />The CSS sets the layout, and the motion runs on the compositor, also on slow phones.</p>
 
-[![Gzip size](https://flat.badgen.net/static/gzip/11.2%20KB/green)](dist/better-carousel.min.js)
+[![Gzip size](https://flat.badgen.net/static/gzip/11.3%20KB/green)](dist/better-carousel.min.js)
 [![MIT license](https://flat.badgen.net/static/license/MIT/purple)](LICENSE)
 [![No dependencies](https://flat.badgen.net/static/dependencies/0/blue)](package.json)
 
@@ -16,7 +16,7 @@
 
 - **Layout from CSS** - Your CSS sets the sizes of the slides, the space between them, the axis and the alignment. One carousel can show 1 slide on a phone and 4 slides on a desktop.
 - **Smooth** - Each motion is a Web Animations API animation of `translate`. No script runs on each frame, also during the auto scroll.
-- **Small** - <!-- generated:gzip -->11.2 KB<!-- /generated --> gzip with loop, autoplay, auto scroll, auto height, sync and the mouse wheel.
+- **Small** - <!-- generated:gzip -->11.3 KB<!-- /generated --> gzip with loop, autoplay, auto scroll, auto height, sync and the mouse wheel.
 - **Loop** - The loop moves the original slides. It adds clones only if the slides are too few.
 - **Vertical and grid** - A column layout makes a vertical carousel. A CSS grid with more rows also works.
 - **Accessible** - WCAG 2.1 AA: names for the carousel, the slides and the buttons, the keyboard focus, a live region and reduced motion.
@@ -336,6 +336,7 @@ BetterCarousel(element, {
 | `loop` | `boolean` | `false` | The first slide comes after the last slide. ([example](https://twistedandy.github.io/better-carousel/#loop)) |
 | `clones` | `'auto'`, `'fill'`, `false` | `'auto'` | `'auto'`: add clones only if the loop needs them. `'fill'`: add clones that fill the window. `false`: add no clones. ([example](https://twistedandy.github.io/better-carousel/#clones)) |
 | `dragFree` | `boolean`, `'snap'` | `false` | `true`: glide after a drag and stop at any position. `'snap'`: glide and stop at the nearest snap. ([example](https://twistedandy.github.io/better-carousel/#free)) |
+| `friction` | `number` | `1` | The length of the glide after a fast drag: the glide distance is divided by this number. `2`: half the distance. `0.5`: 2 times the distance. It also changes how many snaps a flick moves. The value must be more than 0. ([example](https://twistedandy.github.io/better-carousel/#free)) |
 | `containScroll` | `'trimSnaps'`, `'keepSnaps'`, `false` | `'trimSnaps'` | `'trimSnaps'`: no empty space at the ends. `'keepSnaps'`: no empty space, but keep a snap for each group. `false`: snaps can show empty space. ([example](https://twistedandy.github.io/better-carousel/#contain)) |
 | `slidesToScroll` | `number`, `'auto'` | `1` | The number of slides in one snap. `'auto'`: the slides that fit in the viewport. ([example](https://twistedandy.github.io/better-carousel/#groups)) |
 | `skipSnaps` | `boolean`, `number` | `true` | A fast flick can move more than one snap. `false`: one snap. A number: the maximum number of snaps. ([example](https://twistedandy.github.io/better-carousel/#skip)) |
@@ -702,9 +703,9 @@ The library is made for slow phones. A motion runs on the compositor, and a caro
 <!-- generated:sizes -->
 | File | Minified | Gzip | Brotli |
 | --- | --- | --- | --- |
-| `better-carousel.min.js` | 28.0 KB | 11.2 KB | 10.2 KB |
+| `better-carousel.min.js` | 28.3 KB | 11.3 KB | 10.3 KB |
 | `better-carousel.css` | 4.0 KB | 1.3 KB | 1.0 KB |
-| Total | 32.0 KB | 12.4 KB | 11.2 KB |
+| Total | 32.3 KB | 12.6 KB | 11.4 KB |
 <!-- /generated -->
 
 The same features in Embla 9 (the core, three plugins and a wrapper) are 12.6 KB gzip.

@@ -121,12 +121,13 @@ export function velocity(samples) {
  * @param {boolean|number} [args.skipSnaps] true: go to the snap nearest to the projected location. A number: the same, but go at most this number of snaps.
  *     false: go at most one snap.
  * @param {boolean|string} [args.dragFree]
+ * @param {number} [args.friction] The glide distance is divided by this number.
  * @returns {{location: number, snap: number}}
  */
-export function releaseTarget({ location, from, velocity, current, snaps, min, max, period, skipSnaps, dragFree }) {
+export function releaseTarget({ location, from, velocity, current, snaps, min, max, period, skipSnaps, dragFree, friction = 1 }) {
 	const count = snaps.length;
 
-	let projected = location + velocity * MOMENTUM;
+	let projected = location + velocity * MOMENTUM / friction;
 
 	if (!period) {
 		projected = clamp(projected, min, max);

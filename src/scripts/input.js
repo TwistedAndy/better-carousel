@@ -128,7 +128,7 @@ export function drag(context) {
 		const geo = context.geo(),
 			location = context.location(),
 			speed = up ? velocity(samples) : 0,
-			target = releaseTarget({ location, from: base, velocity: speed, current: snap, snaps: geo.snaps, min: geo.min, max: geo.max, period: geo.period, skipSnaps: options.skipSnaps, dragFree: options.dragFree }),
+			target = releaseTarget({ location, from: base, velocity: speed, current: snap, snaps: geo.snaps, min: geo.min, max: geo.max, period: geo.period, skipSnaps: options.skipSnaps, dragFree: options.dragFree, friction: options.friction }),
 			curve = options.dragFree === true ? GLIDE : EASE;
 
 		dragging = false;

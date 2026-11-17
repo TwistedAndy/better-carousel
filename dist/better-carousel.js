@@ -361,6 +361,7 @@ const defaults = {
 	direction: 'auto',
 	loop: false,
 	dragFree: false,
+	friction: 1,
 	containScroll: 'trimSnaps',
 	slidesToScroll: 1,
 	skipSnaps: true,
@@ -1355,12 +1356,13 @@ function velocity(samples) {
  * @param {boolean|number} [args.skipSnaps] true: go to the snap nearest to the projected location. A number: the same, but go at most this number of snaps.
  *     false: go at most one snap.
  * @param {boolean|string} [args.dragFree]
+ * @param {number} [args.friction] The glide distance is divided by this number.
  * @returns {{location: number, snap: number}}
  */
-function releaseTarget({ location, from, velocity, current, snaps, min, max, period, skipSnaps, dragFree }) {
+function releaseTarget({ location, from, velocity, current, snaps, min, max, period, skipSnaps, dragFree, friction = 1 }) {
 	const count = snaps.length;
 
-	let projected = location + velocity * MOMENTUM;
+	let projected = location + velocity * MOMENTUM / friction;
 
 	if (!period) {
 		projected = clamp(projected, min, max);
@@ -1627,7 +1629,7 @@ function drag(context) {
 		const geo = context.geo(),
 			location = context.location(),
 			speed = up ? velocity(samples) : 0,
-			target = releaseTarget({ location, from: base, velocity: speed, current: snap, snaps: geo.snaps, min: geo.min, max: geo.max, period: geo.period, skipSnaps: options.skipSnaps, dragFree: options.dragFree }),
+			target = releaseTarget({ location, from: base, velocity: speed, current: snap, snaps: geo.snaps, min: geo.min, max: geo.max, period: geo.period, skipSnaps: options.skipSnaps, dragFree: options.dragFree, friction: options.friction }),
 			curve = options.dragFree === true ? GLIDE : EASE;
 
 		dragging = false;
@@ -1890,13 +1892,14 @@ let resizer;
 
 /**
  * Watch the size of elements. The ResizeObserver callback calls owner.read() for each owner, and then owner.write() for each owner whose read() returned true.
+ * An entry for which owner.skip() returns true does not count.
  *
  * @param {Element[]} nodes
- * @param {{read: () => boolean, write: () => void}} [owner] Without an owner, stop the watch.
+ * @param {{read: () => boolean, write: () => void, skip: (entry: ResizeObserverEntry) => boolean}} [owner] Without an owner, stop the watch.
  */
 function observeSize(nodes, owner) {
 	resizer ||= new ResizeObserver((entries) => {
-		const list = new Set(entries.map((entry) => owners.get(entry.target)));
+		const list = new Set(entries.filter((entry) => !owners.get(entry.target)?.skip(entry)).map((entry) => owners.get(entry.target)));
 		[...list].filter((item) => item && item.read()).forEach((item) => item.write());
 	});
 
@@ -2221,7 +2224,8 @@ function BetterCarousel(element, userOptions = {}) {
 		ready = false,
 		started = false,
 		changed = false,
-		signature = '',
+		signature = [],
+		viewWidth = 0,
 		pending = -1,
 		lastWindow = 0;
 
@@ -2273,7 +2277,7 @@ function BetterCarousel(element, userOptions = {}) {
 	};
 
 	const events = emitter(api),
-		owner = { read: measure, write: measured },
+		owner = { read: measure, write: measured, skip: heightOnly },
 		// The states that the "progress" and the "offset" callbacks get. Each call gets the same object, so a frame makes no garbage.
 		whole = { progress: 0, snap: 0 },
 		each = { slide: null, index: 0, offset: 0, distance: 0, size: 0, visible: 0 },
@@ -2460,7 +2464,8 @@ function BetterCarousel(element, userOptions = {}) {
 		ready = false;
 		location = 0;
 		visible = [];
-		signature = '';
+		signature = [];
+		viewWidth = 0;
 		written = { axis: '', container: 0, slides: [] };
 	}
 
@@ -2506,6 +2511,22 @@ function BetterCarousel(element, userOptions = {}) {
 		observeSize(observed);
 		observed = on ? [viewport, container, ...nodes] : [];
 		observeSize(observed, owner);
+	}
+
+	/**
+	 * Find a resize of the viewport that changed only its height in a horizontal carousel with autoHeight.
+	 * autoHeight sets this height, and its transition changes it on each frame, so it needs no measure pass.
+	 *
+	 * @param {ResizeObserverEntry} entry
+	 * @returns {boolean}
+	 */
+	function heightOnly({ target, contentRect: { width } }) {
+		if (target !== viewport) {
+			return false;
+		}
+		const same = width === viewWidth;
+		viewWidth = width;
+		return same && options.autoHeight && geo?.axis === 'x';
 	}
 
 	function onMutation() {
@@ -2583,13 +2604,14 @@ function BetterCarousel(element, userOptions = {}) {
 		lastWindow = options.loop && options.clones === 'fill' ? windowSize(layout.axis) : 0;
 
 		const area = visibleArea(viewport, layout, rects.view, lastWindow),
-			text = JSON.stringify([layout.axis, layout.rtl, typeof layout.align === 'string' && layout.align, rects, area]);
+			values = [layout.axis, layout.rtl, typeof layout.align === 'string' && layout.align, rects.view, rects.gap, area.start, area.size, ...rects.slides.flatMap((slide) => [slide.start, slide.end, slide.cross])];
 
-		if (text === signature && ready) {
+		// A change of less than 0.5 px is not a change. During a motion, the rects have small errors, because the browser and bezier() round the easing differently.
+		if (ready && values.length === signature.length && values.every((value, index) => value === signature[index] || Math.abs(value - signature[index]) < 0.5)) {
 			return false;
 		}
 
-		signature = text;
+		signature = values;
 
 		const keep = ready ? selectedSlide() : requested,
 			count = slides.length,
@@ -2655,7 +2677,7 @@ function BetterCarousel(element, userOptions = {}) {
 		if (pending >= 0) {
 			setClones(pending);
 			pending = -1;
-			signature = '';
+			signature = [];
 			observe(true);
 			return;
 		}

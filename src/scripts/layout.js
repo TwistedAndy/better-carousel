@@ -132,13 +132,14 @@ let resizer;
 
 /**
  * Watch the size of elements. The ResizeObserver callback calls owner.read() for each owner, and then owner.write() for each owner whose read() returned true.
+ * An entry for which owner.skip() returns true does not count.
  *
  * @param {Element[]} nodes
- * @param {{read: () => boolean, write: () => void}} [owner] Without an owner, stop the watch.
+ * @param {{read: () => boolean, write: () => void, skip: (entry: ResizeObserverEntry) => boolean}} [owner] Without an owner, stop the watch.
  */
 export function observeSize(nodes, owner) {
 	resizer ||= new ResizeObserver((entries) => {
-		const list = new Set(entries.map((entry) => owners.get(entry.target)));
+		const list = new Set(entries.filter((entry) => !owners.get(entry.target)?.skip(entry)).map((entry) => owners.get(entry.target)));
 		[...list].filter((item) => item && item.read()).forEach((item) => item.write());
 	});
 

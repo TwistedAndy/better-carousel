@@ -140,6 +140,8 @@ export interface Options {
 	clones?: 'auto' | 'fill' | false;
 	/** `true`: glide after a drag and stop at any position. `'snap'`: glide and stop at the nearest snap. @default false @see {@link https://twistedandy.github.io/better-carousel/#free | example} */
 	dragFree?: boolean | 'snap';
+	/** The length of the glide after a fast drag: the glide distance is divided by this number. `2`: half the distance. `0.5`: 2 times the distance. It also changes how many snaps a flick moves. The value must be more than 0. @default 1 @see {@link https://twistedandy.github.io/better-carousel/#free | example} */
+	friction?: number;
 	/** `'trimSnaps'`: no empty space at the ends. `'keepSnaps'`: no empty space, but keep a snap for each group. `false`: snaps can show empty space. @default 'trimSnaps' @see {@link https://twistedandy.github.io/better-carousel/#contain | example} */
 	containScroll?: 'trimSnaps' | 'keepSnaps' | false;
 	/** The number of slides in one snap. `'auto'`: the slides that fit in the viewport. @default 1 @see {@link https://twistedandy.github.io/better-carousel/#groups | example} */

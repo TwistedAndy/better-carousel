@@ -86,7 +86,8 @@ export default function BetterCarousel(element, userOptions = {}) {
 		ready = false,
 		started = false,
 		changed = false,
-		signature = '',
+		signature = [],
+		viewWidth = 0,
 		pending = -1,
 		lastWindow = 0;
 
@@ -138,7 +139,7 @@ export default function BetterCarousel(element, userOptions = {}) {
 	};
 
 	const events = emitter(api),
-		owner = { read: measure, write: measured },
+		owner = { read: measure, write: measured, skip: heightOnly },
 		// The states that the "progress" and the "offset" callbacks get. Each call gets the same object, so a frame makes no garbage.
 		whole = { progress: 0, snap: 0 },
 		each = { slide: null, index: 0, offset: 0, distance: 0, size: 0, visible: 0 },
@@ -325,7 +326,8 @@ export default function BetterCarousel(element, userOptions = {}) {
 		ready = false;
 		location = 0;
 		visible = [];
-		signature = '';
+		signature = [];
+		viewWidth = 0;
 		written = { axis: '', container: 0, slides: [] };
 	}
 
@@ -371,6 +373,22 @@ export default function BetterCarousel(element, userOptions = {}) {
 		observeSize(observed);
 		observed = on ? [viewport, container, ...nodes] : [];
 		observeSize(observed, owner);
+	}
+
+	/**
+	 * Find a resize of the viewport that changed only its height in a horizontal carousel with autoHeight.
+	 * autoHeight sets this height, and its transition changes it on each frame, so it needs no measure pass.
+	 *
+	 * @param {ResizeObserverEntry} entry
+	 * @returns {boolean}
+	 */
+	function heightOnly({ target, contentRect: { width } }) {
+		if (target !== viewport) {
+			return false;
+		}
+		const same = width === viewWidth;
+		viewWidth = width;
+		return same && options.autoHeight && geo?.axis === 'x';
 	}
 
 	function onMutation() {
@@ -448,13 +466,14 @@ export default function BetterCarousel(element, userOptions = {}) {
 		lastWindow = options.loop && options.clones === 'fill' ? windowSize(layout.axis) : 0;
 
 		const area = visibleArea(viewport, layout, rects.view, lastWindow),
-			text = JSON.stringify([layout.axis, layout.rtl, typeof layout.align === 'string' && layout.align, rects, area]);
+			values = [layout.axis, layout.rtl, typeof layout.align === 'string' && layout.align, rects.view, rects.gap, area.start, area.size, ...rects.slides.flatMap((slide) => [slide.start, slide.end, slide.cross])];
 
-		if (text === signature && ready) {
+		// A change of less than 0.5 px is not a change. During a motion, the rects have small errors, because the browser and bezier() round the easing differently.
+		if (ready && values.length === signature.length && values.every((value, index) => value === signature[index] || Math.abs(value - signature[index]) < 0.5)) {
 			return false;
 		}
 
-		signature = text;
+		signature = values;
 
 		const keep = ready ? selectedSlide() : requested,
 			count = slides.length,
@@ -520,7 +539,7 @@ export default function BetterCarousel(element, userOptions = {}) {
 		if (pending >= 0) {
 			setClones(pending);
 			pending = -1;
-			signature = '';
+			signature = [];
 			observe(true);
 			return;
 		}

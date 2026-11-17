@@ -38,6 +38,15 @@ test('durations', () => {
 	assert.equal(releaseDuration(-10, -5, GLIDE, 400), 200);
 });
 
+test('release target: the friction divides the glide distance', () => {
+	const snaps = [0, -320, -640, -960, -1280, -1600].map((location) => ({ location })),
+		args = { snaps, min: -1600, max: 0, current: 0, from: 0, location: -100, velocity: -2, dragFree: true };
+
+	assert.deepEqual(releaseTarget(args), { location: -750, snap: 2 });
+	assert.deepEqual(releaseTarget({ ...args, friction: 2 }), { location: -425, snap: 1 });
+	assert.deepEqual(releaseTarget({ ...args, friction: 0.5 }), { location: -1400, snap: 4 });
+});
+
 test('release target: a number in skipSnaps limits the snaps of one flick', () => {
 	const snaps = [0, -320, -640, -960, -1280, -1600].map((location) => ({ location })),
 		args = { snaps, min: -1600, max: 0, current: 1, from: -320 };

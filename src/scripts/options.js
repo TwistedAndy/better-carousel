@@ -8,6 +8,7 @@ export const defaults = {
 	direction: 'auto',
 	loop: false,
 	dragFree: false,
+	friction: 1,
 	containScroll: 'trimSnaps',
 	slidesToScroll: 1,
 	skipSnaps: true,

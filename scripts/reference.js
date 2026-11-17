@@ -12,6 +12,7 @@ export const options = [
 	{ name: 'loop', type: '`boolean`', default: false, text: 'The first slide comes after the last slide.', example: 'loop' },
 	{ name: 'clones', type: "`'auto'`, `'fill'`, `false`", default: 'auto', text: "`'auto'`: add clones only if the loop needs them. `'fill'`: add clones that fill the window. `false`: add no clones.", example: 'clones' },
 	{ name: 'dragFree', type: "`boolean`, `'snap'`", default: false, text: "`true`: glide after a drag and stop at any position. `'snap'`: glide and stop at the nearest snap.", example: 'free' },
+	{ name: 'friction', type: '`number`', default: 1, text: 'The length of the glide after a fast drag: the glide distance is divided by this number. `2`: half the distance. `0.5`: 2 times the distance. It also changes how many snaps a flick moves. The value must be more than 0.', example: 'free' },
 	{ name: 'containScroll', type: "`'trimSnaps'`, `'keepSnaps'`, `false`", default: 'trimSnaps', text: "`'trimSnaps'`: no empty space at the ends. `'keepSnaps'`: no empty space, but keep a snap for each group. `false`: snaps can show empty space.", example: 'contain' },
 	{ name: 'slidesToScroll', type: "`number`, `'auto'`", default: 1, text: "The number of slides in one snap. `'auto'`: the slides that fit in the viewport.", example: 'groups' },
 	{ name: 'skipSnaps', type: '`boolean`, `number`', default: true, text: 'A fast flick can move more than one snap. `false`: one snap. A number: the maximum number of snaps.', example: 'skip' },

@@ -37,7 +37,7 @@
 					<p>A small, fast and accessible carousel. The CSS sets the layout, and the motion runs on the compositor, so it stays smooth on slow phones. Loop, drag, autoplay, auto scroll and vertical carousels, with no dependencies.</p>
 				</div>
 				<div class="images">
-					<img src="https://flat.badgen.net/static/gzip/11.2%20KB/green" alt="11.2 KB gzipped" height="20">
+					<img src="https://flat.badgen.net/static/gzip/11.3%20KB/green" alt="11.3 KB gzipped" height="20">
 					<img src="https://flat.badgen.net/static/license/MIT/purple" alt="MIT license" height="20">
 					<img src="https://flat.badgen.net/static/dependencies/0/blue" alt="No dependencies" height="20">
 				</div>
@@ -55,7 +55,7 @@
 			<ul class="items items_4">
 				<li class="item"><h3>Smooth</h3><p class="text">Each motion runs on the compositor, so no script runs on each frame of a motion.</p></li>
 				<li class="item"><h3>CSS layout</h3><p class="text">The sizes, the margins, the axis and the alignment come from your CSS.</p></li>
-				<li class="item"><h3>Small</h3><p class="text"><!-- generated:gzip -->11.2 KB<!-- /generated --> gzip with loop, autoplay, auto scroll, auto height and sync.</p></li>
+				<li class="item"><h3>Small</h3><p class="text"><!-- generated:gzip -->11.3 KB<!-- /generated --> gzip with loop, autoplay, auto scroll, auto height and sync.</p></li>
 				<li class="item"><h3>Accessible</h3><p class="text">WCAG 2.1 AA: names, keyboard, focus, live region and reduced motion.</p></li>
 			</ul>
 		</div>
@@ -793,16 +793,23 @@ panel.hidden = false;</code></pre></div>
 <section class="section" id="free">
 	<div class="contents">
 		<span class="caption">Interaction</span><h2><a href="#free">Free drag</a></h2>
-		<div class="content"><p>With <code>dragFree: true</code>, the carousel glides after a drag and stops at any location.</p></div>
+		<div class="content"><p>With <code>dragFree: true</code>, the carousel glides after a drag and stops at any location.</p><p>The <code>friction</code> option changes the length of the glide. The first carousel has the default value, <code>friction: 1</code>. The second carousel has <code>friction: 3</code>, so its glide is 3 times shorter. A value less than 1 makes the glide longer. Without <code>dragFree</code>, the friction changes how many snaps a fast flick moves.</p></div>
 	</div>
 	<div class="content">
 	<div class="demo"><div class="items items_4 carousel" data-carousel='{"dragFree":true}'>
 			<div class="item"><img src="demo/images/14-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">1</span></div><div class="item"><img src="demo/images/16-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">2</span></div><div class="item"><img src="demo/images/17-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">3</span></div><div class="item"><img src="demo/images/18-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">4</span></div><div class="item"><img src="demo/images/19-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">5</span></div><div class="item"><img src="demo/images/21-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">6</span></div><div class="item"><img src="demo/images/22-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">7</span></div><div class="item"><img src="demo/images/23-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">8</span></div><div class="item"><img src="demo/images/24-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">9</span></div><div class="item"><img src="demo/images/26-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">10</span></div><div class="item"><img src="demo/images/27-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">11</span></div><div class="item"><img src="demo/images/28-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">12</span></div><div class="item"><img src="demo/images/29-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">13</span></div><div class="item"><img src="demo/images/10-800x800.jpg" alt="" width="800" height="800" loading="lazy"><span class="number">14</span></div><div class="item"><img src="demo/images/15-800x800.jpg" alt="" width="800" height="800" loading="lazy"><span class="number">15</span></div><div class="item"><img src="demo/images/20-800x800.jpg" alt="" width="800" height="800" loading="lazy"><span class="number">16</span></div><div class="item"><img src="demo/images/25-800x800.jpg" alt="" width="800" height="800" loading="lazy"><span class="number">17</span></div><div class="item"><img src="demo/images/11-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">18</span></div><div class="item"><img src="demo/images/12-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">19</span></div><div class="item"><img src="demo/images/13-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">20</span></div>
+		</div>
+		<div class="items items_4 carousel" data-carousel='{"dragFree":true,"friction":3}'>
+			<div class="item"><img src="demo/images/14-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">1</span></div><div class="item"><img src="demo/images/16-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">2</span></div><div class="item"><img src="demo/images/17-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">3</span></div><div class="item"><img src="demo/images/18-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">4</span></div><div class="item"><img src="demo/images/19-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">5</span></div><div class="item"><img src="demo/images/21-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">6</span></div><div class="item"><img src="demo/images/22-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">7</span></div><div class="item"><img src="demo/images/23-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">8</span></div><div class="item"><img src="demo/images/24-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">9</span></div><div class="item"><img src="demo/images/26-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">10</span></div><div class="item"><img src="demo/images/27-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">11</span></div><div class="item"><img src="demo/images/28-400x400.jpg" alt="" width="400" height="400" loading="lazy"><span class="number">12</span></div>
 		</div></div>
 	<div class="code"><div class="heading"><span class="label">HTML</span><button class="button" type="button" data-copy aria-label="Copy HTML code">Copy</button></div><pre><code class="language-html">&lt;div class="items items_4 carousel" data-carousel='{"dragFree":true}'&gt;
   &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
   &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
   &lt;div class="item"&gt;&lt;img src="photo.jpg" alt=""&gt;&lt;/div&gt;
+  ...
+&lt;/div&gt;
+
+&lt;div class="items items_4 carousel" data-carousel='{"dragFree":true,"friction":3}'&gt;
   ...
 &lt;/div&gt;</code></pre></div>
 	</div>
@@ -1224,6 +1231,7 @@ BetterCarousel(element, {
 <tr><td><code id="option-loop">loop</code></td><td><code>boolean</code></td><td><code>false</code></td><td>The first slide comes after the last slide. (<a href="#loop">example</a>)</td></tr>
 <tr><td><code id="option-clones">clones</code></td><td><code>'auto'</code>, <code>'fill'</code>, <code>false</code></td><td><code>'auto'</code></td><td><code>'auto'</code>: add clones only if the loop needs them. <code>'fill'</code>: add clones that fill the window. <code>false</code>: add no clones. (<a href="#clones">example</a>)</td></tr>
 <tr><td><code id="option-dragFree">dragFree</code></td><td><code>boolean</code>, <code>'snap'</code></td><td><code>false</code></td><td><code>true</code>: glide after a drag and stop at any position. <code>'snap'</code>: glide and stop at the nearest snap. (<a href="#free">example</a>)</td></tr>
+<tr><td><code id="option-friction">friction</code></td><td><code>number</code></td><td><code>1</code></td><td>The length of the glide after a fast drag: the glide distance is divided by this number. <code>2</code>: half the distance. <code>0.5</code>: 2 times the distance. It also changes how many snaps a flick moves. The value must be more than 0. (<a href="#free">example</a>)</td></tr>
 <tr><td><code id="option-containScroll">containScroll</code></td><td><code>'trimSnaps'</code>, <code>'keepSnaps'</code>, <code>false</code></td><td><code>'trimSnaps'</code></td><td><code>'trimSnaps'</code>: no empty space at the ends. <code>'keepSnaps'</code>: no empty space, but keep a snap for each group. <code>false</code>: snaps can show empty space. (<a href="#contain">example</a>)</td></tr>
 <tr><td><code id="option-slidesToScroll">slidesToScroll</code></td><td><code>number</code>, <code>'auto'</code></td><td><code>1</code></td><td>The number of slides in one snap. <code>'auto'</code>: the slides that fit in the viewport. (<a href="#groups">example</a>)</td></tr>
 <tr><td><code id="option-skipSnaps">skipSnaps</code></td><td><code>boolean</code>, <code>number</code></td><td><code>true</code></td><td>A fast flick can move more than one snap. <code>false</code>: one snap. A number: the maximum number of snaps. (<a href="#skip">example</a>)</td></tr>
@@ -1430,11 +1438,11 @@ BetterCarousel(element, { classes: { active: 'selected' } });</code></pre></div>
 	<div class="content">
 	<ul><li>A motion is a Web Animations API animation of <code>translate</code>. No script runs for each frame.</li><li>The auto scroll is one animation that does not stop. During the motion, the browser does no script, style, layout or paint work.</li><li>One <code>ResizeObserver</code> serves all carousels. It reads the layout of all carousels first, and then it writes. For this reason, the browser calculates the layout only one time.</li><li>The dots move with <code>translate</code> and change size with <code>transform</code>. A click on a dot causes no layout work.</li><li>The listeners for the autoplay and the mouse wheel exist only while they can do something.</li><li>The <code>progress</code> and <code>offset</code> options run a script on each frame of a motion. For this reason, they are off by default.</li></ul><!-- generated:sizes -->
 <div class="table table_reference"><table><thead><tr><th>File</th><th>Minified</th><th>Gzip</th><th>Brotli</th></tr></thead><tbody>
-<tr><td><code>better-carousel.min.js</code></td><td>28.0 KB</td><td>11.2 KB</td><td>10.2 KB</td></tr>
+<tr><td><code>better-carousel.min.js</code></td><td>28.3 KB</td><td>11.3 KB</td><td>10.3 KB</td></tr>
 <tr><td><code>better-carousel.css</code></td><td>4.0 KB</td><td>1.3 KB</td><td>1.0 KB</td></tr>
-<tr><td>Total</td><td>32.0 KB</td><td>12.4 KB</td><td>11.2 KB</td></tr>
+<tr><td>Total</td><td>32.3 KB</td><td>12.6 KB</td><td>11.4 KB</td></tr>
 </tbody></table></div>
-<!-- /generated --><p>The same features in Embla 9 (the core, three plugins and a wrapper) are 12.6 KB gzip.</p><div class="table"><table><thead><tr><th>Measure, on a phone with a CPU 4 times slower</th><th>Better Carousel</th></tr></thead><tbody><tr><td>JS size, gzip</td><td><!-- generated:gzip -->11.2 KB<!-- /generated --></td></tr><tr><td>CPU load during 10 s of auto scroll</td><td>0.5%</td></tr><tr><td>CPU load during 10 s of autoplay</td><td>1.1%</td></tr><tr><td>Total Blocking Time added at page load</td><td>0 ms</td></tr><tr><td>Layout shift</td><td>0</td></tr></tbody></table></div>
+<!-- /generated --><p>The same features in Embla 9 (the core, three plugins and a wrapper) are 12.6 KB gzip.</p><div class="table"><table><thead><tr><th>Measure, on a phone with a CPU 4 times slower</th><th>Better Carousel</th></tr></thead><tbody><tr><td>JS size, gzip</td><td><!-- generated:gzip -->11.3 KB<!-- /generated --></td></tr><tr><td>CPU load during 10 s of auto scroll</td><td>0.5%</td></tr><tr><td>CPU load during 10 s of autoplay</td><td>1.1%</td></tr><tr><td>Total Blocking Time added at page load</td><td>0 ms</td></tr><tr><td>Layout shift</td><td>0</td></tr></tbody></table></div>
 	</div>
 </section>
 

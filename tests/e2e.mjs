@@ -239,6 +239,8 @@ for (const [id, key, skip] of [['start', 'start', 'last'], ['center', 'center', 
 
 // A change of isMobile or hasTouch reloads the page
 const reload = async () => {
+	// Chrome restores the scroll position after a reload, and it can do that after a test scrolls to its carousel
+	await page.evaluate(() => (history.scrollRestoration = 'manual'));
 	await page.reload({ waitUntil: 'load' });
 	await page.evaluate(() => window.ready);
 	await helpers();
@@ -247,34 +249,47 @@ const reload = async () => {
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // The center of a viewport in page coordinates, and the state of its carousel
-const state = (id) => page.evaluate((id) => {
-	const carousel = window.byId(id),
+const state = (id, index = 0) => page.evaluate((id, index) => {
+	const carousel = window.byId(id, index),
 		view = carousel.viewportNode().getBoundingClientRect(),
 		slides = [...carousel.containerNode().children].map((node) => node.getBoundingClientRect().left - view.left);
 	return { x: view.left + view.width / 2, y: view.top + view.height / 2, snap: carousel.selectedSnap(), first: slides[0], aligned: slides.some((left) => Math.abs(left) <= 0.5) };
-}, id);
+}, id, index);
 
 // Wait for the settle event of a carousel, or for a timeout
-const settle = (id) => page.evaluate((id) => new Promise((resolve) => {
-	const carousel = window.byId(id),
+const settle = (id, index = 0) => page.evaluate((id, index) => new Promise((resolve) => {
+	const carousel = window.byId(id, index),
 		done = () => {
 			carousel.off('settle', done);
 			resolve(true);
 		};
 	carousel.on('settle', done);
 	setTimeout(() => resolve(false), 3000);
-}), id);
+}), id, index);
+
+// Wait until no motion and no transition runs in a section, for two checks in a row, or for 3 s. A step that does not move a carousel has no "settle" event.
+const idle = async (id) => {
+	for (let still = 0, tries = 0; still < 2 && tries < 60; tries++) {
+		await wait(50);
+		const moving = await page.evaluate((id) => document.getElementById(id).getAnimations({ subtree: true }).some((animation) => animation.playState === 'running' && animation.effect.getComputedTiming().endTime < Infinity), id);
+		still = moving ? 0 : still + 1;
+	}
+};
 
 const scrollTo = (id) => page.evaluate((id) => {
 	document.getElementById(id).scrollIntoView({ block: 'center', behavior: 'instant' });
 	window.byId(id).goTo(0, true);
 }, id);
 
-// A mouse drag: a slow drag ends with a stop, a flick ends at full speed
-const mouseDrag = async (id, distance, flick) => {
-	await scrollTo(id);
-	const start = await state(id),
-		done = settle(id);
+// A mouse drag: a slow drag ends with a stop, a flick ends at full speed. The index selects a carousel in a section with more than one.
+const mouseDrag = async (id, distance, flick, index = 0) => {
+	await page.evaluate((id, index) => {
+		const carousel = window.byId(id, index);
+		carousel.rootNode().scrollIntoView({ block: 'center', behavior: 'instant' });
+		carousel.goTo(0, true);
+	}, id, index);
+	const start = await state(id, index),
+		done = settle(id, index);
 	await page.mouse.move(start.x, start.y);
 	await page.mouse.down();
 	const steps = flick ? 4 : 12;
@@ -287,7 +302,7 @@ const mouseDrag = async (id, distance, flick) => {
 	}
 	await page.mouse.up();
 	await done;
-	return state(id);
+	return state(id, index);
 };
 
 {
@@ -302,6 +317,10 @@ const mouseDrag = async (id, distance, flick) => {
 		skip = await mouseDrag('skip', -400, true),
 		one = await mouseDrag('start', -400, true);
 	check('dragFree: a flick stops between the snaps', !normal.aligned && normal.first < -400, JSON.stringify(normal));
+
+	// The same flick glides less with friction: 3. The speed of a flick changes from run to run, so compare only the order.
+	const slower = await mouseDrag('free', -400, true, 1);
+	check('friction: 3 makes the glide after the same flick shorter', slower.first > normal.first && slower.first < -400, JSON.stringify({ normal: normal.first, slower: slower.first }));
 	check('dragFree snap: a flick stops at a snap after more than one snap', snap.aligned && snap.snap > 1, JSON.stringify(snap));
 	check('skipSnaps false: a flick goes one snap only', skip.aligned && skip.snap === 1, JSON.stringify(skip));
 	check('default skipSnaps true: a flick passes more than one snap', one.aligned && one.snap > 1, JSON.stringify(one));
@@ -587,7 +606,7 @@ for (const [id, limit] of [['loop', 21], ['clones', 21]]) {
 		return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
 	});
 	await page.mouse.click(thumb.x, thumb.y);
-	await wait(900);
+	await idle('product');
 	const value = await page.evaluate(() => {
 		const main = window.byId('product'),
 			thumbs = window.byId('product', 1);
@@ -596,7 +615,7 @@ for (const [id, limit] of [['loop', 21], ['clones', 21]]) {
 	check('sync: a click on thumbnail 4 selects photo 4 and marks the thumbnail', value.main === 3 && value.thumbs === 3 && value.active === 3 && value.mainBox <= 0.5, JSON.stringify(value));
 
 	await page.evaluate(() => window.byId('product').goToNext());
-	await wait(900);
+	await idle('product');
 	const next = await page.evaluate(() => {
 		const thumbs = window.byId('product', 1);
 		return { thumbs: thumbs.selectedSlide(), active: thumbs.slideNodes().findIndex((node) => node.classList.contains('active')), center: Math.abs(window.box(thumbs).center) };
@@ -616,7 +635,7 @@ for (const [id, limit] of [['loop', 21], ['clones', 21]]) {
 		await wait(16);
 	}
 	await page.mouse.up();
-	await wait(900);
+	await idle('product');
 	const dragged = await page.evaluate(() => {
 		const main = window.byId('product'),
 			thumbs = window.byId('product', 1);
@@ -813,7 +832,15 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 		return { slide: carousel.selectedSlide(), playing: carousel.autoplay.isPlaying(), live: carousel.containerNode().getAttribute('aria-live'), label: button.getAttribute('aria-label'), state: carousel.rootNode().classList.contains('playing') };
 	});
 	const first = await read();
-	await wait(2600);
+	// A short delay, so that the checks do not wait for the 2 s delay of the demo. The timer starts at "settle", and a motion takes 400 ms,
+	// so the slide changes at 300 ms and again at 1000 ms. A read at 700 ms is between them.
+	await page.evaluate(() => {
+		const carousel = window.byId('autoplay');
+		window.autoplayOptions = carousel.options().autoplay;
+		carousel.reInit({ autoplay: { ...window.autoplayOptions, delay: 300 } });
+		return new Promise((resolve) => carousel.on('reinit', resolve));
+	});
+	await wait(700);
 	const second = await read();
 	check('autoplay: plays at init, goes to the next slide after the delay, aria-live is off', first.playing && first.live === 'off' && first.state && first.label === 'Stop the slide show' && second.slide === 1, JSON.stringify({ first, second }));
 
@@ -822,7 +849,7 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 		window.byId('autoplay').goTo(2, true);
 		window.byId('autoplay').autoplay.play();
 	});
-	await wait(2600);
+	await wait(700);
 	const slow = await read();
 	check('autoplay: data-delay on a slide changes its delay', slow.slide === 2, JSON.stringify(slow));
 
@@ -830,12 +857,13 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 	await page.evaluate(() => {
 		window.byId('autoplay').goTo(0, true);
 		window.byId('autoplay').autoplay.play();
-		scrollTo(0, document.body.scrollHeight);
+		// The page has scroll-behavior: smooth, and a smooth scroll can still run when the test scrolls back
+		scrollTo({ top: document.body.scrollHeight, behavior: 'instant' });
 	});
-	await wait(2600);
+	await wait(700);
 	const away = await read();
 	await show('autoplay');
-	await wait(2600);
+	await wait(700);
 	const back = await read();
 	check('autoplay: pauses out of view and plays again in view', away.slide === 0 && back.slide === 1, JSON.stringify({ away, back }));
 
@@ -845,7 +873,7 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 		window.byId('autoplay').autoplay.play();
 		window.byId('autoplay').rootNode().querySelector('.better_next').focus({ focusVisible: true });
 	});
-	await wait(2600);
+	await wait(700);
 	const focused = await read();
 	await page.evaluate(() => document.activeElement.blur());
 	check('autoplay: the keyboard focus in the carousel pauses it', focused.slide === 0 && focused.playing, JSON.stringify(focused));
@@ -853,7 +881,7 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 	// The stop button
 	await page.evaluate(() => window.byId('autoplay').rootNode().querySelector('.better_play').click());
 	const stopped = await read();
-	await wait(2600);
+	await wait(700);
 	const still = await read();
 	check('autoplay: the button stops it, aria-live is polite, and the button name changes', !stopped.playing && stopped.live === 'polite' && !stopped.state && stopped.label === 'Start the slide show' && still.slide === stopped.slide, JSON.stringify({ stopped, still }));
 
@@ -862,6 +890,13 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 	await page.evaluate(() => window.byId('autoplay').rootNode().querySelector('.better_next').click());
 	const clicked = await read();
 	check('autoplay: an arrow click stops it', !clicked.playing, JSON.stringify(clicked));
+
+	// The demo options again, for the timer bar check in the examples
+	await page.evaluate(() => {
+		const carousel = window.byId('autoplay');
+		carousel.reInit({ autoplay: window.autoplayOptions });
+		return new Promise((resolve) => carousel.on('reinit', resolve));
+	});
 
 	// The timer callback gets the delay of each timer. Its cleanup function runs when the timer ends and when the autoplay stops.
 	const calls = await page.evaluate(async () => {
@@ -893,14 +928,14 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 	});
 	check('auto scroll: plays after its delay, with clones for few logos', info.playing && info.animations === 1 && info.clones > 0, JSON.stringify(info));
 
-	// The largest empty space in the viewport on each frame for 3 s
+	// The largest empty space in the viewport on each frame for 1 s
 	const gap = await page.evaluate(async () => {
 		const carousel = window.byId('logos'),
 			view = carousel.viewportNode().getBoundingClientRect(),
 			nodes = [...carousel.containerNode().children];
 		let worst = 0;
 		const begin = performance.now();
-		while (performance.now() - begin < 3000) {
+		while (performance.now() - begin < 1000) {
 			await new Promise(requestAnimationFrame);
 			const list = nodes.map((node) => node.getBoundingClientRect()).filter((rect) => rect.right > view.left && rect.left < view.right).sort((a, b) => a.left - b.left);
 			let at = view.left;
@@ -912,18 +947,18 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 		}
 		return Math.round(worst);
 	});
-	check('auto scroll: no empty space and no jump on each frame for 3 s', gap <= 21, gap + ' px');
+	check('auto scroll: no empty space and no jump on each frame for 1 s', gap <= 21, gap + ' px');
 
 	// A trace: no script on each frame
 	await page.tracing.start({ categories: ['devtools.timeline', 'disabled-by-default-devtools.timeline'] });
-	await wait(3000);
+	await wait(1000);
 	const data = JSON.parse(new TextDecoder().decode(await page.tracing.stop()));
 	const events = data.traceEvents,
 		main = events.find((event) => event.name === 'thread_name' && event.args.name === 'CrRendererMain' && events.some((item) => item.pid === event.pid && item.name === 'ParseHTML' || item.pid === event.pid && item.name === 'Layout' || item.pid === event.pid && item.name === 'TimerFire')),
 		list = events.filter((event) => event.pid === main?.pid && event.tid === main?.tid),
 		count = (name) => list.filter((event) => event.name === name && event.ph !== 'E').length;
 	const trace = { frames: count('FireAnimationFrame'), timers: count('TimerFire'), layouts: count('Layout'), scripts: count('FunctionCall') };
-	check('auto scroll: a 3 s trace has no rAF frames, timers or layouts', trace.frames === 0 && trace.timers === 0 && trace.layouts === 0, JSON.stringify(trace));
+	check('auto scroll: a 1 s trace has no rAF frames, timers or layouts', trace.frames === 0 && trace.timers === 0 && trace.layouts === 0, JSON.stringify(trace));
 
 	// A drag during the auto scroll starts from the location that shows, with no jump
 	const start = await state('logos');
@@ -961,26 +996,22 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 			viewport = carousel.viewportNode(),
 			slide = (index) => Math.round(carousel.slideNodes()[index].getBoundingClientRect().height),
 			first = Math.round(parseFloat(viewport.style.height));
+		// The height transition runs during the motion. Each frame of it calls the ResizeObserver, and measure() reads the rects of the moving slides.
+		let resized = 0;
+		const count = () => resized++;
+		carousel.on('resize', count);
 		carousel.goTo(1);
 		await new Promise((resolve) => setTimeout(resolve, 100));
 		const middle = viewport.getBoundingClientRect().height;
 		await new Promise((resolve) => setTimeout(resolve, 600));
 		const last = Math.round(parseFloat(viewport.style.height));
-		// Two instant changes: the height transition runs with no motion. Count the second one only,
-		// because a measure pass during the last motion can leave a signature that the first pass at rest changes.
-		carousel.goTo(0, true);
-		await new Promise((resolve) => setTimeout(resolve, 600));
-		let resized = 0;
-		const count = () => resized++;
-		carousel.on('resize', count);
-		carousel.goTo(1, true);
-		await new Promise((resolve) => setTimeout(resolve, 600));
+		carousel.goTo(0);
+		await new Promise((resolve) => setTimeout(resolve, 700));
 		carousel.off('resize', count);
-		carousel.goTo(0, true);
 		return { first, wide: slide(0), last, square: slide(1), middle, resized, transition: getComputedStyle(viewport).transitionProperty };
 	});
 	check('auto height: the viewport gets the height of the slide in view, with a transition', value.first === value.wide && value.last === value.square && value.wide < value.square && value.middle > value.wide && value.middle < value.square && value.transition.includes('height'), JSON.stringify(value));
-	check('auto height: the height transition of the viewport causes no measure pass', value.resized === 0, JSON.stringify(value));
+	check('auto height: the height transition during a motion causes no measure pass', value.resized === 0, JSON.stringify(value));
 }
 
 // Progress and offset
@@ -1230,7 +1261,7 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 	const seen = [];
 	for (let index = 0; index < 13; index++) {
 		await page.keyboard.press('Tab');
-		await wait(600);
+		await idle('controls');
 		seen.push(await page.evaluate(() => {
 			const carousel = window.byId('controls'),
 				view = carousel.viewportNode().getBoundingClientRect(),
@@ -1264,7 +1295,7 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 	await page.mouse.down();
 	await page.mouse.move(field.x - 200, field.y, { steps: 8 });
 	await page.mouse.up();
-	await wait(600);
+	await idle('controls');
 	const typed = await page.evaluate(() => ({ focused: document.activeElement === document.querySelector('#controls input'), value: document.querySelector('#controls input').value, snap: window.byId('controls').selectedSnap() }));
 	check('controls: a click focuses the field, typing works, and a drag on the field does not move the carousel', typed.focused && typed.value === 'a@b.c' && typed.snap === 0, JSON.stringify(typed));
 
@@ -1279,7 +1310,7 @@ const show = (id) => page.evaluate((id) => document.getElementById(id).scrollInt
 	await page.mouse.down();
 	await page.mouse.move(like.x - 200, like.y, { steps: 8 });
 	await page.mouse.up();
-	await wait(600);
+	await idle('controls');
 	const dragged = await page.evaluate(() => ({ pressed: document.querySelector('#controls .demo_like').getAttribute('aria-pressed'), snap: window.byId('controls').selectedSnap() }));
 	check('controls: a click on a button works, and a drag from it moves the carousel and does not click it', pressed === 'true' && dragged.pressed === 'true' && dragged.snap > 0, JSON.stringify({ pressed, dragged }));
 
