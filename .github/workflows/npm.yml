@@ -28,4 +28,15 @@ jobs:
         if: github.event_name == 'release'
         run: test "v$(node -p 'require("./package.json").version')" = "${{ github.event.release.tag_name }}"
 
-      - run: npm publish
+      # npm refuses a version that it has, so a second run or a version published by hand does not fail the workflow
+      - name: Check npm
+        id: npm
+        run: |
+          package="$(node -p 'const p = require("./package.json"); p.name + "@" + p.version')"
+          if npm view "$package" version > /dev/null 2>&1; then
+            echo "$package is on npm already"
+            echo "published=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - if: steps.npm.outputs.published != 'true'
+        run: npm publish
