@@ -1,4 +1,6 @@
-// Default options, class presets and the option merge
+/*
+ * Options: the defaults, the class names, the merge of the option sources, and the breakpoints.
+ */
 
 export const defaults = {
 	axis: 'auto',
@@ -35,6 +37,12 @@ export const defaults = {
 	autoScroll: false,
 	autoHeight: false
 };
+
+// The defaults of the "autoplay" option
+export const autoplayDefaults = { delay: 4000, stopOnInteraction: true, stopOnMouseEnter: false, stopOnFocusIn: true, stopOnLastSnap: false, playOnInit: true, instant: false };
+
+// The defaults of the "autoScroll" option
+export const autoScrollDefaults = { speed: 120, direction: 'forward', startDelay: 1000, stopOnInteraction: true, stopOnMouseEnter: false, stopOnFocusIn: true, playOnInit: true };
 
 // The class names of a prefix. The root class is the prefix, such as "better" or "embla".
 const names = (prefix) => ({
@@ -107,15 +115,49 @@ export function merge(...sources) {
 }
 
 /**
- * Read the JSON options of the data-carousel attribute.
+ * Get the options of an element: the library defaults, then the sources, then the JSON options of the data-carousel attribute.
  *
  * @param {HTMLElement} element
+ * @param {...object} sources The site defaults and the options of the call.
  * @returns {object}
  */
-export function dataOptions(element) {
+export function resolve(element, ...sources) {
+	let data = {};
 	try {
-		return JSON.parse(element.dataset.carousel || '{}');
-	} catch (error) {
-		return {};
+		data = JSON.parse(element.dataset.carousel || '{}');
+	} catch {
+		// The library ignores an attribute that is not valid JSON
 	}
+	return merge(defaults, ...sources, data);
+}
+
+/**
+ * Merge the options of the breakpoints whose media query matches, and watch the media queries.
+ *
+ * @param {object} base The options, with the "breakpoints" option.
+ * @param {() => void} change Called when a media query starts or stops to match.
+ * @returns {{options: object, remove: () => void}} The options, and a function that stops the watch.
+ */
+export function breakpoints(base, change) {
+	// Keep the key of each query: the browser can write MediaQueryList.media in a different form.
+	const list = Object.entries(base.breakpoints || {}).map(([query, value]) => [matchMedia(query), value]);
+
+	list.forEach(([query]) => query.addEventListener('change', change));
+
+	return {
+		options: merge(base, ...list.filter(([query]) => query.matches).map(([, value]) => value)),
+		remove: () => list.forEach(([query]) => query.removeEventListener('change', change))
+	};
+}
+
+/**
+ * Merge the value of the "autoplay" or the "autoScroll" option over the defaults of the feature.
+ *
+ * @param {object} base The defaults.
+ * @param {string} key The setting that a number sets: 'delay' or 'speed'.
+ * @param {boolean|number|object} value true, a number or an object.
+ * @returns {object}
+ */
+export function settings(base, key, value) {
+	return { ...base, ...(typeof value === 'number' ? { [key]: value } : value) };
 }

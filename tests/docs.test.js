@@ -1,11 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { defaults } from '../src/options.js';
-import { events, methods, options } from '../docs/reference.js';
+import { defaults } from '../src/scripts/options.js';
+import { events, methods, options } from '../scripts/reference.js';
 import { writeDocs } from '../scripts/docs.mjs';
 
-const source = readFileSync(new URL('../src/index.js', import.meta.url), 'utf8') + readFileSync(new URL('../src/autoplay.js', import.meta.url), 'utf8');
+// The code that has the public methods and emits the events
+const source = ['index.js', 'scripts/carousel.js', 'scripts/autoplay.js', 'scripts/input.js'].map((file) => readFileSync(new URL('../src/' + file, import.meta.url), 'utf8')).join('\n');
 
 // All names in code format of a text, such as "`goTo(index, instant)`" -> "goTo"
 const names = (list) => list.flatMap((item) => [...item.name.matchAll(/`(?:BetterCarousel\.)?(\w[\w:]*)/g)].map((match) => match[1]));
@@ -31,7 +32,7 @@ test('docs: each method in the reference is in the code', () => {
 });
 
 test('docs: the types have each option, each event and each method', () => {
-	const types = readFileSync(new URL('../dist/better-carousel.d.ts', import.meta.url), 'utf8'),
+	const types = readFileSync(new URL('../src/types/better-carousel.d.ts', import.meta.url), 'utf8'),
 		list = types.match(/export interface Options \{[\s\S]*?\n\}/)[0],
 		typed = [...list.matchAll(/^\t(\w+)\?:/gm)].map((match) => match[1]);
 	assert.deepEqual(typed.sort(), Object.keys(defaults).sort());

@@ -11,7 +11,8 @@
 	carousels.filter((carousel) => carousel.rootNode().closest('.demo')).forEach((carousel) => {
 		const info = document.createElement('p');
 		info.className = 'demo_info';
-		carousel.rootNode().after(info);
+		// After the thumbnails and the arrows in #product, so that the arrows stay in the middle of the thumbnails
+		(carousel.rootNode().closest('.gallery_nav') || carousel.rootNode()).after(info);
 
 		const update = () => {
 			info.textContent = 'snap ' + carousel.selectedSnap() + ' of ' + carousel.snapList().length + ', slide ' + carousel.selectedSlide() + (carousel.isFit() ? ', fit' : '');

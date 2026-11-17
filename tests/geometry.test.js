@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { alignOffset, columns, fits, groups, inView, nearestSnap, progress, snapOfSlide, snaps, targetLocation } from '../src/geometry.js';
+import { alignOffset, columns, groups, inView, nearestSnap, progress, snapOfSlide, snaps, targetLocation } from '../src/scripts/geometry.js';
 
 // The %item model: 300 px slides with a 20 px right margin, in a 940 px viewport (3 slides)
 const row = (count, size = 300, gap = 20) => Array.from({ length: count }, (item, index) => ({ start: index * (size + gap), end: index * (size + gap) + size }));
@@ -103,12 +103,6 @@ test('slidesToScroll: a number and auto', () => {
 	assert.deepEqual(snaps({ ...base, slides, align: 'start', slidesToScroll: 2 }).snaps.map((snap) => snap.location), [0, -640, -960]);
 	assert.equal(groups(columns(slides), view, 'auto').length, 2);
 	assert.deepEqual(snaps({ ...base, slides, align: 'start', slidesToScroll: 'auto' }).snaps.map((snap) => snap.location), [0, -960]);
-});
-
-test('fit mode at the limit', () => {
-	assert.equal(fits(row(3), 940), true);
-	assert.equal(fits([{ start: 0, end: 942 }], 940), false);
-	assert.equal(fits([], 940), true);
 });
 
 test('loop snaps: no clamp and the last snap is not a copy of the first', () => {

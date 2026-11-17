@@ -5,15 +5,15 @@
 	"type": "module",
 	"main": "./dist/better-carousel.js",
 	"module": "./dist/better-carousel.js",
-	"types": "./dist/better-carousel.d.ts",
+	"types": "./src/types/better-carousel.d.ts",
 	"exports": {
 		".": {
-			"types": "./dist/better-carousel.d.ts",
+			"types": "./src/types/better-carousel.d.ts",
 			"import": "./dist/better-carousel.js",
 			"default": "./dist/better-carousel.js"
 		},
 		"./css": "./dist/better-carousel.css",
-		"./scss": "./src/better-carousel.scss"
+		"./scss": "./src/styles/better-carousel.scss"
 	},
 	"sideEffects": [
 		"*.css",

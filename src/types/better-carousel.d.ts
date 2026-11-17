@@ -1,10 +1,10 @@
-// The types of Better Carousel. This file is written by hand: the build does not make it.
-// tests/docs.test.js compares the options and the events with the code.
+// The types of Better Carousel. The members of Options come from scripts/reference.js: run "npm run docs" after a change there.
+// The other types are written by hand. tests/docs.test.js compares the options and the events with the code.
 
 /** The options of the autoplay. */
 export interface AutoplayOptions {
-	/** The time on each slide, in ms. A `data-delay` attribute on a slide sets the time of that slide. @default 4000 */
-	delay?: number;
+	/** The time on each slide, in ms, or an array with one time for each snap. A `data-delay` attribute on a slide sets the time of that slide. @default 4000 */
+	delay?: number | number[];
 	/** A drag, an arrow or a dot stops the autoplay. @default true */
 	stopOnInteraction?: boolean;
 	/** Pause while the mouse is on the carousel. @default false */
@@ -98,23 +98,24 @@ export interface ClassNames {
 
 /** The options. Set them in the call, in the `data-carousel` attribute as JSON, or in `BetterCarousel.defaults`. */
 export interface Options {
-	/** The axis of the motion. With `'auto'`, the CSS of the container sets the axis. @default 'auto' */
+	// <!-- generated:options -->
+	/** The axis of the motion. With `'auto'`, the CSS of the container sets the axis. @default 'auto' @see {@link https://twistedandy.github.io/better-carousel/#switch | example} */
 	axis?: 'x' | 'y' | 'auto';
-	/** The position of the selected snap in the viewport. A function returns the offset in px. With `'auto'`, `justify-content` sets the alignment. @default 'auto' */
+	/** The position of the selected snap in the viewport. A function gets `(viewSize, snapSize, index)` and returns the offset in px. With `'auto'`, `justify-content` sets the alignment. @default 'auto' @see {@link https://twistedandy.github.io/better-carousel/#center | example} */
 	align?: 'start' | 'center' | 'end' | 'auto' | ((viewSize: number, snapSize: number, index: number) => number);
 	/** The text direction. With `'auto'`, the CSS `direction` sets it. @default 'auto' */
 	direction?: 'ltr' | 'rtl' | 'auto';
-	/** The first slide comes after the last slide. @default false */
+	/** The first slide comes after the last slide. @default false @see {@link https://twistedandy.github.io/better-carousel/#loop | example} */
 	loop?: boolean;
-	/** `'auto'`: add clones only if the loop needs them. `'fill'`: add clones that fill the window. `false`: add no clones. @default 'auto' */
+	/** `'auto'`: add clones only if the loop needs them. `'fill'`: add clones that fill the window. `false`: add no clones. @default 'auto' @see {@link https://twistedandy.github.io/better-carousel/#clones | example} */
 	clones?: 'auto' | 'fill' | false;
-	/** `true`: glide after a drag and stop at any position. `'snap'`: glide and stop at the nearest snap. @default false */
+	/** `true`: glide after a drag and stop at any position. `'snap'`: glide and stop at the nearest snap. @default false @see {@link https://twistedandy.github.io/better-carousel/#free | example} */
 	dragFree?: boolean | 'snap';
-	/** `'trimSnaps'`: no empty space at the ends. `'keepSnaps'`: no empty space, but keep a snap for each group. `false`: snaps can show empty space. @default 'trimSnaps' */
+	/** `'trimSnaps'`: no empty space at the ends. `'keepSnaps'`: no empty space, but keep a snap for each group. `false`: snaps can show empty space. @default 'trimSnaps' @see {@link https://twistedandy.github.io/better-carousel/#center | example} */
 	containScroll?: 'trimSnaps' | 'keepSnaps' | false;
 	/** The number of slides in one snap. `'auto'`: the slides that fit in the viewport. @default 1 */
 	slidesToScroll?: number | 'auto';
-	/** A fast flick can move more than one snap. `false`: one snap. A number: the maximum number of snaps. @default true */
+	/** A fast flick can move more than one snap. `false`: one snap. A number: the maximum number of snaps. @default true @see {@link https://twistedandy.github.io/better-carousel/#skip | example} */
 	skipSnaps?: boolean | number;
 	/** The distance in px that the pointer moves before a drag starts. @default 10 */
 	dragThreshold?: number;
@@ -122,17 +123,17 @@ export interface Options {
 	duration?: number;
 	/** The index of the snap at the start. @default 0 */
 	startSnap?: number;
-	/** `true`: start when the carousel comes within one screen of the view. A number: the distance in px. @default false */
+	/** `true`: start when the carousel comes within one screen of the view. A number: the distance in px. @default false @see {@link https://twistedandy.github.io/better-carousel/#lazy | example} */
 	lazy?: boolean | number;
 	/** Drag with the mouse, the pen and the finger. @default true */
 	draggable?: boolean;
-	/** The mouse wheel moves a vertical carousel. `'both'`: also a horizontal carousel. @default true */
+	/** The mouse wheel moves a vertical carousel. `'both'`: also a horizontal carousel. `false`: the wheel does not move the carousel. @default true @see {@link https://twistedandy.github.io/better-carousel/#vertical | example} */
 	wheel?: boolean | 'both';
 	/** Measure again when a size changes. @default true */
 	resize?: boolean;
 	/** Measure again when the page adds or removes a slide. @default true */
 	slideChanges?: boolean;
-	/** Go to a slide when it gets the keyboard focus. @default true */
+	/** Go to a slide when it gets the keyboard focus. @default true @see {@link https://twistedandy.github.io/better-carousel/#controls | example} */
 	focus?: boolean;
 	/** The part of a slide, from 0 to 1, that must show for `slidesInView()`. @default 0 */
 	inViewThreshold?: number;
@@ -146,24 +147,25 @@ export interface Options {
 	slides?: string | null;
 	/** Add the root and the viewport if the page does not have them. @default true */
 	wrap?: boolean;
-	/** Add the arrows to the root. `false`: no arrows. An element or a selector: add the arrows to that element. @default true */
+	/** Add the arrows to the root. `false`: no arrows. An element or a selector: add the arrows to that element. @default true @see {@link https://twistedandy.github.io/better-carousel/#heading | example} */
 	arrows?: boolean | Element | string;
-	/** Add the dots. The values are the same as for `arrows`. @default true */
+	/** Add the dots. The values are the same as for `arrows`. @default true @see {@link https://twistedandy.github.io/better-carousel/#heading | example} */
 	dots?: boolean | Element | string;
-	/** The texts for screen readers. */
+	/** The texts for screen readers: `carousel`, `slide` (`'%d of %n'`), `prev`, `next`, `dot` (`'Go to slide %d'`), `play`, `pause`. `%d` is the slide number, and `%n` is the number of slides. */
 	labels?: Labels;
-	/** A class prefix such as `'embla'`, or an object with the names to change. @default null */
+	/** A class prefix such as `'embla'`, or an object with the names to change. The Classes table gives all names. @default null @see {@link https://twistedandy.github.io/better-carousel/#embla | example} */
 	classes?: string | ClassNames | null;
-	/** The prefix of the state classes, such as `'is_'`. @default '' */
+	/** The prefix of the state classes, such as `'is_'`. @default '' @see {@link https://twistedandy.github.io/better-carousel/#state | example} */
 	state?: string;
-	/** Another carousel, its container or a selector. This carousel follows the selected slide of the other carousel. @default null */
+	/** Another carousel, its container or a selector. This carousel follows the selected slide of the other carousel. A click on a slide selects it in the other carousel. @default null @see {@link https://twistedandy.github.io/better-carousel/#product | example} */
 	sync?: Carousel | Element | string | null;
-	/** Go to the next slide after a delay. `true`, a delay in ms, or an object. @default false */
+	/** Go to the next slide after a delay. `true`, a delay in ms, or an object. @default false @see {@link https://twistedandy.github.io/better-carousel/#autoplay | example} */
 	autoplay?: boolean | number | AutoplayOptions;
-	/** Move the slides at a constant speed. `true`, a speed in px/s, or an object. @default false */
+	/** Move the slides at a constant speed. `true`, a speed in px/s, or an object. @default false @see {@link https://twistedandy.github.io/better-carousel/#logos | example} */
 	autoScroll?: boolean | number | AutoScrollOptions;
-	/** The viewport gets the height of the tallest slide in view. @default false */
+	/** The viewport gets the height of the tallest slide in view. @default false @see {@link https://twistedandy.github.io/better-carousel/#height | example} */
 	autoHeight?: boolean;
+	// <!-- /generated -->
 }
 
 /** The names of the events. */

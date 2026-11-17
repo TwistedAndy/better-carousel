@@ -1,19 +1,19 @@
-// Write the reference tables and the file sizes into README.md and index.html.
+// Write the reference tables and the file sizes into README.md and index.html, and the Options interface into the types.
 //
-// Each file marks a generated part with <!-- generated:name --> ... <!-- /generated -->.
+// Each file marks a generated part with <!-- generated:name --> ... <!-- /generated -->. In the types, each marker is in a // comment.
 // Run "node scripts/docs.mjs" to write the files, or "node scripts/docs.mjs --check" to find the files that are not current.
 // The build runs this script after it writes the minified file.
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { gzipSync, brotliCompressSync } from 'node:zlib';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { classes, embla, events, methods, options, site } from '../docs/reference.js';
+import { classes, embla, events, methods, options, site } from './reference.js';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 
-const files = ['README.md', 'index.html'];
+const files = ['README.md', 'index.html', 'src/types/better-carousel.d.ts'];
 
-const marker = /<!-- generated:(\w+) -->[\s\S]*?<!-- \/generated -->/g;
+const marker = /(\t\/\/ )?<!-- generated:(\w+) -->[\s\S]*?<!-- \/generated -->/g;
 
 const escape = (text) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
@@ -87,6 +87,19 @@ function sizes(file) {
 }
 
 /**
+ * Make the members of the Options interface of the types.
+ *
+ * @returns {string}
+ */
+function members() {
+	return options.map((option) => {
+		const type = option.ts || option.type.replace(/`/g, '').replace(/, /g, ' | ') + (option.default === null ? ' | null' : ''),
+			text = option.text.replace(/\[([^\]]+)\]\(#[\w-]+\)/g, '$1') + ('shown' in option ? '' : ' @default ' + shown(option).slice(1, -1)) + (option.example ? ' @see {@link ' + site + '#' + option.example + ' | example}' : '');
+		return '\t/** ' + text + ' */\n\t' + option.name + '?: ' + type + ';';
+	}).join('\n');
+}
+
+/**
  * Make the generated parts of a file.
  *
  * @param {boolean} html
@@ -137,19 +150,19 @@ export function writeDocs(write = true) {
 
 	for (const file of files) {
 		const before = readFileSync(root + file, 'utf8'),
-			html = file.endsWith('.html'),
-			list = parts(html, anchors(before));
+			types = file.endsWith('.ts'),
+			list = types ? { options: members() } : parts(file.endsWith('.html'), anchors(before));
 
-		let after = before.replace(marker, (all, name) => {
+		let after = before.replace(marker, (all, prefix = '', name) => {
 			if (!(name in list)) {
 				throw new Error(file + ': unknown generated part "' + name + '"');
 			}
-			const value = name === 'gzip' ? list.gzip : '\n' + list[name] + '\n';
-			return '<!-- generated:' + name + ' -->' + value + '<!-- /generated -->';
+			const value = name === 'gzip' ? list.gzip : '\n' + list[name] + '\n' + prefix;
+			return prefix + '<!-- generated:' + name + ' -->' + value + '<!-- /generated -->';
 		});
 
 		// The size badge has no room for a marker
-		after = after.replace(/static\/gzip\/[\d.]+%20KB/g, 'static/gzip/' + list.gzip.replace(' ', '%20')).replace(/alt="[\d.]+ KB gzipped"/g, 'alt="' + list.gzip + ' gzipped"');
+		after = types ? after : after.replace(/static\/gzip\/[\d.]+%20KB/g, 'static/gzip/' + list.gzip.replace(' ', '%20')).replace(/alt="[\d.]+ KB gzipped"/g, 'alt="' + list.gzip + ' gzipped"');
 
 		if (after !== before) {
 			changed.push(file);

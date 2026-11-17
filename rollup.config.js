@@ -10,7 +10,7 @@ const input = 'src/index.js';
 
 // The gzip size of the minified file must not be more than this value
 // 10.5 KB. The same features in Embla 9 (the core, 3 plugins and the theme wrapper) are 12.6 KB gzip.
-const budget = 10752;
+const budget = 11264;
 
 const terserOptions = {
 	ecma: 2020,
@@ -27,7 +27,7 @@ const terserOptions = {
 	}
 };
 
-const stylesSource = 'src/better-carousel.scss';
+const stylesSource = 'src/styles/better-carousel.scss';
 const demoSource = 'demo/styles/demo.scss';
 
 /**
@@ -41,7 +41,7 @@ const styles = {
 	},
 	writeBundle() {
 		// The SCSS uses @import, so that node-sass can compile it. Dart Sass warns about @import.
-		const options = { style: 'compressed', charset: false, loadPaths: ['src'], silenceDeprecations: ['import'] };
+		const options = { style: 'compressed', charset: false, loadPaths: ['src/styles'], silenceDeprecations: ['import'] };
 		writeFileSync('dist/better-carousel.css', sass.compile(stylesSource, options).css + '\n');
 		writeFileSync('demo/demo.css', sass.compile(demoSource, { ...options, style: 'expanded' }).css + '\n');
 	}

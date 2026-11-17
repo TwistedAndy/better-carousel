@@ -1,6 +1,8 @@
-// Motion math. The functions in this part do not use the DOM.
+/*
+ * Motion: the easing, the durations, the target after a drag, and the motion engine.
+ */
 
-import { nearestSnap, targetLocation } from './geometry.js';
+import { clamp, nearestSnap, snapIndex, targetLocation } from './geometry.js';
 
 // The easing of a goTo() motion
 export const EASE = [0.25, 1, 0.5, 1];
@@ -85,7 +87,7 @@ export function releaseDuration(path, velocity, curve, fallback) {
 	if (Math.sign(path) !== Math.sign(velocity) || Math.abs(velocity) < 0.05) {
 		return fallback;
 	}
-	return Math.min(1200, Math.max(200, Math.abs(path) * curve[1] / curve[0] / Math.abs(velocity)));
+	return clamp(Math.abs(path) * curve[1] / curve[0] / Math.abs(velocity), 200, 1200);
 }
 
 /**
@@ -101,7 +103,8 @@ export function velocity(samples) {
 		return 0;
 	}
 
-	const first = samples.find((sample) => last[1] - sample[1] <= 100) || last,
+	// The last sample is always in its own window, so find() always finds a sample
+	const first = samples.find((sample) => last[1] - sample[1] <= 100),
 		time = last[1] - first[1];
 
 	return time > 0 ? (last[0] - first[0]) / time : 0;
@@ -125,18 +128,18 @@ export function velocity(samples) {
  * @returns {{location: number, snap: number}}
  */
 export function releaseTarget({ location, from, velocity, current, snaps, min, max, period, skipSnaps, dragFree }) {
-	const clamp = (value) => period ? value : Math.min(max, Math.max(min, value)),
-		count = snaps.length;
+	const count = snaps.length;
 
-	let projected = clamp(location + velocity * MOMENTUM);
+	let projected = location + velocity * MOMENTUM;
+
+	if (!period) {
+		projected = clamp(projected, min, max);
+	}
 
 	// A number in skipSnaps: keep the projected location between the snaps that are skipSnaps snaps before and after the start snap
 	if (typeof skipSnaps === 'number' && skipSnaps > 0 && skipSnaps < count - 1 + !period) {
-		const limit = (direction) => {
-			const index = current + direction * skipSnaps;
-			return period ? targetLocation(snaps[(index % count + count) % count].location, from, period, direction) : snaps[Math.min(count - 1, Math.max(0, index))].location;
-		};
-		projected = Math.min(limit(-1), Math.max(limit(1), projected));
+		const limit = (direction) => targetLocation(snaps[snapIndex(current + direction * skipSnaps, count, period)].location, from, period, direction);
+		projected = clamp(projected, limit(1), limit(-1));
 	}
 
 	if (dragFree === true) {
@@ -158,52 +161,13 @@ export function releaseTarget({ location, from, velocity, current, snaps, min, m
 		direction = moved < 0 ? 1 : -1;
 	}
 
-	let snap = current + direction;
-
-	if (period) {
-		snap = (snap + count) % count;
-	} else {
-		snap = Math.min(count - 1, Math.max(0, snap));
-	}
-
-	const target = snaps[snap].location;
+	const snap = snapIndex(current + direction, count, period),
+		target = snaps[snap].location;
 
 	return {
 		location: period ? targetLocation(target, direction ? from : location, period, snap === current ? 0 : direction) : target,
 		snap
 	};
-}
-
-/**
- * Get the location of a motion at a time.
- *
- * @param {number} from
- * @param {number} to
- * @param {number} time The time from the motion start, in ms.
- * @param {number} duration
- * @param {(t: number) => number} ease
- * @returns {number}
- */
-export function locationAt(from, to, time, duration, ease) {
-	return from + (to - from) * ease(duration > 0 ? time / duration : 1);
-}
-
-/**
- * Get the rubber band location out of the limits.
- *
- * @param {number} location
- * @param {number} min
- * @param {number} max
- * @returns {number}
- */
-export function resist(location, min, max) {
-	if (location > max) {
-		return max + (location - max) * 0.25;
-	}
-	if (location < min) {
-		return min + (location - min) * 0.25;
-	}
-	return location;
 }
 
 /**
@@ -220,7 +184,7 @@ export function animator(element, css, frame, done) {
 	let state = null;
 
 	const time = () => state.animation ? state.animation.currentTime || 0 : performance.now() - state.start,
-		current = () => state && locationAt(state.from, state.to, time(), state.duration, state.ease);
+		current = () => state && state.from + (state.to - state.from) * state.ease(state.duration > 0 ? time() / state.duration : 1);
 
 	function tick() {
 		if (time() >= state.duration) {

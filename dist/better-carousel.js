@@ -1,4 +1,364 @@
-// Default options, class presets and the option merge
+/*
+ * Loop math: the period, the clones and the place of each slide. This module does not use the DOM.
+ *
+ * The values and the slides are the same as in geometry.js. In loop mode, each slide is at start + k * period.
+ * The library writes k * period as the translate of the slide.
+ */
+
+/**
+ * Get the number of full copies of the slides that the loop needs. With 0, the slides can loop with no clones:
+ * no slide is necessary at two places at the same time.
+ *
+ * @param {number} length The loop period of the original slides.
+ * @param {number} view
+ * @param {number} max
+ * @returns {number}
+ */
+function cloneCount(length, view, max) {
+	return length > 0 ? Math.max(0, Math.ceil((view + max) / length) - 1) : 0;
+}
+
+/**
+ * Get the k of each slide for a motion from one location to another. With from = to, it is the placement at rest.
+ * The slide center goes into a window of one period. The window has the same center as the part of the content that shows during the motion.
+ *
+ * @param {Array<{start: number, end: number}>} slides
+ * @param {number} from
+ * @param {number} to
+ * @param {number} view The size of the visible area.
+ * @param {number} length The loop period.
+ * @param {number} [offset] The start of the visible area, relative to the viewport start.
+ * @returns {number[]}
+ */
+function placement(slides, from, to, view, length, offset = 0) {
+	const center = offset + (view - from - to) / 2;
+	return slides.map((slide) => Math.round((center - (slide.start + slide.end) / 2) / length) || 0);
+}
+
+/**
+ * Find if one placement is correct for the full motion. If not, the motion must change the placement during the motion.
+ *
+ * @param {Array<{start: number, end: number}>} slides
+ * @param {number} from
+ * @param {number} to
+ * @param {number} view
+ * @param {number} length
+ * @returns {boolean}
+ */
+function pathFits(slides, from, to, view, length) {
+	const path = view + Math.abs(to - from);
+	return slides.every((slide) => length >= path + slide.end - slide.start);
+}
+
+/**
+ * Get the steps of each slide for an auto scroll iteration. The container moves by one period, from `from` to `from - length` (forward)
+ * or to `from + length` (back). Each slide moves by one period at one time in the iteration.
+ *
+ * @param {Array<{start: number, end: number}>} slides
+ * @param {number} from
+ * @param {number} view
+ * @param {number} length
+ * @param {number} direction 1 for forward, -1 for back.
+ * @param {number} [offset] The start of the visible area, relative to the viewport start.
+ * @returns {Array<{k: number, offset: number}>} k at the start of the iteration, and the time of the step, from 0 to 1.
+ */
+function steps(slides, from, view, length, direction, offset = 0) {
+	return slides.map((slide) => {
+		const value = (offset + view / 2 - from - (slide.start + slide.end) / 2) / length,
+			k = Math.round(value);
+
+		return { k, offset: direction > 0 ? k + 0.5 - value : value - k + 0.5 };
+	});
+}
+
+/**
+ * Put a location into the range (-length, 0].
+ *
+ * @param {number} location
+ * @param {number} length
+ * @returns {number}
+ */
+function normalize(location, length) {
+	return location - Math.ceil(location / length) * length;
+}
+
+/*
+ * Markup: the wrapper, the slides, the clones, the ARIA attributes, and the helpers that write to the DOM.
+ *
+ * The helpers that set a value write only when the value changes. restore() removes all that the library added.
+ */
+
+/**
+ * Add or remove a class.
+ *
+ * @param {Element} element
+ * @param {string} name An empty name does nothing.
+ * @param {boolean} on
+ */
+function setClass(element, name, on) {
+	if (name && element.classList.contains(name) !== !!on) {
+		element.classList.toggle(name, !!on);
+	}
+}
+
+/**
+ * Set an attribute, or remove it if the value is null or false.
+ *
+ * @param {Element} element
+ * @param {string} name
+ * @param {string|boolean|null} value
+ */
+function setAttribute(element, name, value) {
+	const text = value === true ? '' : value === false || value == null ? null : String(value);
+	if (element.getAttribute(name) !== text) {
+		if (text === null) {
+			element.removeAttribute(name);
+		} else {
+			element.setAttribute(name, text);
+		}
+	}
+}
+
+/**
+ * Set an inline style property.
+ *
+ * @param {HTMLElement} element
+ * @param {string} name
+ * @param {string} value An empty string removes the property.
+ */
+function setStyle(element, name, value) {
+	if (element.style[name] !== value) {
+		element.style[name] = value;
+	}
+}
+
+/**
+ * Remove an empty style attribute that the library left.
+ *
+ * @param {Element} element
+ */
+function cleanStyle(element) {
+	if (element.getAttribute('style') === '') {
+		element.removeAttribute('style');
+	}
+}
+
+/**
+ * Make an element.
+ *
+ * @param {string} tag
+ * @param {string} className
+ * @returns {HTMLElement}
+ */
+function create(tag, className) {
+	const element = document.createElement(tag);
+	if (className) {
+		element.className = className;
+	}
+	return element;
+}
+
+/**
+ * Find the element of an option, such as "arrows", "dots" or "sync". true gives the root, and false gives null.
+ * The library searches for a selector in the root and then in each parent of the root, so that it finds a heading in the section of the carousel.
+ *
+ * @param {boolean|string|Element} value The option value.
+ * @param {HTMLElement} root
+ * @returns {Element|null}
+ */
+function optionElement(value, root) {
+	if (typeof value === 'string') {
+		for (let node = root; node; node = node.parentElement) {
+			const found = node.querySelector(value);
+			if (found) {
+				return found;
+			}
+		}
+		return null;
+	}
+	return value === true ? root : value || null;
+}
+
+// The attributes and the classes that the library added: element => names
+const marked = new WeakMap(),
+	added = new WeakMap();
+
+/**
+ * Set an attribute that the page did not set. restore() removes it.
+ *
+ * @param {Element} node
+ * @param {string} name
+ * @param {string} value
+ */
+function own(node, name, value) {
+	const list = marked.get(node) || new Set();
+	if (list.has(name) || !node.hasAttribute(name)) {
+		list.add(name);
+		marked.set(node, list);
+		if (node.getAttribute(name) !== value) {
+			node.setAttribute(name, value);
+		}
+	}
+}
+
+/**
+ * Add a class that the element does not have. restore() removes it.
+ *
+ * @param {Element} node
+ * @param {string} name An empty name does nothing.
+ */
+function addClass(node, name) {
+	if (name && !node.classList.contains(name)) {
+		const list = added.get(node) || new Set();
+		node.classList.add(name);
+		list.add(name);
+		added.set(node, list);
+	}
+}
+
+// The elements that the library made: the wrapper and the clones
+const made = new WeakSet();
+
+// A counter for container ids
+let uid = 0;
+
+/**
+ * Find or make the root, the viewport and the container of a carousel. Then add their classes and the ARIA attributes of the
+ * carousel pattern of the WAI-ARIA Authoring Practices. A new setup after reInit() uses the wrapper that the library made before.
+ *
+ * @param {HTMLElement} element The container of the slides, or its viewport.
+ * @param {object} options
+ * @param {object} cls The class names.
+ * @returns {{root: HTMLElement, viewport: HTMLElement, container: HTMLElement}}
+ */
+function build(element, options, cls) {
+	let container = options.container ? element.querySelector(options.container) : element;
+
+	if (container.classList.contains(cls.viewport)) {
+		container = container.firstElementChild;
+	}
+
+	let viewport = container.parentElement,
+		root = viewport.parentElement;
+
+	if (!made.has(viewport) && !viewport.classList.contains(cls.viewport) && options.wrap) {
+		root = create('div');
+		viewport = create('div');
+		made.add(root).add(viewport);
+		container.before(root);
+		root.append(viewport);
+		viewport.append(container);
+	}
+
+	addClass(root, cls.root);
+	addClass(viewport, cls.viewport);
+	addClass(container, cls.container);
+
+	own(root, 'role', 'region');
+	own(root, 'aria-roledescription', 'carousel');
+	if (!root.hasAttribute('aria-labelledby')) {
+		own(root, 'aria-label', options.labels.carousel);
+	}
+	own(container, 'id', container.id || 'carousel-' + ++uid);
+	own(container, 'aria-live', 'polite');
+
+	return { root, viewport, container };
+}
+
+/**
+ * Remove the classes and the attributes that own() and addClass() added, an empty class attribute, and the wrapper that build() made.
+ *
+ * @param {HTMLElement} root
+ * @param {HTMLElement} viewport
+ * @param {HTMLElement} container
+ * @param {HTMLElement[]} slides
+ * @param {boolean} keep Keep the wrapper for a new setup.
+ */
+function restore(root, viewport, container, slides, keep) {
+	for (const node of [root, viewport, container, ...slides]) {
+		marked.get(node)?.forEach((name) => node.removeAttribute(name));
+		added.get(node)?.forEach((name) => node.classList.remove(name));
+		marked.delete(node);
+		added.delete(node);
+		if (node.getAttribute('class') === '') {
+			node.removeAttribute('class');
+		}
+	}
+
+	if (!keep && made.has(root)) {
+		root.before(container);
+		root.remove();
+	}
+}
+
+// Slides that are a control keep their own role and name
+const controls = 'a[href],button,input,select,textarea,[tabindex],[role]';
+
+// The slides that can get the "group" role. An element with its own role, such as an article or a list item, does not permit "group".
+const generic = 'div,span,section';
+
+/**
+ * Get the slides of a container. The clones that the library made are not slides.
+ *
+ * @param {HTMLElement} container
+ * @param {string} [selector] The "slides" option.
+ * @returns {HTMLElement[]}
+ */
+function readSlides(container, selector) {
+	return [...(selector ? container.querySelectorAll(selector) : container.children)].filter((node) => !made.has(node));
+}
+
+/**
+ * Make the clones: full copies of the slides, which the screen reader and the keyboard do not see.
+ *
+ * @param {HTMLElement[]} slides
+ * @param {number} count The number of copies of all slides.
+ * @param {string} className The class of a clone.
+ * @returns {HTMLElement[]}
+ */
+function copySlides(slides, count, className) {
+	const list = [];
+
+	for (let copy = 0; copy < count; copy++) {
+		for (const node of slides) {
+			const clone = node.cloneNode(true);
+			for (const item of [clone, ...clone.querySelectorAll('[id]')]) {
+				item.removeAttribute('id');
+			}
+			clone.setAttribute('aria-hidden', 'true');
+			clone.inert = true;
+			clone.style.translate = '';
+			setClass(clone, className, true);
+			cleanStyle(clone);
+			made.add(clone);
+			list.push(clone);
+		}
+	}
+
+	return list;
+}
+
+/**
+ * Give each slide the slide role and a name such as "2 of 8". A slide with its own role, such as an article, keeps it.
+ *
+ * @param {HTMLElement[]} slides
+ * @param {string} text The "slide" label, with %d for the slide number and %n for the number of slides.
+ */
+function labelSlides(slides, text) {
+	slides.forEach((node, index) => {
+		if (!node.matches(controls) || marked.get(node)?.has('role')) {
+			if (node.matches(generic)) {
+				own(node, 'role', 'group');
+			}
+			own(node, 'aria-roledescription', 'slide');
+			own(node, 'aria-label', text.replace('%d', index + 1).replace('%n', slides.length));
+		}
+	});
+}
+
+/*
+ * Options: the defaults, the class names, the merge of the option sources, and the breakpoints.
+ */
 
 const defaults = {
 	axis: 'auto',
@@ -35,6 +395,12 @@ const defaults = {
 	autoScroll: false,
 	autoHeight: false
 };
+
+// The defaults of the "autoplay" option
+const autoplayDefaults = { delay: 4000, stopOnInteraction: true, stopOnMouseEnter: false, stopOnFocusIn: true, stopOnLastSnap: false, playOnInit: true, instant: false };
+
+// The defaults of the "autoScroll" option
+const autoScrollDefaults = { speed: 120, direction: 'forward', startDelay: 1000, stopOnInteraction: true, stopOnMouseEnter: false, stopOnFocusIn: true, playOnInit: true };
 
 // The class names of a prefix. The root class is the prefix, such as "better" or "embla".
 const names = (prefix) => ({
@@ -107,225 +473,415 @@ function merge(...sources) {
 }
 
 /**
- * Read the JSON options of the data-carousel attribute.
+ * Get the options of an element: the library defaults, then the sources, then the JSON options of the data-carousel attribute.
  *
  * @param {HTMLElement} element
+ * @param {...object} sources The site defaults and the options of the call.
  * @returns {object}
  */
-function dataOptions(element) {
+function resolve(element, ...sources) {
+	let data = {};
 	try {
-		return JSON.parse(element.dataset.carousel || '{}');
-	} catch (error) {
-		return {};
+		data = JSON.parse(element.dataset.carousel || '{}');
+	} catch {
+		// The library ignores an attribute that is not valid JSON
 	}
+	return merge(defaults, ...sources, data);
 }
 
 /**
- * Make an event emitter. A handler gets (api, name), as in Embla.
+ * Merge the options of the breakpoints whose media query matches, and watch the media queries.
  *
- * @param {object} api
- * @returns {{on: Function, off: Function, emit: Function, has: Function}}
+ * @param {object} base The options, with the "breakpoints" option.
+ * @param {() => void} change Called when a media query starts or stops to match.
+ * @returns {{options: object, remove: () => void}} The options, and a function that stops the watch.
  */
-function emitter(api) {
-	const map = {};
+function breakpoints(base, change) {
+	// Keep the key of each query: the browser can write MediaQueryList.media in a different form.
+	const list = Object.entries(base.breakpoints || {}).map(([query, value]) => [matchMedia(query), value]);
+
+	list.forEach(([query]) => query.addEventListener('change', change));
 
 	return {
-		on(name, handler) {
-			(map[name] ||= new Set()).add(handler);
-			return api;
+		options: merge(base, ...list.filter(([query]) => query.matches).map(([, value]) => value)),
+		remove: () => list.forEach(([query]) => query.removeEventListener('change', change))
+	};
+}
+
+/**
+ * Merge the value of the "autoplay" or the "autoScroll" option over the defaults of the feature.
+ *
+ * @param {object} base The defaults.
+ * @param {string} key The setting that a number sets: 'delay' or 'speed'.
+ * @param {boolean|number|object} value true, a number or an object.
+ * @returns {object}
+ */
+function settings(base, key, value) {
+	return { ...base, ...(typeof value === 'number' ? { [key]: value } : value) };
+}
+
+/*
+ * Autoplay: the autoplay, the auto scroll, and the play control that they share.
+ *
+ * Each feature takes the context of a carousel (see carousel.js) and returns an object with remove().
+ */
+
+
+/**
+ * Watch the reasons to pause: the root is out of view, the tab is hidden, the mouse is on the root, or the keyboard focus is in the root.
+ * Make it only while a feature plays, so that a carousel at rest has no listeners on the document.
+ *
+ * @param {HTMLElement} root
+ * @param {{stopOnMouseEnter: boolean, stopOnFocusIn: boolean}} options
+ * @param {() => void} change Called when the paused state changes.
+ * @returns {{paused: () => boolean, remove: () => void}}
+ */
+function pauser(root, options, change) {
+	const reasons = new Set(),
+		set = (reason, on) => {
+			const before = reasons.size;
+			reasons[on ? 'add' : 'delete'](reason);
+			if (!before !== !reasons.size) {
+				change();
+			}
 		},
-		off(name, handler) {
-			map[name]?.delete(handler);
-			return api;
-		},
-		emit(name) {
-			map[name]?.forEach((handler) => handler(api, name));
-		},
-		has(name) {
-			return !!map[name]?.size;
+		observer = new IntersectionObserver(([entry]) => set('view', !entry.isIntersecting)),
+		listeners = [
+			[document, 'visibilitychange', () => set('tab', document.hidden)],
+			[root, 'pointerenter', (event) => set('mouse', options.stopOnMouseEnter && event.pointerType === 'mouse')],
+			[root, 'pointerleave', () => set('mouse', false)],
+			// A mouse click also moves the focus to a button. Only the keyboard focus pauses.
+			[root, 'focusin', (event) => set('focus', options.stopOnFocusIn && event.target.matches(':focus-visible'))],
+			[root, 'focusout', (event) => set('focus', root.contains(event.relatedTarget) && reasons.has('focus'))]
+		];
+
+	observer.observe(root);
+	listeners.forEach(([node, name, handler]) => node.addEventListener(name, handler));
+
+	return {
+		paused: () => reasons.size > 0,
+		remove() {
+			observer.disconnect();
+			listeners.forEach(([node, name, handler]) => node.removeEventListener(name, handler));
 		}
 	};
 }
 
-// DOM helpers. Each helper writes only when the value changes.
-
 /**
- * Add or remove a class.
+ * The part that autoplay and auto scroll share: the play and pause button (WCAG 2.2.2), the "playing" class, aria-live, the pause reasons and the events.
  *
- * @param {Element} element
- * @param {string} name An empty name does nothing.
- * @param {boolean} on
+ * @param {object} context What the features share. See carousel.js.
+ * @param {string} name 'autoplay' or 'autoscroll', for the events.
+ * @param {object} options The feature options.
+ * @param {{play: () => void, stop: () => void, pause: (paused: boolean) => void, events?: Array<[string, Function]>}} hooks
+ * events: more handlers of carousel events. remove() removes them.
+ * @returns {{play: () => void, stop: () => void, isPlaying: () => boolean, paused: () => boolean, remove: () => void}}
  */
-function setClass(element, name, on) {
-	if (name && element.classList.contains(name) !== !!on) {
-		element.classList.toggle(name, !!on);
+function controller(context, name, options, hooks) {
+	const { api, root, container, cls, emit } = context,
+		labels = context.options.labels,
+		button = create('button', cls.button + ' ' + cls.play),
+		handlers = [['init', show], ['reinit', show], ['resize', show], ['init', begin], ['reinit', begin], ...(hooks.events || [])];
+
+	let playing = false,
+		watch = null;
+
+	button.type = 'button';
+	button.setAttribute('aria-controls', container.id);
+	button.addEventListener('click', () => playing ? control.stop() : control.play());
+
+	function update() {
+		setAttribute(button, 'aria-label', playing ? labels.pause : labels.play);
+		setClass(root, cls.playing, playing);
+		// A screen reader does not read each automatic change
+		own(container, 'aria-live', playing ? 'off' : 'polite');
 	}
+
+	function show() {
+		if (api.isFit()) {
+			button.remove();
+		} else if (!button.isConnected) {
+			root.append(button);
+		}
+	}
+
+	// Start at the first init, unless the user prefers less motion
+	function begin() {
+		api.off('init', begin);
+		api.off('reinit', begin);
+		if (options.playOnInit && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+			control.play();
+		}
+	}
+
+	const control = {
+		play() {
+			if (!playing) {
+				playing = true;
+				watch = pauser(root, options, () => hooks.pause(watch.paused()));
+				update();
+				hooks.play();
+				emit(name + ':play');
+			}
+		},
+		stop() {
+			if (playing) {
+				playing = false;
+				watch.remove();
+				update();
+				hooks.stop();
+				emit(name + ':stop');
+			}
+		},
+		isPlaying: () => playing,
+		paused: () => !playing || watch.paused(),
+		remove() {
+			control.stop();
+			handlers.forEach(([event, handler]) => api.off(event, handler));
+			button.remove();
+		}
+	};
+
+	handlers.forEach(([event, handler]) => api.on(event, handler));
+	update();
+
+	return control;
 }
 
 /**
- * Set an attribute, or remove it if the value is null or false.
+ * Go to the next snap after a delay. The timer starts at "settle", so that a slow motion does not make the delay shorter.
  *
- * @param {Element} element
- * @param {string} name
- * @param {string|boolean|null} value
+ * @param {object} context What the features share. See carousel.js.
+ * @returns {object} The control: play(), stop(), reset(), isPlaying(), remove().
  */
-function setAttribute(element, name, value) {
-	const text = value === true ? '' : value === false || value == null ? null : String(value);
-	if (element.getAttribute(name) !== text) {
-		if (text === null) {
-			element.removeAttribute(name);
+function autoplay(context) {
+	const api = context.api,
+		options = settings(autoplayDefaults, 'delay', context.options.autoplay);
+
+	let timer = 0,
+		own = false;
+
+	function reset() {
+		clearTimeout(timer);
+		if (!control.paused() && !api.isFit()) {
+			// The delay: data-delay on the selected slide, one value for each snap, or one value
+			const value = api.slideNodes()[api.selectedSlide()]?.dataset.delay || options.delay;
+			timer = setTimeout(next, +(Array.isArray(value) ? value[api.selectedSnap()] : value));
+		}
+	}
+
+	function next() {
+		own = true;
+		if (api.canGoToNext()) {
+			api.goToNext(options.instant);
+		} else if (options.stopOnLastSnap) {
+			control.stop();
 		} else {
-			element.setAttribute(name, text);
+			api.goTo(0, options.instant);
 		}
+		own = false;
 	}
-}
 
-/**
- * Set an inline style property.
- *
- * @param {HTMLElement} element
- * @param {string} name
- * @param {string} value An empty string removes the property.
- */
-function setStyle(element, name, value) {
-	if (element.style[name] !== value) {
-		element.style[name] = value;
-	}
-}
-
-/**
- * Get the CSS translate value for one axis.
- *
- * @param {string} axis 'x' or 'y'.
- * @param {number} value px
- * @returns {string}
- */
-function translate(axis, value) {
-	return value ? (axis === 'x' ? value + 'px' : '0 ' + value + 'px') : '';
-}
-
-/**
- * Remove an empty style attribute that the library left.
- *
- * @param {Element} element
- */
-function cleanStyle(element) {
-	if (element.getAttribute('style') === '') {
-		element.removeAttribute('style');
-	}
-}
-
-/**
- * Make an element.
- *
- * @param {string} tag
- * @param {string} className
- * @returns {HTMLElement}
- */
-function create(tag, className) {
-	const element = document.createElement(tag);
-	if (className) {
-		element.className = className;
-	}
-	return element;
-}
-
-// Layout reads. They run in the ResizeObserver callback, when the layout is clean.
-
-/**
- * Read the axis, the alignment, the direction and the gap from the computed style of the container.
- *
- * @param {HTMLElement} container
- * @param {object} options
- * @returns {{axis: string, align: string|Function, rtl: boolean, gap: number}}
- */
-function readLayout(container, options) {
-	const style = getComputedStyle(container),
-		display = style.display,
-		content = style.justifyContent;
-
-	let axis = options.axis;
-
-	if (axis === 'auto') {
-		axis = 'x';
-		if (display.includes('grid')) {
-			axis = style.gridAutoFlow.startsWith('column') ? 'x' : 'y';
-		} else if (display.includes('flex') && style.flexDirection.startsWith('column') && style.flexWrap === 'nowrap') {
-			axis = 'y';
+	// A drag, an arrow, a dot or the keyboard stops the autoplay. With stopOnInteraction: false, the timer starts again at "settle".
+	function interact() {
+		if (!own) {
+			clearTimeout(timer);
+			if (options.stopOnInteraction) {
+				control.stop();
+			}
 		}
 	}
 
-	let align = options.align;
+	const control = controller(context, 'autoplay', options, {
+		play: reset,
+		stop: () => clearTimeout(timer),
+		pause: reset,
+		events: [['settle', reset], ['select', interact], ['pointerdown', interact]]
+	});
 
-	if (align === 'auto') {
-		align = content === 'center' ? 'center' : content === 'flex-end' || content === 'end' || (axis === 'x' && content === 'right') ? 'end' : 'start';
+	control.reset = reset;
+
+	return control;
+}
+
+/**
+ * Move the slides at a constant speed. With loop, the motion runs on the compositor: the container moves by one period in each iteration,
+ * and each slide moves by one period at the time when it leaves the visible area. Without loop, the carousel goes to the end.
+ *
+ * @param {object} context What the features share. See carousel.js.
+ * @returns {object} The play control in "control", remove(), and the calls that the carousel makes.
+ */
+function autoScroll(context) {
+	const options = settings(autoScrollDefaults, 'speed', context.options.autoScroll);
+
+	// The motion of a loop: { from, direction, length, list, duration, animations }, or null
+	let scroll = null,
+		// The start delay
+		timer = 0;
+
+	const control = controller(context, 'autoscroll', options, {
+		play: wait,
+		stop() {
+			wait(-1);
+			context.halt();
+		},
+		pause: (paused) => scroll ? scroll.animations.forEach((animation) => animation[paused ? 'pause' : 'play']()) : paused ? context.halt() : timer || run()
+	});
+
+	/**
+	 * Start the auto scroll after its delay.
+	 *
+	 * @param {number} [cancel] With -1, only stop the timer.
+	 */
+	function wait(cancel) {
+		clearTimeout(timer);
+		timer = cancel ? 0 : setTimeout(run, options.startDelay);
+	}
+
+	function run() {
+		timer = 0;
+		const geo = context.geo();
+		if (!geo || geo.fit || scroll || context.dragging() || control.paused()) {
+			return;
+		}
+
+		const direction = options.direction === 'backward' ? -1 : 1,
+			from = context.halt(),
+			length = geo.period,
+			speed = options.speed / 1000;
+
+		if (!length) {
+			const to = direction > 0 ? geo.min : geo.max;
+			if (Math.abs(to - from) > 1) {
+				context.glide(from, to, Math.abs(to - from) / speed);
+			}
+			return;
+		}
+
+		const list = steps(geo.slides, from, geo.area.size, length, direction, geo.area.start),
+			timing = { duration: length / speed, iterations: Infinity },
+			start = document.timeline.currentTime,
+			css = context.css;
+
+		context.write(from);
+		scroll = {
+			from,
+			direction,
+			length,
+			list,
+			duration: timing.duration,
+			animations: [
+				context.container.animate([{ translate: css(from) }, { translate: css(from - direction * length) }], timing),
+				...context.nodes().map((node, index) => {
+					const { k, offset } = list[index],
+						before = css(k * length),
+						after = css((k + direction) * length);
+					return node.animate([{ translate: before }, { translate: before, offset }, { translate: after, offset }, { translate: after }], timing);
+				})
+			]
+		};
+		scroll.animations.forEach((animation) => animation.startTime = start);
+	}
+
+	// The time in the iteration, from 0 to 1
+	function phase() {
+		return (scroll.animations[0].currentTime || 0) % scroll.duration / scroll.duration;
+	}
+
+	// The location of the loop motion now, or null
+	function at() {
+		return scroll ? scroll.from - scroll.direction * scroll.length * phase() : null;
 	}
 
 	return {
-		axis,
-		align,
-		rtl: axis === 'x' && (options.direction === 'auto' ? style.direction === 'rtl' : options.direction === 'rtl'),
-		gap: parseFloat(axis === 'x' ? style.columnGap : style.rowGap) || 0
+		control,
+		remove: control.remove,
+		at,
+
+		// A drag, a wheel step or a goTo() from the user stops the auto scroll, or makes it wait until the next "settle"
+		interrupt() {
+			if (control.isPlaying()) {
+				wait(-1);
+				if (options.stopOnInteraction) {
+					control.stop();
+				}
+			}
+		},
+
+		// A motion stopped: start again after the delay
+		settled() {
+			if (control.isPlaying() && !scroll) {
+				wait();
+			}
+		},
+
+		// A measure pass is done: start again now
+		resume() {
+			if (control.isPlaying() && !timer) {
+				run();
+			}
+		},
+
+		/**
+		 * Stop the loop motion.
+		 *
+		 * @returns {number|null} The location where it stopped, or null if it did not run.
+		 */
+		cancel() {
+			const location = at();
+			scroll?.animations.forEach((animation) => animation.cancel());
+			scroll = null;
+			return location;
+		},
+
+		/**
+		 * Get the translate values of the loop motion now.
+		 *
+		 * @param {number} sign -1 for a right-to-left carousel.
+		 * @param {string} axis
+		 * @returns {{axis: string, container: number, slides: number[]}|null}
+		 */
+		shown(sign, axis) {
+			if (!scroll) {
+				return null;
+			}
+			const time = phase();
+			return { axis, container: sign * at(), slides: scroll.list.map(({ k, offset }) => sign * (time >= offset ? k + scroll.direction : k) * scroll.length) };
+		}
 	};
+}
+
+/*
+ * Snap math: the snaps, the active slide, the slides in view and the progress. This module does not use the DOM.
+ *
+ * All values are on the main axis, in px. A slide is { start, end }: its border box at location 0, relative to the viewport start.
+ * The location L is the translate of the container. A slide shows at start + L.
+ * In loop mode, the period is the length of one copy of the slides. Without loop, it is 0.
+ */
+
+/**
+ * Keep a value between two limits.
+ *
+ * @param {number} value
+ * @param {number} min
+ * @param {number} max
+ * @returns {number}
+ */
+function clamp(value, min, max) {
+	return Math.min(max, Math.max(min, value));
 }
 
 /**
- * Read the slide boxes on the main axis, relative to the viewport start at location 0.
+ * Get a valid snap index. In loop mode, the index goes around. Without loop, it stops at the first or the last snap.
  *
- * @param {HTMLElement} viewport
- * @param {HTMLElement[]} nodes All slides, clones included.
- * @param {object} layout The result of readLayout().
- * @param {{axis: string, container: number, slides: number[]}} written The translate values that the library wrote, in px on the screen.
- * @returns {{view: number, cross: number, slides: Array<{start: number, end: number, cross: number}>, gap: number}}
- * gap is the loop gap: the space between the last slide and the next copy of the first slide.
+ * @param {number} index
+ * @param {number} count The number of snaps.
+ * @param {number} [period]
+ * @returns {number}
  */
-function readRects(viewport, nodes, layout, written) {
-	const box = viewport.getBoundingClientRect(),
-		x = layout.axis === 'x',
-		sign = layout.rtl ? -1 : 1,
-		known = written.axis === layout.axis,
-		shift = known ? written.container : 0;
-
-	let first = 0,
-		last = 0;
-
-	const slides = nodes.map((node, index) => {
-		const rect = node.getBoundingClientRect(),
-			offset = sign * (shift + (known && written.slides[index] || 0)),
-			start = (x ? (layout.rtl ? box.right - rect.right : rect.left - box.left) : rect.top - box.top) - offset,
-			size = x ? rect.width : rect.height;
-
-		return { start, end: start + size, cross: x ? rect.height : rect.width };
-	});
-
-	slides.forEach((slide, index) => {
-		if (slide.start < slides[first].start) {
-			first = index;
-		}
-		if (slide.end > slides[last].end) {
-			last = index;
-		}
-	});
-
-	let gap = layout.gap;
-
-	if (slides.length) {
-		const side = x ? (layout.rtl ? ['Right', 'Left'] : ['Left', 'Right']) : ['Top', 'Bottom'];
-		gap += (parseFloat(getComputedStyle(nodes[first])['margin' + side[0]]) || 0) + (parseFloat(getComputedStyle(nodes[last])['margin' + side[1]]) || 0);
-	}
-
-	return {
-		view: x ? box.width : box.height,
-		cross: x ? box.height : box.width,
-		slides,
-		gap
-	};
+function snapIndex(index, count, period) {
+	return period ? (index % count + count) % count : clamp(index, 0, count - 1);
 }
-
-// Snap math. This module does not use the DOM.
-//
-// All values are on the main axis, in px. A slide is { start, end }: its border box at location 0, relative to the viewport start.
-// The location L is the translate of the container. A slide shows at start + L.
 
 /**
  * Get the offset of a snap from the viewport start.
@@ -361,17 +917,6 @@ function bounds(slides) {
 	}
 
 	return { start, end, size: end - start, max };
-}
-
-/**
- * Find if all slides fit in the viewport.
- *
- * @param {Array<{start: number, end: number}>} slides
- * @param {number} view
- * @returns {boolean}
- */
-function fits(slides, view) {
-	return !slides.length || bounds(slides).size <= view + 1;
 }
 
 /**
@@ -464,7 +1009,7 @@ function snaps({ slides, view, align, slidesToScroll, containScroll, period = 0 
 
 	if (!period) {
 		if (containScroll) {
-			list = list.map((location) => Math.min(max, Math.max(min, location)));
+			list = list.map((location) => clamp(location, min, max));
 		} else {
 			max = Math.max(...list);
 			min = Math.min(...list);
@@ -617,7 +1162,7 @@ function progress(location, min, max, period) {
 		const value = -location / period;
 		return value - Math.floor(value);
 	}
-	return max > min ? Math.min(1, Math.max(0, (max - location) / (max - min))) : 0;
+	return max > min ? clamp((max - location) / (max - min), 0, 1) : 0;
 }
 
 /**
@@ -646,111 +1191,9 @@ function inView(slides, location, view, threshold, period) {
 	return result;
 }
 
-// Loop math. This module does not use the DOM.
-//
-// In loop mode, each slide is at start + k * period. The library writes k * period as the translate of the slide.
-
-/**
- * Get the loop period: the distance from the first slide start to the same point in the next copy of the slides.
- *
- * @param {number} start The first slide start.
- * @param {number} end The last slide end.
- * @param {number} gap The gap between the last slide and the first slide of the next copy.
- * @returns {number}
+/*
+ * Motion: the easing, the durations, the target after a drag, and the motion engine.
  */
-function period(start, end, gap) {
-	return end + gap - start;
-}
-
-/**
- * Find if the slides can loop with no clones. No slide can be necessary at two places at the same time.
- *
- * @param {number} length The loop period.
- * @param {number} view The viewport size.
- * @param {number} max The size of the largest slide.
- * @returns {boolean}
- */
-function canLoop(length, view, max) {
-	return length >= view + max;
-}
-
-/**
- * Get the number of full copies of the slides that the loop needs.
- *
- * @param {number} length The loop period of the original slides.
- * @param {number} view
- * @param {number} max
- * @returns {number}
- */
-function cloneCount(length, view, max) {
-	return length > 0 ? Math.max(0, Math.ceil((view + max) / length) - 1) : 0;
-}
-
-/**
- * Get the k of each slide for a motion from one location to another. With from = to, it is the placement at rest.
- * The slide center goes into a window of one period. The window has the same center as the part of the content that shows during the motion.
- *
- * @param {Array<{start: number, end: number}>} slides
- * @param {number} from
- * @param {number} to
- * @param {number} view The size of the visible area.
- * @param {number} length The loop period.
- * @param {number} [offset] The start of the visible area, relative to the viewport start.
- * @returns {number[]}
- */
-function placement(slides, from, to, view, length, offset = 0) {
-	const center = offset + (view - from - to) / 2;
-	return slides.map((slide) => Math.round((center - (slide.start + slide.end) / 2) / length) || 0);
-}
-
-/**
- * Find if one placement is correct for the full motion. If not, the motion must change the placement during the motion.
- *
- * @param {Array<{start: number, end: number}>} slides
- * @param {number} from
- * @param {number} to
- * @param {number} view
- * @param {number} length
- * @returns {boolean}
- */
-function pathFits(slides, from, to, view, length) {
-	const path = view + Math.abs(to - from);
-	return slides.every((slide) => length >= path + slide.end - slide.start);
-}
-
-/**
- * Get the steps of each slide for an auto scroll iteration. The container moves by one period, from `from` to `from - length` (forward)
- * or to `from + length` (back). Each slide moves by one period at one time in the iteration.
- *
- * @param {Array<{start: number, end: number}>} slides
- * @param {number} from
- * @param {number} view
- * @param {number} length
- * @param {number} direction 1 for forward, -1 for back.
- * @param {number} [offset] The start of the visible area, relative to the viewport start.
- * @returns {Array<{k: number, offset: number}>} k at the start of the iteration, and the time of the step, from 0 to 1.
- */
-function steps(slides, from, view, length, direction, offset = 0) {
-	return slides.map((slide) => {
-		const value = (offset + view / 2 - from - (slide.start + slide.end) / 2) / length,
-			k = Math.round(value);
-
-		return { k, offset: direction > 0 ? k + 0.5 - value : value - k + 0.5 };
-	});
-}
-
-/**
- * Put a location into the range (-length, 0].
- *
- * @param {number} location
- * @param {number} length
- * @returns {number}
- */
-function normalize(location, length) {
-	return location - Math.ceil(location / length) * length;
-}
-
-// Motion math. The functions in this part do not use the DOM.
 
 
 // The easing of a goTo() motion
@@ -836,7 +1279,7 @@ function releaseDuration(path, velocity, curve, fallback) {
 	if (Math.sign(path) !== Math.sign(velocity) || Math.abs(velocity) < 0.05) {
 		return fallback;
 	}
-	return Math.min(1200, Math.max(200, Math.abs(path) * curve[1] / curve[0] / Math.abs(velocity)));
+	return clamp(Math.abs(path) * curve[1] / curve[0] / Math.abs(velocity), 200, 1200);
 }
 
 /**
@@ -852,7 +1295,8 @@ function velocity(samples) {
 		return 0;
 	}
 
-	const first = samples.find((sample) => last[1] - sample[1] <= 100) || last,
+	// The last sample is always in its own window, so find() always finds a sample
+	const first = samples.find((sample) => last[1] - sample[1] <= 100),
 		time = last[1] - first[1];
 
 	return time > 0 ? (last[0] - first[0]) / time : 0;
@@ -876,18 +1320,18 @@ function velocity(samples) {
  * @returns {{location: number, snap: number}}
  */
 function releaseTarget({ location, from, velocity, current, snaps, min, max, period, skipSnaps, dragFree }) {
-	const clamp = (value) => period ? value : Math.min(max, Math.max(min, value)),
-		count = snaps.length;
+	const count = snaps.length;
 
-	let projected = clamp(location + velocity * MOMENTUM);
+	let projected = location + velocity * MOMENTUM;
+
+	if (!period) {
+		projected = clamp(projected, min, max);
+	}
 
 	// A number in skipSnaps: keep the projected location between the snaps that are skipSnaps snaps before and after the start snap
 	if (typeof skipSnaps === 'number' && skipSnaps > 0 && skipSnaps < count - 1 + !period) {
-		const limit = (direction) => {
-			const index = current + direction * skipSnaps;
-			return period ? targetLocation(snaps[(index % count + count) % count].location, from, period, direction) : snaps[Math.min(count - 1, Math.max(0, index))].location;
-		};
-		projected = Math.min(limit(-1), Math.max(limit(1), projected));
+		const limit = (direction) => targetLocation(snaps[snapIndex(current + direction * skipSnaps, count, period)].location, from, period, direction);
+		projected = clamp(projected, limit(1), limit(-1));
 	}
 
 	if (dragFree === true) {
@@ -909,52 +1353,13 @@ function releaseTarget({ location, from, velocity, current, snaps, min, max, per
 		direction = moved < 0 ? 1 : -1;
 	}
 
-	let snap = current + direction;
-
-	if (period) {
-		snap = (snap + count) % count;
-	} else {
-		snap = Math.min(count - 1, Math.max(0, snap));
-	}
-
-	const target = snaps[snap].location;
+	const snap = snapIndex(current + direction, count, period),
+		target = snaps[snap].location;
 
 	return {
 		location: period ? targetLocation(target, direction ? from : location, period, snap === current ? 0 : direction) : target,
 		snap
 	};
-}
-
-/**
- * Get the location of a motion at a time.
- *
- * @param {number} from
- * @param {number} to
- * @param {number} time The time from the motion start, in ms.
- * @param {number} duration
- * @param {(t: number) => number} ease
- * @returns {number}
- */
-function locationAt(from, to, time, duration, ease) {
-	return from + (to - from) * ease(duration > 0 ? time / duration : 1);
-}
-
-/**
- * Get the rubber band location out of the limits.
- *
- * @param {number} location
- * @param {number} min
- * @param {number} max
- * @returns {number}
- */
-function resist(location, min, max) {
-	if (location > max) {
-		return max + (location - max) * 0.25;
-	}
-	if (location < min) {
-		return min + (location - min) * 0.25;
-	}
-	return location;
 }
 
 /**
@@ -971,7 +1376,7 @@ function animator(element, css, frame, done) {
 	let state = null;
 
 	const time = () => state.animation ? state.animation.currentTime || 0 : performance.now() - state.start,
-		current = () => state && locationAt(state.from, state.to, time(), state.duration, state.ease);
+		current = () => state && state.from + (state.to - state.from) * state.ease(state.duration > 0 ? time() / state.duration : 1);
 
 	function tick() {
 		if (time() >= state.duration) {
@@ -1057,41 +1462,49 @@ function animator(element, css, frame, done) {
 	};
 }
 
+/*
+ * Input: the pointer drag and the mouse wheel.
+ *
+ * Each input takes the context of a carousel (see carousel.js) and returns an object with remove().
+ */
+
+
 // The targets that keep their own pointer behavior
 const fields = 'input,textarea,select,[contenteditable]';
 
 /**
- * Make the drag input of a viewport.
+ * Make the drag input of a carousel. The carousel follows the pointer. At the release, it goes to a snap, or with dragFree, it glides.
  *
- * @param {HTMLElement} viewport
- * @param {object} hooks
- * @param {() => boolean} hooks.enabled
- * @param {() => {x: boolean, sign: number, threshold: number}} hooks.axis The axis, the sign of the main axis and the drag threshold.
- * @param {() => void} hooks.down Called on each pointerdown.
- * @param {() => number} hooks.begin Called when the drag starts. Returns the start location.
- * @param {(location: number) => void} hooks.move
- * @param {(velocity: number) => void} hooks.release
- * @returns {() => void} A function that removes the listeners.
+ * @param {object} context What the features share. See carousel.js.
+ * @returns {{dragging: () => boolean, pressed: () => number, remove: () => void}} pressed() gives the time of the last pointerdown.
  */
-function drag(viewport, hooks) {
+function drag(context) {
+	const { viewport, root, cls, options } = context;
+
 	let pointer = null,
 		start,
 		base,
 		axis,
 		dragging = false,
 		block = false,
-		samples = [];
+		samples = [],
+		// The time of the last pointerdown
+		pressed = 0,
+		// The selected snap at the drag start
+		snap = 0;
 
 	const listen = (method) => ['pointermove', 'pointerup', 'pointercancel'].forEach((name) => window[method](name, handle));
 
 	function down(event) {
 		block = false;
 
-		if (pointer !== null || event.button || !hooks.enabled() || event.target.closest(fields)) {
+		const geo = context.geo();
+
+		if (pointer !== null || event.button || !geo || geo.fit || !options.draggable || event.target.closest(fields)) {
 			return;
 		}
 
-		hooks.down();
+		pressed = performance.now();
 
 		// Stop the text selection and the native image drag
 		if (event.pointerType === 'mouse') {
@@ -1099,7 +1512,7 @@ function drag(viewport, hooks) {
 		}
 
 		pointer = event.pointerId;
-		axis = hooks.axis();
+		axis = { x: geo.axis === 'x', sign: geo.rtl ? -1 : 1 };
 		start = [event.clientX, event.clientY];
 		samples = [];
 		listen('addEventListener');
@@ -1128,16 +1541,20 @@ function drag(viewport, hooks) {
 			if (event.pointerType !== 'mouse' && Math.abs(cross) > Math.abs(main)) {
 				return end();
 			}
-			if (Math.abs(main) < axis.threshold) {
+			if (Math.abs(main) < options.dragThreshold) {
 				return;
 			}
-			dragging = true;
-			base = hooks.begin();
+			begin();
 			// Capture only now: with capture, a link in a slide does not get the click
 			viewport.setPointerCapture(pointer);
 		}
 
-		hooks.move(base + main);
+		const geo = context.geo(),
+			value = base + main,
+			edge = clamp(value, geo.min, geo.max);
+
+		// Out of the limits, the carousel moves at a quarter of the pointer speed
+		context.hold(geo.period ? value : edge + (value - edge) / 4, true);
 		samples.push([main, event.timeStamp]);
 
 		if (samples.length > 10) {
@@ -1145,14 +1562,41 @@ function drag(viewport, hooks) {
 		}
 	}
 
-	function end(release) {
+	// Stop the motion, and start the drag at the location where the carousel is now
+	function begin() {
+		context.interrupt();
+		base = context.halt();
+		snap = context.selected();
+		dragging = true;
+		context.write(base);
+		setClass(root, cls.dragging, true);
+		context.emit('pointerdown');
+	}
+
+	/**
+	 * End the drag.
+	 *
+	 * @param {boolean} [up] true for a pointerup. A pointercancel releases with no velocity.
+	 */
+	function end(up) {
 		listen('removeEventListener');
 		pointer = null;
-		if (dragging) {
-			dragging = false;
-			block = true;
-			hooks.release(release ? velocity(samples) : 0);
+
+		if (!dragging) {
+			return;
 		}
+
+		const geo = context.geo(),
+			location = context.location(),
+			speed = up ? velocity(samples) : 0,
+			target = releaseTarget({ location, from: base, velocity: speed, current: snap, snaps: geo.snaps, min: geo.min, max: geo.max, period: geo.period, skipSnaps: options.skipSnaps, dragFree: options.dragFree }),
+			curve = options.dragFree === true ? GLIDE : EASE;
+
+		dragging = false;
+		block = true;
+		setClass(root, cls.dragging, false);
+		context.emit('pointerup');
+		context.move(target.snap, target.location, releaseDuration(target.location - location, speed, curve, options.duration), curve);
 	}
 
 	function click(event) {
@@ -1169,51 +1613,333 @@ function drag(viewport, hooks) {
 	viewport.addEventListener('click', click, true);
 	viewport.addEventListener('dragstart', prevent);
 
-	return () => {
-		if (pointer !== null) {
-			listen('removeEventListener');
-			pointer = null;
+	return {
+		dragging: () => dragging,
+		pressed: () => pressed,
+		remove() {
+			if (pointer !== null) {
+				listen('removeEventListener');
+				pointer = null;
+			}
+			dragging = false;
+			viewport.removeEventListener('pointerdown', down);
+			viewport.removeEventListener('click', click, true);
+			viewport.removeEventListener('dragstart', prevent);
 		}
-		viewport.removeEventListener('pointerdown', down);
-		viewport.removeEventListener('click', click, true);
-		viewport.removeEventListener('dragstart', prevent);
 	};
 }
 
 /**
- * Find the element for the arrows or the dots.
- * A selector is searched in the root and then in each ancestor of the root, so that it finds a heading in the section of the carousel.
+ * Make the wheel input of a viewport: in a vertical carousel, and with wheel: 'both' also in a horizontal carousel. The carousel follows
+ * the wheel distance with a short motion on the compositor. When the wheel stops, the carousel goes to a snap. At the first and the last
+ * location, the page scrolls.
  *
- * @param {boolean|string|Element} value The "arrows" or "dots" option.
- * @param {HTMLElement} root
- * @returns {Element|null}
+ * @param {object} context What the features share. See carousel.js.
+ * @returns {{listen: (on: boolean) => void, remove: () => void}}
  */
-function place(value, root) {
-	if (typeof value === 'string') {
-		for (let node = root; node; node = node.parentElement) {
-			const found = node.querySelector(value);
-			if (found) {
-				return found;
-			}
+function wheel(context) {
+	const viewport = context.viewport,
+		// With dragFree: true, the carousel stays where the wheel stops
+		free = context.options.dragFree === true;
+
+	// The time of the last wheel event, and of the last event that moved the carousel
+	let time = 0,
+		moved = 0,
+		// The timer that finds the end of a gesture
+		timer = 0,
+		// The selected snap at the gesture start, and the direction of the last step
+		snap = 0,
+		direction = 0;
+
+	function onWheel(event) {
+		const geo = context.geo(),
+			side = geo.axis === 'x' && Math.abs(event.deltaX) > Math.abs(event.deltaY),
+			delta = side ? event.deltaX * (geo.rtl ? -1 : 1) : event.deltaY;
+
+		if (event.ctrlKey || !delta || context.dragging()) {
+			return;
 		}
+
+		const now = event.timeStamp,
+			gesture = now - time < 200,
+			base = context.location(),
+			path = delta * (event.deltaMode === 1 ? 40 : event.deltaMode ? geo.view : 1);
+
+		let target = base - path;
+		if (!geo.period) {
+			target = clamp(target, geo.min, geo.max);
+		}
+
+		time = now;
+
+		// At the end, the page scrolls. The inertia of a gesture that moved the carousel does not scroll the page.
+		if (Math.abs(target - base) < 0.5) {
+			if (gesture && now - moved < 1000) {
+				event.preventDefault();
+			}
+			return;
+		}
+
+		event.preventDefault();
+		context.interrupt();
+
+		if (!timer) {
+			snap = context.selected();
+		}
+		moved = now;
+		direction = path > 0 ? 1 : -1;
+		context.move(nearestSnap(geo.snaps, target, geo.period), target, WHEEL, EASE);
+
+		clearTimeout(timer);
+		if (!free) {
+			timer = setTimeout(end, 150);
+		}
+	}
+
+	// Go to a snap when the wheel stops. A short wheel motion goes to the next snap in its direction, so that one wheel step always changes the slide.
+	function end() {
+		timer = 0;
+		const geo = context.geo(),
+			at = context.current(),
+			index = nearestSnap(geo.snaps, at, geo.period),
+			away = Math.abs(targetLocation(geo.snaps[index].location, at, geo.period) - at) > 10;
+
+		context.step(index, index === snap && away ? direction : 0);
+	}
+
+	return {
+		// A wheel listener that is not passive makes the browser wait for the main thread before it scrolls the page.
+		// Add it only where the wheel moves the carousel.
+		listen: (on) => viewport[on ? 'addEventListener' : 'removeEventListener']('wheel', onWheel, { passive: false }),
+		remove() {
+			viewport.removeEventListener('wheel', onWheel);
+			clearTimeout(timer);
+			timer = 0;
+		}
+	};
+}
+
+/*
+ * Layout: the layout reads, and the observers that all carousels share.
+ *
+ * The reads run in the ResizeObserver callback, when the layout is clean.
+ */
+
+/**
+ * Read the axis, the alignment, the direction and the gap from the computed style of the container.
+ *
+ * @param {HTMLElement} container
+ * @param {object} options
+ * @returns {{axis: string, align: string|Function, rtl: boolean, gap: number}}
+ */
+function readLayout(container, options) {
+	const style = getComputedStyle(container),
+		display = style.display,
+		content = style.justifyContent;
+
+	let axis = options.axis;
+
+	if (axis === 'auto') {
+		axis = 'x';
+		if (display.includes('grid')) {
+			axis = style.gridAutoFlow.startsWith('column') ? 'x' : 'y';
+		} else if (display.includes('flex') && style.flexDirection.startsWith('column') && style.flexWrap === 'nowrap') {
+			axis = 'y';
+		}
+	}
+
+	let align = options.align;
+
+	if (align === 'auto') {
+		align = content === 'center' ? 'center' : content === 'flex-end' || content === 'end' || (axis === 'x' && content === 'right') ? 'end' : 'start';
+	}
+
+	return {
+		axis,
+		align,
+		rtl: axis === 'x' && (options.direction === 'auto' ? style.direction === 'rtl' : options.direction === 'rtl'),
+		gap: parseFloat(axis === 'x' ? style.columnGap : style.rowGap) || 0
+	};
+}
+
+/**
+ * Read the slide boxes on the main axis, relative to the viewport start at location 0.
+ *
+ * @param {HTMLElement} viewport
+ * @param {HTMLElement[]} nodes All slides, clones included.
+ * @param {object} layout The result of readLayout().
+ * @param {{axis: string, container: number, slides: number[]}} written The translate values that the library wrote, in px on the screen.
+ * @returns {{view: number, cross: number, slides: Array<{start: number, end: number, cross: number}>, gap: number}}
+ * gap is the loop gap: the space between the last slide and the next copy of the first slide.
+ */
+function readRects(viewport, nodes, layout, written) {
+	const box = viewport.getBoundingClientRect(),
+		x = layout.axis === 'x',
+		sign = layout.rtl ? -1 : 1,
+		known = written.axis === layout.axis,
+		shift = known ? written.container : 0;
+
+	let first = 0,
+		last = 0;
+
+	const slides = nodes.map((node, index) => {
+		const rect = node.getBoundingClientRect(),
+			offset = sign * (shift + (known && written.slides[index] || 0)),
+			start = (x ? (layout.rtl ? box.right - rect.right : rect.left - box.left) : rect.top - box.top) - offset,
+			size = x ? rect.width : rect.height;
+
+		return { start, end: start + size, cross: x ? rect.height : rect.width };
+	});
+
+	slides.forEach((slide, index) => {
+		if (slide.start < slides[first].start) {
+			first = index;
+		}
+		if (slide.end > slides[last].end) {
+			last = index;
+		}
+	});
+
+	let gap = layout.gap;
+
+	if (slides.length) {
+		const side = x ? (layout.rtl ? ['Right', 'Left'] : ['Left', 'Right']) : ['Top', 'Bottom'];
+		gap += (parseFloat(getComputedStyle(nodes[first])['margin' + side[0]]) || 0) + (parseFloat(getComputedStyle(nodes[last])['margin' + side[1]]) || 0);
+	}
+
+	return {
+		view: x ? box.width : box.height,
+		cross: x ? box.height : box.width,
+		slides,
+		gap
+	};
+}
+
+/**
+ * Get the window size on the main axis.
+ *
+ * @param {string} axis 'x' or 'y'.
+ * @returns {number}
+ */
+function windowSize(axis) {
+	return axis === 'x' ? document.documentElement.clientWidth : innerHeight;
+}
+
+/**
+ * Get the part of the main axis where the loop must show slides, relative to the viewport start.
+ * It is the viewport. With clones: 'fill', it is the window, so that the slides fill it when the viewport overflow shows.
+ *
+ * @param {HTMLElement} viewport
+ * @param {{axis: string, rtl: boolean}} layout
+ * @param {number} view The viewport size.
+ * @param {number} [size] The window size on the main axis, for clones: 'fill'. Without it, the area is the viewport.
+ * @returns {{start: number, size: number}}
+ */
+function visibleArea(viewport, layout, view, size) {
+	if (!size) {
+		return { start: 0, size: view };
+	}
+
+	const box = viewport.getBoundingClientRect(),
+		before = Math.max(0, Math.round(layout.axis === 'x' ? (layout.rtl ? size - box.right : box.left) : box.top));
+
+	return { start: -before, size: before + Math.max(view, Math.round(size - before)) };
+}
+
+// One ResizeObserver for all carousels. Each callback first reads the layout of all carousels, then writes. In this way, the reads of one carousel do not
+// come after the writes of another carousel, and the browser does one layout for all of them.
+const owners = new WeakMap();
+
+let resizer;
+
+/**
+ * Watch the size of elements. The ResizeObserver callback calls owner.read() for each owner, and then owner.write() for each owner whose read() returned true.
+ *
+ * @param {Element[]} nodes
+ * @param {{read: () => boolean, write: () => void}} [owner] Without an owner, stop the watch.
+ */
+function observeSize(nodes, owner) {
+	resizer ||= new ResizeObserver((entries) => {
+		const list = new Set(entries.map((entry) => owners.get(entry.target)));
+		[...list].filter((item) => item && item.read()).forEach((item) => item.write());
+	});
+
+	for (const node of nodes) {
+		if (owner) {
+			owners.set(node, owner);
+			resizer.observe(node);
+		} else {
+			owners.delete(node);
+			resizer.unobserve(node);
+		}
+	}
+}
+
+// The lazy option: one IntersectionObserver for each margin, the callback of each element that waits, and the boxes that readBoxes() read
+const watchers = new Map(),
+	waiters = new WeakMap(),
+	boxes = new WeakMap();
+
+/**
+ * Read the boxes of elements before a carousel writes to the DOM. Then the reads of all carousels cause one layout, not one for each carousel.
+ * waitNear() uses each box one time.
+ *
+ * @param {Element[]} elements
+ */
+function readBoxes(elements) {
+	elements.forEach((element) => boxes.set(element, element.getBoundingClientRect()));
+}
+
+/**
+ * Wait until an element comes near the screen.
+ *
+ * @param {Element} node
+ * @param {true|number} lazy The "lazy" option: true for one screen height, or a distance in px.
+ * @param {Function} callback
+ * @returns {Function|null} A function that stops the wait, or null if the element is near the screen now.
+ */
+function waitNear(node, lazy, callback) {
+	const near = lazy === true ? innerHeight : lazy,
+		rect = boxes.get(node) || node.getBoundingClientRect(),
+		margin = lazy === true ? '100%' : lazy + 'px';
+
+	boxes.delete(node);
+
+	if (rect.height && rect.bottom >= -near && rect.top <= innerHeight + near) {
 		return null;
 	}
-	return value === true ? root : value || null;
+
+	let observer = watchers.get(margin);
+	if (!observer) {
+		observer = new IntersectionObserver((entries) => entries.forEach((entry) => entry.isIntersecting && waiters.get(entry.target)?.()), { rootMargin: margin });
+		watchers.set(margin, observer);
+	}
+	waiters.set(node, callback);
+	observer.observe(node);
+	return () => {
+		observer.unobserve(node);
+		waiters.delete(node);
+	};
 }
+
+/*
+ * Navigation: the arrows, the dots, and the link to another carousel (the sync option).
+ *
+ * Each feature takes the context of a carousel (see carousel.js) and returns an object with remove().
+ */
+
 
 /**
  * Make the arrows and the dots of a carousel. They update on the carousel events.
  *
- * @param {object} api
- * @param {HTMLElement} root
- * @param {object} cls The class names.
- * @param {object} options
- * @returns {() => void} A function that removes the arrows and the dots.
+ * @param {object} context What the features share. See carousel.js.
+ * @returns {{remove: () => void}} remove() removes the arrows and the dots.
  */
-function nav(api, root, cls, options) {
-	const labels = options.labels,
-		arrows = place(options.arrows, root),
-		box = place(options.dots, root),
+function nav(context) {
+	const { api, root, cls, options } = context,
+		labels = options.labels,
+		arrows = optionElement(options.arrows, root),
+		box = optionElement(options.dots, root),
 		buttons = [],
 		dots = [],
 		list = box && create('div', cls.dots);
@@ -1225,7 +1951,7 @@ function nav(api, root, cls, options) {
 			const button = create('button', cls.button + ' ' + cls[key]);
 			button.type = 'button';
 			button.setAttribute('aria-label', labels[key]);
-			button.setAttribute('aria-controls', api.containerNode().id);
+			button.setAttribute('aria-controls', context.container.id);
 			button.addEventListener('click', () => api[method]());
 			buttons.push(button);
 		});
@@ -1269,7 +1995,7 @@ function nav(api, root, cls, options) {
 				index = dots.length;
 			dot.type = 'button';
 			dot.setAttribute('aria-label', labels.dot.replace('%d', index + 1));
-			dot.setAttribute('aria-controls', api.containerNode().id);
+			dot.setAttribute('aria-controls', context.container.id);
 			// The window of the dots hides the dots out of the zoom: keep them out of the tab order
 			dot.tabIndex = -1;
 			dot.addEventListener('click', () => api.goTo(index));
@@ -1291,7 +2017,7 @@ function nav(api, root, cls, options) {
 		});
 
 		marks.forEach((name, index) => {
-			if (next.get(index) !== name && dots[index]) {
+			if (next.get(index) !== name) {
 				setClass(dots[index], name, false);
 				setAttribute(dots[index], 'aria-current', false);
 				dots[index].tabIndex = -1;
@@ -1317,10 +2043,12 @@ function nav(api, root, cls, options) {
 
 	names.forEach((name) => api.on(name, update));
 
-	return () => {
-		names.forEach((name) => api.off(name, update));
-		buttons.forEach((button) => button.remove());
-		list?.remove();
+	return {
+		remove() {
+			names.forEach((name) => api.off(name, update));
+			buttons.forEach((button) => button.remove());
+			list?.remove();
+		}
 	};
 }
 
@@ -1328,27 +2056,27 @@ function nav(api, root, cls, options) {
  * Connect a carousel to another carousel with the same slides, such as thumbnails to a main gallery. This carousel follows the slide
  * that the other carousel selects. Only a click on a slide of this carousel selects that slide in the other carousel: a drag does not.
  *
- * @param {object} api This carousel.
- * @param {object|string|Element} target The other carousel, its container or a selector.
- * @param {(element: Element) => object} find Get the carousel of an element.
- * @param {(node: Element) => number} slideOf Get the original slide index of a node in this carousel, or -1.
- * @param {(index: number) => void} follow Set the selected slide of this carousel.
- * @returns {() => void} A function that disconnects the carousels.
+ * @param {object} context What the features share. See carousel.js. The "sync" option is the other carousel, its container or a selector.
+ * @returns {{remove: () => void}} remove() disconnects the carousels.
  */
-function sync(api, target, find, slideOf, follow) {
+function sync(context) {
+	const { api, container } = context,
+		target = context.options.sync;
+
 	let other = null;
 
 	// Show the slide that the other carousel selects
 	function show(instant) {
 		const index = other.selectedSlide();
-		follow(index);
+		context.follow(index);
 		api.goToSlide(index, instant === true);
 	}
 
 	function click(event) {
-		const index = slideOf(event.target);
+		// The slide or the clone that gets the click, and then its original slide
+		const index = context.nodes().findIndex((node) => node.contains(event.target));
 		if (other && index > -1) {
-			other.goToSlide(index);
+			other.goToSlide(index % api.slideNodes().length);
 		}
 	}
 
@@ -1357,7 +2085,7 @@ function sync(api, target, find, slideOf, follow) {
 		if (other) {
 			return;
 		}
-		other = target && target.goTo ? target : find(typeof target === 'string' ? place(target, api.rootNode()) : target);
+		other = target?.goTo ? target : context.find(typeof target === 'string' ? optionElement(target, context.root) : target);
 		if (other) {
 			other.on('select', show);
 			show(true);
@@ -1366,294 +2094,61 @@ function sync(api, target, find, slideOf, follow) {
 
 	api.on('init', connect);
 	api.on('reinit', connect);
-	api.containerNode().addEventListener('click', click);
-
-	return () => {
-		api.off('init', connect);
-		api.off('reinit', connect);
-		other?.off('select', show);
-		api.containerNode().removeEventListener('click', click);
-	};
-}
-
-/**
- * Watch the reasons to pause: the root is out of view, the tab is hidden, the mouse is on the root, or the keyboard focus is in the root.
- * Make it only while a feature plays, so that a carousel at rest has no listeners on the document.
- *
- * @param {HTMLElement} root
- * @param {{stopOnMouseEnter: boolean, stopOnFocusIn: boolean}} options
- * @param {() => void} change Called when the paused state changes.
- * @returns {{paused: () => boolean, remove: () => void}}
- */
-function pauser(root, options, change) {
-	const reasons = new Set(),
-		set = (reason, on) => {
-			const before = reasons.size;
-			reasons[on ? 'add' : 'delete'](reason);
-			if (!before !== !reasons.size) {
-				change();
-			}
-		},
-		observer = new IntersectionObserver(([entry]) => set('view', !entry.isIntersecting)),
-		listeners = [
-			[document, 'visibilitychange', () => set('tab', document.hidden)],
-			[root, 'pointerenter', (event) => set('mouse', options.stopOnMouseEnter && event.pointerType === 'mouse')],
-			[root, 'pointerleave', () => set('mouse', false)],
-			// A mouse click also moves the focus to a button. Only the keyboard focus pauses.
-			[root, 'focusin', (event) => set('focus', options.stopOnFocusIn && event.target.matches(':focus-visible'))],
-			[root, 'focusout', (event) => set('focus', root.contains(event.relatedTarget) && reasons.has('focus'))]
-		];
-
-	observer.observe(root);
-	listeners.forEach(([node, name, handler]) => node.addEventListener(name, handler));
+	container.addEventListener('click', click);
 
 	return {
-		paused: () => reasons.size > 0,
 		remove() {
-			observer.disconnect();
-			listeners.forEach(([node, name, handler]) => node.removeEventListener(name, handler));
+			api.off('init', connect);
+			api.off('reinit', connect);
+			other?.off('select', show);
+			container.removeEventListener('click', click);
 		}
 	};
 }
 
-/**
- * The part that autoplay and auto scroll share: the play and pause button (WCAG 2.2.2), the "playing" class, aria-live, the pause reasons and the events.
+/*
+ * Carousel: its state, its API, the setup, the measure pass, the render and the motion.
  *
- * @param {object} api
- * @param {string} name 'autoplay' or 'autoscroll', for the events.
- * @param {object} options The feature options.
- * @param {object} cls The class names.
- * @param {object} labels
- * @param {(name: string) => void} emit
- * @param {(value: string) => void} live Set aria-live on the container.
- * @param {{play: () => void, stop: () => void, pause: (paused: boolean) => void}} hooks
- * @returns {{play: () => void, stop: () => void, isPlaying: () => boolean, paused: () => boolean, remove: () => void}}
+ * The features in the other modules get their part of the carousel through the context object.
+ * Each feature is a function that takes the context and returns an object with remove().
  */
-function controller(api, name, options, cls, labels, emit, live, hooks) {
-	const root = api.rootNode(),
-		button = create('button', cls.button + ' ' + cls.play),
-		names = ['init', 'reinit', 'resize'];
 
-	let playing = false,
-		watch = null;
-
-	button.type = 'button';
-	button.setAttribute('aria-controls', api.containerNode().id);
-	button.addEventListener('click', () => playing ? control.stop() : control.play());
-
-	function update() {
-		setAttribute(button, 'aria-label', playing ? labels.pause : labels.play);
-		setClass(root, cls.playing, playing);
-		// A screen reader does not read each automatic change
-		live(playing ? 'off' : 'polite');
-	}
-
-	function show() {
-		if (api.isFit()) {
-			button.remove();
-		} else if (!button.isConnected) {
-			root.append(button);
-		}
-	}
-
-	// Start at the first init, unless the user prefers less motion
-	function begin() {
-		api.off('init', begin);
-		api.off('reinit', begin);
-		if (options.playOnInit && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
-			control.play();
-		}
-	}
-
-	const control = {
-		play() {
-			if (!playing) {
-				playing = true;
-				watch = pauser(root, options, () => hooks.pause(watch.paused()));
-				update();
-				hooks.play();
-				emit(name + ':play');
-			}
-		},
-		stop() {
-			if (playing) {
-				playing = false;
-				watch.remove();
-				update();
-				hooks.stop();
-				emit(name + ':stop');
-			}
-		},
-		isPlaying: () => playing,
-		paused: () => !playing || watch.paused(),
-		remove() {
-			control.stop();
-			names.forEach((item) => api.off(item, show));
-			button.remove();
-		}
-	};
-
-	names.forEach((item) => api.on(item, show));
-	api.on('init', begin);
-	api.on('reinit', begin);
-	update();
-
-	return control;
-}
-
-/**
- * Go to the next snap after a delay. The timer starts at "settle", so that a slow motion does not make the delay shorter.
- *
- * @param {object} api
- * @param {boolean|number|object} value The "autoplay" option: true, a delay in ms, or an object.
- * @param {object} cls
- * @param {object} labels
- * @param {(name: string) => void} emit
- * @param {(value: string) => void} live
- * @returns {object} The control: play(), stop(), reset(), isPlaying(), remove().
- */
-function autoplay(api, value, cls, labels, emit, live) {
-	const options = { delay: 4000, stopOnInteraction: true, stopOnMouseEnter: false, stopOnFocusIn: true, stopOnLastSnap: false, playOnInit: true, instant: false, ...(value > 0 ? { delay: value } : value) };
-
-	let timer = 0,
-		own = false;
-
-	// The delay: data-delay on the selected slide, one value for each snap, or one value
-	function delay() {
-		const value = api.slideNodes()[api.selectedSlide()]?.dataset.delay || options.delay;
-		return +(Array.isArray(value) ? value[api.selectedSnap()] : value);
-	}
-
-	function reset() {
-		clearTimeout(timer);
-		if (!control.paused() && !api.isFit()) {
-			timer = setTimeout(next, delay());
-		}
-	}
-
-	function next() {
-		own = true;
-		if (api.canGoToNext()) {
-			api.goToNext(options.instant);
-		} else if (options.stopOnLastSnap) {
-			control.stop();
-		} else {
-			api.goTo(0, options.instant);
-		}
-		own = false;
-	}
-
-	// A drag, an arrow, a dot or the keyboard stops the autoplay. With stopOnInteraction: false, the timer starts again at "settle".
-	function interact() {
-		if (!own) {
-			clearTimeout(timer);
-			if (options.stopOnInteraction) {
-				control.stop();
-			}
-		}
-	}
-
-	const control = controller(api, 'autoplay', options, cls, labels, emit, live, { play: reset, stop: () => clearTimeout(timer), pause: reset }),
-		remove = control.remove;
-
-	api.on('settle', reset);
-	api.on('select', interact);
-	api.on('pointerdown', interact);
-
-	control.reset = reset;
-	control.remove = () => {
-		remove();
-		api.off('settle', reset);
-		api.off('select', interact);
-		api.off('pointerdown', interact);
-	};
-
-	return control;
-}
 
 // The instance of each root, viewport and container
 const registry = new WeakMap();
 
-// One ResizeObserver for all carousels. Each callback first reads the layout of all carousels, then writes. Thus the reads of one carousel do not
-// come after the writes of another carousel, and the browser does one layout for all of them.
-const owners = new WeakMap();
-
-// The clones that the library made
-const ours = new WeakSet();
-
-// The attributes that the library added: element => names
-const marked = new WeakMap();
-
-// A counter for container ids
-let uid = 0;
+/**
+ * Get the carousel of a root, a viewport or a container.
+ *
+ * @param {Element} element
+ * @returns {object|undefined}
+ */
+const find = (element) => registry.get(element);
 
 /**
- * Set an attribute that the page did not set. The library removes it in destroy().
+ * Make an event emitter. A handler gets (api, name), as in Embla.
  *
- * @param {Element} node
- * @param {string} name
- * @param {string} value
+ * @param {object} api
+ * @returns {{on: Function, off: Function, emit: Function, has: Function}}
  */
-function own(node, name, value) {
-	const list = marked.get(node) || new Set();
-	if (list.has(name) || !node.hasAttribute(name)) {
-		list.add(name);
-		marked.set(node, list);
-		if (node.getAttribute(name) !== value) {
-			node.setAttribute(name, value);
+function emitter(api) {
+	const map = {};
+
+	return {
+		on(name, handler) {
+			(map[name] ||= new Set()).add(handler);
+			return api;
+		},
+		off(name, handler) {
+			map[name]?.delete(handler);
+			return api;
+		},
+		emit(name) {
+			map[name]?.forEach((handler) => handler(api, name));
+		},
+		has(name) {
+			return !!map[name]?.size;
 		}
-	}
-}
-
-/**
- * Remove the attributes that own() added.
- *
- * @param {Element} node
- */
-function disown(node) {
-	marked.get(node)?.forEach((name) => node.removeAttribute(name));
-	marked.delete(node);
-}
-
-// Slides that are a control keep their own role and name
-const controls = 'a[href],button,input,select,textarea,[tabindex],[role]';
-
-// The slides that can get the "group" role. An element with its own role, such as an article or a list item, does not permit "group".
-const generic = 'div,span,section';
-
-let sharedObserver;
-
-function resizeObserver() {
-	return sharedObserver ||= new ResizeObserver((entries) => {
-		const list = new Set(entries.map((entry) => owners.get(entry.target)));
-		[...list].filter((owner) => owner && owner.read()).forEach((owner) => owner.write());
-	});
-}
-
-// The lazy option: one IntersectionObserver for each margin, the callback of each element that waits, and the boxes that initAll() read
-const watchers = new Map(),
-	waiters = new WeakMap(),
-	boxes = new WeakMap();
-
-/**
- * Call a function when an element comes near the screen.
- *
- * @param {Element} node
- * @param {string} margin The rootMargin of the IntersectionObserver.
- * @param {Function} callback
- * @returns {Function} A function that stops the watch.
- */
-function watch(node, margin, callback) {
-	let observer = watchers.get(margin);
-	if (!observer) {
-		observer = new IntersectionObserver((entries) => entries.forEach((entry) => entry.isIntersecting && waiters.get(entry.target)?.()), { rootMargin: margin });
-		watchers.set(margin, observer);
-	}
-	waiters.set(node, callback);
-	observer.observe(node);
-	return () => {
-		observer.unobserve(node);
-		waiters.delete(node);
 	};
 }
 
@@ -1671,49 +2166,46 @@ function BetterCarousel(element, userOptions = {}) {
 		return found;
 	}
 
+	// The options and the markup
 	let options,
 		cls,
 		root,
 		viewport,
 		container,
 		slides = [],
+		clones = [],
 		nodes = [],
-		created = false,
-		added = [],
-		geo = null,
+		// The features: each has remove()
+		parts = [];
+
+	// The observers and the measure state
+	let observed = [],
+		mutationObserver,
+		media = null,
+		ready = false,
+		started = false,
+		changed = false,
+		signature = '',
+		pending = -1,
+		lastWindow = 0;
+
+	// The geometry, the location and the selection
+	let geo = null,
 		location = 0,
 		selected = 0,
 		previous = 0,
 		requested = -1,
 		followed = -1,
-		written = { axis: '', container: 0, slides: [] },
-		observed = [],
-		mutationObserver,
-		queries = [],
-		ready = false,
-		started = false,
-		changed = false,
 		visible = [],
-		signature = '',
-		motion,
-		removeDrag,
-		lastDown = 0,
-		dragFrom = 0,
-		dragging = false,
-		lastWindow = 0,
-		wheelTime = 0,
-		wheelMoved = 0,
-		wheelTimer = 0,
-		wheelSnap = 0,
-		wheelDirection = 0,
-		dragSnap = 0,
-		clones = [],
-		pending = -1,
-		parts = [],
-		scroll = null,
-		scrollTimer = 0,
-		scroller = null,
-		scrollOptions;
+		written = { axis: '', container: 0, slides: [] };
+
+	// The motion and the input
+	let motion,
+		dragInput,
+		wheelInput;
+
+	// The auto scroll, if the option is on
+	let auto = null;
 
 	const api = {
 		goTo: (index, instant) => go(physical(index), instant),
@@ -1736,44 +2228,54 @@ function BetterCarousel(element, userOptions = {}) {
 		isFit: () => !geo || geo.fit,
 		options: () => options,
 		reInit,
-		destroy
+		destroy: () => {
+			teardown(false);
+			events.emit('destroy');
+		}
 	};
 
 	const events = emitter(api),
 		owner = { read: measure, write: measured },
-		hooks = {
-			enabled: () => !!geo && !geo.fit && options.draggable,
-			axis: () => ({ x: geo.axis === 'x', sign: geo.rtl ? -1 : 1, threshold: options.dragThreshold }),
-			down: () => {
-				lastDown = performance.now();
-			},
-			begin: () => {
-				interrupt();
-				const at = halt();
-				dragFrom = at;
-				dragSnap = selected;
-				dragging = true;
-				write(at);
-				setClass(root, cls.dragging, true);
-				events.emit('pointerdown');
-				return at;
-			},
-			move: (value) => {
-				location = geo.period ? value : resist(value, geo.min, geo.max);
-				frame(location);
-				if (select(nearestSnap(geo.snaps, location, geo.period))) {
-					render(true);
-					events.emit('select');
-				}
-			},
-			release: (speed) => {
-				const target = releaseTarget({ location, from: dragFrom, velocity: speed, current: dragSnap, snaps: geo.snaps, min: geo.min, max: geo.max, period: geo.period, skipSnaps: options.skipSnaps, dragFree: options.dragFree }),
-					curve = options.dragFree === true ? GLIDE : EASE;
-				setClass(root, cls.dragging, false);
-				dragging = false;
-				events.emit('pointerup');
+		/**
+		 * What the features share: the API, the events, and the state and the actions of the carousel.
+		 * setup() adds root, viewport, container, cls and options.
+		 */
+		context = {
+			api,
+			emit: events.emit,
+			// The carousel of an element
+			find,
+
+			// The state
+			geo: () => geo,
+			nodes: () => nodes,
+			selected: () => selected,
+			dragging: () => dragInput.dragging(),
+			// The location at rest or at the end of the motion. During the auto scroll, the location now.
+			location: () => auto?.at() ?? location,
+			current,
+
+			// The actions
+			write,
+			hold,
+			css,
+			halt,
+			interrupt: () => auto?.interrupt(),
+			// Select a snap and move to a location
+			move: (index, target, duration, curve) => {
 				requested = -1;
-				move(target.snap, target.location, releaseDuration(target.location - location, speed, curve, options.duration), curve);
+				move(index, target, duration, curve);
+			},
+			// Go to the snap after a snap in a direction: 1, -1, or 0 for the snap itself
+			step: (index, direction) => go(wrap(index + direction), false, -1, direction),
+			// A linear motion to a location, without the snaps
+			glide: (from, to, duration) => {
+				location = to;
+				motion.run(from, to, duration, [0, 0, 1, 1], events.has('scroll'));
+			},
+			// Set the slide that the sync option follows
+			follow: (index) => {
+				followed = index;
 			}
 		};
 
@@ -1782,19 +2284,13 @@ function BetterCarousel(element, userOptions = {}) {
 
 	// The lazy option: a carousel that is not near the screen waits. A carousel near the screen starts now: a start after the first paint
 	// adds the arrows and the dots in view, and this moves the page (CLS).
-	let waiting = null;
-	const lazy = merge(defaults, BetterCarousel.defaults, userOptions, dataOptions(element)).lazy;
+	const lazy = resolve(element, BetterCarousel.defaults, userOptions).lazy;
 
-	if (lazy) {
-		const margin = lazy === true ? innerHeight : lazy,
-			rect = boxes.get(element) || element.getBoundingClientRect();
-		if (!rect.height || rect.bottom < -margin || rect.top > innerHeight + margin) {
-			registry.set(element, api);
-			waiting = watch(element, lazy === true ? '100%' : lazy + 'px', reInit);
-		}
-	}
+	let waiting = lazy ? waitNear(element, lazy, reInit) : null;
 
-	if (!waiting) {
+	if (waiting) {
+		registry.set(element, api);
+	} else {
 		setup();
 	}
 
@@ -1804,87 +2300,47 @@ function BetterCarousel(element, userOptions = {}) {
 	 * Read the options, add the markup and start the observers. The first ResizeObserver callback measures the layout.
 	 */
 	function setup() {
-		const base = merge(defaults, BetterCarousel.defaults, userOptions, dataOptions(element)),
-			points = base.breakpoints || {};
-
-		queries = Object.keys(points).map((query) => {
-			const list = matchMedia(query);
-			list.addEventListener('change', onQuery);
-			return list;
-		});
-
-		options = merge(base, ...queries.filter((list) => list.matches).map((list) => points[list.media]));
+		media = breakpoints(resolve(element, BetterCarousel.defaults, userOptions), () => reInit());
+		options = media.options;
 
 		if (!options.active) {
 			return;
 		}
 
 		cls = classNames(options.classes, options.state);
-
-		container = options.container ? element.querySelector(options.container) : element;
-
-		if (container.classList.contains(cls.viewport)) {
-			container = container.firstElementChild;
-		}
-
-		if (!created) {
-			viewport = container.parentElement;
-			if (!viewport.classList.contains(cls.viewport) && options.wrap) {
-				root = create('div');
-				viewport = create('div');
-				container.before(root);
-				root.append(viewport);
-				viewport.append(container);
-				created = true;
-			} else {
-				root = viewport.parentElement;
-			}
-		}
-
-		addClass(root, cls.root);
-		addClass(viewport, cls.viewport);
-		addClass(container, cls.container);
-
-		// The carousel pattern of the WAI-ARIA Authoring Practices
-		own(root, 'role', 'region');
-		own(root, 'aria-roledescription', 'carousel');
-		if (!root.hasAttribute('aria-labelledby')) {
-			own(root, 'aria-label', options.labels.carousel);
-		}
-		own(container, 'id', container.id || 'carousel-' + ++uid);
-		own(container, 'aria-live', 'polite');
+		({ root, viewport, container } = build(element, options, cls));
 
 		for (const node of [root, viewport, container]) {
 			registry.set(node, api);
 		}
 
-		slides = readSlides();
+		slides = readSlides(container, options.slides);
 		nodes = slides;
 
-		observe();
+		observe(true);
+
+		Object.assign(context, { root, viewport, container, cls, options });
 
 		motion = animator(container, css, frame, settle);
-		removeDrag = drag(viewport, hooks);
+		dragInput = drag(context);
+		wheelInput = wheel(context);
 		container.addEventListener('focusin', onFocus);
 		viewport.addEventListener('scroll', onScroll);
 		if (options.loop && options.clones === 'fill') {
 			addEventListener('resize', onWindow);
 		}
 
-		parts = [nav(api, root, cls, options)];
-
-		const live = (value) => own(container, 'aria-live', value);
+		parts = [dragInput, wheelInput, nav(context)];
 
 		if (options.autoplay) {
-			api.autoplay = autoplay(api, options.autoplay, cls, options.labels, events.emit, live);
-			parts.push(api.autoplay.remove);
+			api.autoplay = autoplay(context);
+			parts.push(api.autoplay);
 		}
 
 		if (options.autoScroll) {
-			const value = options.autoScroll;
-			scrollOptions = { speed: 120, direction: 'forward', startDelay: 1000, stopOnInteraction: true, stopOnMouseEnter: false, stopOnFocusIn: true, playOnInit: true, ...(value > 0 ? { speed: value } : value) };
-			api.autoScroll = scroller = controller(api, 'autoscroll', scrollOptions, cls, options.labels, events.emit, live, { play: wait, stop: () => wait(-1) ?? halt(), pause: (paused) => scroll ? scroll.animations.forEach((animation) => animation[paused ? 'pause' : 'play']()) : paused ? halt() : kick() });
-			parts.push(scroller.remove);
+			auto = autoScroll(context);
+			api.autoScroll = auto.control;
+			parts.push(auto);
 		}
 
 		if (options.autoHeight) {
@@ -1892,12 +2348,7 @@ function BetterCarousel(element, userOptions = {}) {
 		}
 
 		if (options.sync) {
-			parts.push(sync(api, options.sync, (node) => node && registry.get(node), (node) => {
-				const index = nodes.findIndex((item) => item.contains(node));
-				return index < 0 ? -1 : original(index);
-			}, (index) => {
-				followed = index;
-			}));
+			parts.push(sync(context));
 		}
 
 		if (options.slideChanges) {
@@ -1915,29 +2366,25 @@ function BetterCarousel(element, userOptions = {}) {
 		waiting?.();
 		waiting = null;
 		registry.delete(element);
-		unobserve();
+		observe(false);
 		mutationObserver?.disconnect();
-		queries.forEach((list) => list.removeEventListener('change', onQuery));
-		queries = [];
+		media?.remove();
+		media = null;
 
 		if (!cls) {
 			return;
 		}
 
 		motion.stop();
-		removeDrag();
-		parts.forEach((remove) => remove());
+		parts.forEach((part) => part.remove());
 		parts = [];
 		followed = -1;
 		delete api.autoplay;
 		delete api.autoScroll;
-		scroller = null;
+		auto = null;
 		setStyle(viewport, 'height', '');
 		setClones(0);
 		container.removeEventListener('focusin', onFocus);
-		viewport.removeEventListener('wheel', onWheel);
-		clearTimeout(wheelTimer);
-		wheelTimer = 0;
 		viewport.removeEventListener('scroll', onScroll);
 		removeEventListener('resize', onWindow);
 
@@ -1954,29 +2401,18 @@ function BetterCarousel(element, userOptions = {}) {
 		cleanStyle(container);
 		cleanStyle(viewport);
 
-		for (const name of ['horizontal', 'vertical', 'dynamic', 'autoHeight', 'dragging']) {
+		for (const name of ['horizontal', 'vertical', 'dynamic', 'dragging']) {
 			setClass(root, cls[name], false);
 		}
 
-		added.forEach(([node, name]) => setClass(node, name, false));
-		[root, container, ...slides].forEach(disown);
-		added = [];
-
 		for (const node of [root, viewport, container]) {
 			registry.delete(node);
-			if (node.getAttribute('class') === '') {
-				node.removeAttribute('class');
-			}
 		}
 
-		if (!keep && created) {
-			root.before(container);
-			root.remove();
-			created = false;
-		}
+		restore(root, viewport, container, slides, keep);
 
 		cls = geo = null;
-		ready = dragging = false;
+		ready = false;
 		location = 0;
 		visible = [];
 		signature = '';
@@ -1984,23 +2420,24 @@ function BetterCarousel(element, userOptions = {}) {
 	}
 
 	/**
-	 * Add a class and remember it for teardown(), if the element did not have it.
+	 * Merge new options and set up the carousel again. The selected slide stays.
+	 *
+	 * @param {object} [newOptions]
 	 */
-	function addClass(node, name) {
-		if (name && !node.classList.contains(name)) {
-			node.classList.add(name);
-			added.push([node, name]);
+	function reInit(newOptions) {
+		if (newOptions) {
+			userOptions = merge(userOptions, newOptions);
 		}
-	}
-
-	function readSlides() {
-		return [...(options.slides ? container.querySelectorAll(options.slides) : container.children)].filter((node) => !ours.has(node) && !node.hasAttribute('data-carousel-clone'));
+		const keep = geo ? selectedSlide() : requested;
+		teardown(true);
+		setup();
+		requested = keep;
 	}
 
 	/**
-	 * Make the clones: full copies of the slides, after the last slide.
+	 * Put the clones after the last slide.
 	 *
-	 * @param {number} count The number of copies.
+	 * @param {number} count The number of copies of all slides.
 	 */
 	function setClones(count) {
 		if (clones.length === count * slides.length) {
@@ -2008,31 +2445,33 @@ function BetterCarousel(element, userOptions = {}) {
 		}
 
 		clones.forEach((node) => node.remove());
-		clones = [];
-
-		for (let copy = 0; copy < count; copy++) {
-			for (const node of slides) {
-				const clone = node.cloneNode(true);
-				for (const item of [clone, ...clone.querySelectorAll('[id]')]) {
-					item.removeAttribute('id');
-				}
-				clone.setAttribute('aria-hidden', 'true');
-				clone.inert = true;
-				clone.style.translate = '';
-				setClass(clone, cls.clone, true);
-				cleanStyle(clone);
-				ours.add(clone);
-				clones.push(clone);
-			}
-		}
-
+		clones = copySlides(slides, count, cls.clone);
 		container.append(...clones);
 		nodes = slides.concat(clones);
 		written.slides.length = slides.length;
 		mutationObserver?.takeRecords();
 	}
 
-	// The original slide index of a node
+	/**
+	 * Watch the size of the viewport, the container and the slides.
+	 *
+	 * @param {boolean} on false stops the watch.
+	 */
+	function observe(on) {
+		observeSize(observed);
+		observed = on ? [viewport, container, ...nodes] : [];
+		observeSize(observed, owner);
+	}
+
+	function onMutation() {
+		slides = readSlides(container, options.slides);
+		setClones(0);
+		nodes = slides;
+		changed = true;
+		observe(true);
+	}
+
+	// The original slide index of a slide or a clone
 	function original(index) {
 		return index % slides.length;
 	}
@@ -2042,14 +2481,9 @@ function BetterCarousel(element, userOptions = {}) {
 		return geo ? geo.map[index] ?? 0 : index;
 	}
 
-	// The next or the previous physical snap. In loop mode, the first snap follows the last snap.
+	// The physical snap of an index, such as the selected snap + 1. In loop mode, the first snap follows the last snap.
 	function wrap(index) {
-		return geo.period ? (index + geo.snaps.length) % geo.snaps.length : index;
-	}
-
-	// The location now, also during a motion
-	function current() {
-		return scroll ? scrollAt() : motion.current() ?? location;
+		return snapIndex(index, geo.snaps.length, geo.period);
 	}
 
 	/**
@@ -2074,151 +2508,23 @@ function BetterCarousel(element, userOptions = {}) {
 			}
 		});
 
-		return best < 0 ? Math.min(Math.max(index, 0), geo.snaps.length - 1) : best;
+		return best < 0 ? clamp(index, 0, geo.snaps.length - 1) : best;
 	}
 
-	/**
-	 * Get the original slides that show at a location.
-	 *
-	 * @param {number} at
-	 * @param {number} threshold
-	 * @returns {number[]}
-	 */
-	function seen(at, threshold) {
-		return [...new Set(inView(geo.slides, at, geo.view, threshold, geo.period).map(original))].sort((a, b) => a - b);
+	function selectedSlide() {
+		// A carousel with the sync option selects the slide of the other carousel, also after a drag
+		if (followed > -1) {
+			return followed;
+		}
+		if (!geo) {
+			return Math.max(requested, 0);
+		}
+		return requested >= 0 && api.snapOfSlide(requested) === logical(selected) ? requested : original(geo.snaps[selected].slide);
 	}
 
-	function observe() {
-		unobserve();
-		observed = [viewport, container, ...nodes];
-		for (const node of observed) {
-			owners.set(node, owner);
-			resizeObserver().observe(node);
-		}
-	}
-
-	function unobserve() {
-		for (const node of observed) {
-			owners.delete(node);
-			sharedObserver.unobserve(node);
-		}
-		observed = [];
-	}
-
-	/**
-	 * Write the result of a measure pass and emit the events.
-	 */
-	function measured() {
-		if (pending >= 0) {
-			setClones(pending);
-			pending = -1;
-			signature = '';
-			observe();
-			return;
-		}
-
-		// The auto scroll starts again from its location with the new layout
-		if (scroller?.isPlaying()) {
-			halt();
-		}
-
-		// A motion goes on to the new location of its snap, for example when the selected slide changes its width. A drag keeps its location.
-		const at = motion.current();
-		if (at !== null && written.axis === geo.axis && !geo.fit && motion.retarget(location)) {
-			place(at, location);
-			render(true);
-		} else {
-			motion.stop();
-			render(dragging);
-		}
-		label();
-
-		// A wheel listener that is not passive makes the browser wait for the main thread before it scrolls the page. Add it only where the wheel moves the carousel.
-		const wheel = options.wheel && !geo.fit && (geo.axis === 'y' || options.wheel === 'both');
-		viewport[wheel ? 'addEventListener' : 'removeEventListener']('wheel', onWheel, { passive: false });
-
-		if (!options.resize) {
-			unobserve();
-		}
-
-		if (!ready) {
-			ready = true;
-			events.emit(started ? 'reinit' : 'init');
-			started = true;
-		} else {
-			events.emit('resize');
-		}
-
-		if (changed) {
-			changed = false;
-			events.emit('slideschanged');
-		}
-
-		if (scroller?.isPlaying()) {
-			kick();
-		}
-	}
-
-	/**
-	 * Give each slide the slide role and a name such as "2 of 8". A slide with its own role, such as an article, keeps it.
-	 */
-	function label() {
-		slides.forEach((node, index) => {
-			if (!node.matches(controls) || marked.get(node)?.has('role')) {
-				if (node.matches(generic)) {
-					own(node, 'role', 'group');
-				}
-				own(node, 'aria-roledescription', 'slide');
-				own(node, 'aria-label', options.labels.slide.replace('%d', index + 1).replace('%n', slides.length));
-			}
-		});
-	}
-
-	function onMutation() {
-		slides = readSlides();
-		setClones(0);
-		nodes = slides;
-		changed = true;
-		observe();
-	}
-
-	/**
-	 * Get the part of the main axis where the loop must show slides, relative to the viewport start.
-	 * It is the viewport. With clones: 'fill', it is the window, so that the slides fill it when the viewport overflow shows.
-	 *
-	 * @param {{axis: string, rtl: boolean}} layout
-	 * @param {number} view The viewport size.
-	 * @returns {{start: number, size: number}}
-	 */
-	function visibleArea(layout, view) {
-		if (!options.loop || options.clones !== 'fill') {
-			return { start: 0, size: view };
-		}
-
-		const box = viewport.getBoundingClientRect(),
-			x = layout.axis === 'x',
-			size = windowSize(layout.axis),
-			before = Math.max(0, Math.round(x ? (layout.rtl ? size - box.right : box.left) : box.top));
-
-		lastWindow = size;
-
-		return { start: -before, size: before + Math.max(view, Math.round(size - before)) };
-	}
-
-	function windowSize(axis) {
-		return axis === 'x' ? document.documentElement.clientWidth : innerHeight;
-	}
-
-	// A change of the window size can change the visible area, and the viewport size can stay the same.
-	// Mobile browsers send a resize when the address bar shows or hides. Measure only if the size on the main axis changes.
-	function onWindow() {
-		if (geo && windowSize(geo.axis) !== lastWindow && measure()) {
-			measured();
-		}
-	}
-
-	function onQuery() {
-		reInit();
+	// The location now, also during a motion
+	function current() {
+		return auto?.at() ?? motion.current() ?? location;
 	}
 
 	/**
@@ -2228,8 +2534,12 @@ function BetterCarousel(element, userOptions = {}) {
 	 */
 	function measure() {
 		const layout = readLayout(container, options),
-			rects = readRects(viewport, nodes, layout, shown()),
-			area = visibleArea(layout, rects.view),
+			rects = readRects(viewport, nodes, layout, shown());
+
+		// With clones: 'fill', the loop fills the window
+		lastWindow = options.loop && options.clones === 'fill' ? windowSize(layout.axis) : 0;
+
+		const area = visibleArea(viewport, layout, rects.view, lastWindow),
 			text = JSON.stringify([layout.axis, layout.rtl, typeof layout.align === 'string' && layout.align, rects, area]);
 
 		if (text === signature && ready) {
@@ -2240,18 +2550,20 @@ function BetterCarousel(element, userOptions = {}) {
 
 		const keep = ready ? selectedSlide() : requested,
 			count = slides.length,
-			own = bounds(rects.slides.slice(0, count)),
-			fit = fits(rects.slides.slice(0, count), rects.view) && !(options.autoScroll && options.loop),
+			originals = rects.slides.slice(0, count),
+			content = bounds(originals),
+			fit = content.size <= rects.view + 1 && !(options.autoScroll && options.loop),
 			from = location;
 
 		let copies = 0,
 			length = 0;
 
 		if (options.loop && !fit && count) {
-			const size = period(own.start, own.end, rects.gap),
+			// The loop period: the distance from the first slide start to the same point in the next copy of the slides
+			const size = content.size + rects.gap,
 				all = bounds(rects.slides);
-			copies = /^(auto|fill)$/.test(options.clones) && !canLoop(size, area.size, own.max) ? cloneCount(size, area.size, own.max) : 0;
-			length = period(all.start, all.end, rects.gap);
+			copies = options.clones ? cloneCount(size, area.size, content.max) : 0;
+			length = all.size + rects.gap;
 		}
 
 		if (copies * count !== clones.length) {
@@ -2278,11 +2590,69 @@ function BetterCarousel(element, userOptions = {}) {
 		selected = keep >= 0 ? physical(api.snapOfSlide(keep)) : Math.min(total - 1, ready ? selected : physical(options.startSnap));
 		previous = Math.min(previous, total - 1);
 		requested = keep;
-		if (!dragging) {
+		if (!context.dragging()) {
 			location = targetLocation(geo.snaps[selected].location, from, length);
 		}
 
 		return true;
+	}
+
+	// A change of the window size can change the visible area, and the viewport size can stay the same.
+	// Mobile browsers send a resize when the address bar shows or hides. Measure only if the size on the main axis changes.
+	function onWindow() {
+		if (geo && windowSize(geo.axis) !== lastWindow && measure()) {
+			measured();
+		}
+	}
+
+	/**
+	 * Write the result of a measure pass and emit the events.
+	 */
+	function measured() {
+		if (pending >= 0) {
+			setClones(pending);
+			pending = -1;
+			signature = '';
+			observe(true);
+			return;
+		}
+
+		// The auto scroll starts again from its location with the new layout
+		if (auto?.control.isPlaying()) {
+			halt();
+		}
+
+		// A motion goes on to the new location of its snap, for example when the selected slide changes its width. A drag keeps its location.
+		const at = motion.current();
+		if (at !== null && written.axis === geo.axis && !geo.fit && motion.retarget(location)) {
+			place(at, location);
+			render(true);
+		} else {
+			motion.stop();
+			render(context.dragging());
+		}
+		labelSlides(slides, options.labels.slide);
+
+		wheelInput.listen(options.wheel && !geo.fit && (geo.axis === 'y' || options.wheel === 'both'));
+
+		if (!options.resize) {
+			observe(false);
+		}
+
+		if (!ready) {
+			ready = true;
+			events.emit(started ? 'reinit' : 'init');
+			started = true;
+		} else {
+			events.emit('resize');
+		}
+
+		if (changed) {
+			changed = false;
+			events.emit('slideschanged');
+		}
+
+		auto?.resume();
 	}
 
 	/**
@@ -2309,7 +2679,7 @@ function BetterCarousel(element, userOptions = {}) {
 		}
 
 		const active = selectedSlide(),
-			list = seen(location, options.inViewThreshold);
+			list = [...new Set(inView(geo.slides, location, geo.view, options.inViewThreshold, geo.period).map(original))].sort((a, b) => a - b);
 
 		nodes.forEach((node, index) => setClass(node, cls.active, original(index) === active));
 
@@ -2332,6 +2702,16 @@ function BetterCarousel(element, userOptions = {}) {
 	}
 
 	/**
+	 * Get the CSS translate value of a screen value.
+	 *
+	 * @param {number} value px
+	 * @returns {string}
+	 */
+	function translate(value) {
+		return value ? (geo.axis === 'x' ? value + 'px' : '0 ' + value + 'px') : '';
+	}
+
+	/**
 	 * Write the location as the translate of the container.
 	 *
 	 * @param {number} value
@@ -2343,7 +2723,7 @@ function BetterCarousel(element, userOptions = {}) {
 		}
 
 		written.container = screen(value);
-		setStyle(container, 'translate', translate(geo.axis, written.container));
+		setStyle(container, 'translate', translate(written.container));
 		place(value, value);
 	}
 
@@ -2360,69 +2740,47 @@ function BetterCarousel(element, userOptions = {}) {
 			const value = list.length ? screen(list[index] * geo.period) : 0;
 			if ((written.slides[index] || 0) !== value) {
 				written.slides[index] = value;
-				setStyle(node, 'translate', translate(geo.axis, value));
+				setStyle(node, 'translate', translate(value));
 			}
 		});
 	}
 
-	/**
-	 * Write a location during a motion or a drag.
-	 *
-	 * @param {number} value
-	 */
-	function frame(value) {
-		write(value);
-		events.emit('scroll');
+	// The CSS translate value of a location
+	function css(value) {
+		return translate(screen(value)) || '0px';
 	}
 
 	/**
-	 * End a motion.
-	 */
-	function settle() {
-		if (geo.period) {
-			location = normalize(location, geo.period);
-		}
-		render();
-		events.emit('settle');
-		if (scroller?.isPlaying() && !scroll) {
-			wait();
-		}
-	}
-
-	/**
-	 * Change the selected snap.
+	 * Get the translate values that show now: the written values, or the values of a motion or of the auto scroll.
 	 *
-	 * @param {number} index
-	 * @returns {boolean} true if the snap changed.
+	 * @returns {{axis: string, container: number, slides: number[]}}
 	 */
-	function select(index) {
-		if (index === selected) {
-			return false;
-		}
-		previous = selected;
-		selected = index;
-		return true;
+	function shown() {
+		const sign = geo?.rtl ? -1 : 1,
+			moving = motion.current();
+
+		return auto?.shown(sign, written.axis) || (moving === null ? written : { ...written, container: sign * moving });
 	}
 
 	/**
 	 * Go to a snap.
 	 *
-	 * @param {number} index The snap index.
+	 * @param {number} index The snap index. physical() and wrap() give a valid index.
 	 * @param {boolean} [instant]
 	 * @param {number} [slide] The slide index, for goToSlide().
+	 * @param {number} [direction] 1 to go forward, -1 to go back, 0 for the shortest path in a loop.
 	 */
 	function go(index, instant, slide = -1, direction = 0) {
 		if (waiting) {
 			reInit();
 		}
-		interrupt();
+		auto?.interrupt();
 		if (!geo) {
 			options.startSnap = index;
 			requested = slide;
 			return;
 		}
 
-		index = Math.min(geo.snaps.length - 1, Math.max(0, index));
 		requested = slide;
 
 		const target = targetLocation(geo.snaps[index].location, current(), geo.period, direction),
@@ -2468,36 +2826,41 @@ function BetterCarousel(element, userOptions = {}) {
 		}
 	}
 
-	// The CSS translate value of a location
-	function css(value) {
-		return translate(geo.axis, screen(value)) || '0px';
-	}
-
-	// The time in the auto scroll iteration, from 0 to 1
-	function phase() {
-		return (scroll.animations[0].currentTime || 0) % scroll.duration / scroll.duration;
-	}
-
-	// The location of the auto scroll now
-	function scrollAt() {
-		return scroll.from - scroll.direction * scroll.length * phase();
+	/**
+	 * Change the selected snap.
+	 *
+	 * @param {number} index
+	 * @returns {boolean} true if the snap changed.
+	 */
+	function select(index) {
+		if (index === selected) {
+			return false;
+		}
+		previous = selected;
+		selected = index;
+		return true;
 	}
 
 	/**
-	 * Get the translate values that show now: the written values, or the values of a motion or of the auto scroll.
+	 * Write a location during a motion or a drag.
 	 *
-	 * @returns {{axis: string, container: number, slides: number[]}}
+	 * @param {number} value
 	 */
-	function shown() {
-		const sign = geo?.rtl ? -1 : 1,
-			moving = motion.current();
+	function frame(value) {
+		write(value);
+		events.emit('scroll');
+	}
 
-		if (scroll) {
-			const time = phase();
-			return { axis: written.axis, container: sign * scrollAt(), slides: scroll.list.map(({ k, offset }) => sign * (time >= offset ? k + scroll.direction : k) * scroll.length) };
+	/**
+	 * End a motion.
+	 */
+	function settle() {
+		if (geo.period) {
+			location = normalize(location, geo.period);
 		}
-
-		return moving === null ? written : { ...written, container: sign * moving };
+		render();
+		events.emit('settle');
+		auto?.settled();
 	}
 
 	/**
@@ -2506,92 +2869,26 @@ function BetterCarousel(element, userOptions = {}) {
 	 * @returns {number} The location.
 	 */
 	function halt() {
-		if (scroll) {
-			location = scrollAt();
-			scroll.animations.forEach((animation) => animation.cancel());
-			scroll = null;
-			write(location);
-			if (select(nearestSnap(geo.snaps, location, geo.period))) {
-				render(true);
-				events.emit('select');
-			}
+		const at = auto?.cancel();
+		if (at != null) {
+			hold(at);
 		}
 		return location = motion.stop() ?? location;
 	}
 
-	// A drag or a goTo() from the user stops the auto scroll, or makes it wait until the next "settle"
-	function interrupt() {
-		if (scroller?.isPlaying()) {
-			wait(-1);
-			if (scrollOptions.stopOnInteraction) {
-				scroller.stop();
-			}
-		}
-	}
-
 	/**
-	 * Start the auto scroll after its delay.
+	 * Write a location without a motion, and select the snap that is nearest to it.
 	 *
-	 * @param {number} [cancel] With -1, only stop the timer.
+	 * @param {number} value
+	 * @param {boolean} [scroll] Emit "scroll", as during a motion.
 	 */
-	function wait(cancel) {
-		clearTimeout(scrollTimer);
-		scrollTimer = cancel ? 0 : setTimeout(run, scrollOptions.startDelay);
-	}
-
-	// Start the auto scroll now, if no delay runs
-	function kick() {
-		if (!scrollTimer) {
-			run();
+	function hold(value, scroll) {
+		location = value;
+		(scroll ? frame : write)(value);
+		if (select(nearestSnap(geo.snaps, value, geo.period))) {
+			render(true);
+			events.emit('select');
 		}
-	}
-
-	/**
-	 * Start the auto scroll. With loop, it runs on the compositor: the container moves by one period in each iteration,
-	 * and each slide moves by one period at the time when it leaves the visible area. Without loop, it goes to the end.
-	 */
-	function run() {
-		scrollTimer = 0;
-		if (!geo || geo.fit || scroll || dragging || scroller.paused()) {
-			return;
-		}
-
-		const direction = scrollOptions.direction === 'backward' ? -1 : 1,
-			from = halt(),
-			length = geo.period,
-			speed = scrollOptions.speed / 1000;
-
-		if (!length) {
-			const to = direction > 0 ? geo.min : geo.max;
-			if (Math.abs(to - from) > 1) {
-				location = to;
-				motion.run(from, to, Math.abs(to - from) / speed, [0, 0, 1, 1], events.has('scroll'));
-			}
-			return;
-		}
-
-		const list = steps(geo.slides, from, geo.area.size, length, direction, geo.area.start),
-			timing = { duration: length / speed, iterations: Infinity },
-			start = document.timeline.currentTime;
-
-		write(from);
-		scroll = {
-			from,
-			direction,
-			length,
-			list,
-			duration: timing.duration,
-			animations: [
-				container.animate([{ translate: css(from) }, { translate: css(from - direction * length) }], timing),
-				...nodes.map((node, index) => {
-					const { k, offset } = list[index],
-						before = css(k * length),
-						after = css((k + direction) * length);
-					return node.animate([{ translate: before }, { translate: before, offset }, { translate: after, offset }, { translate: after }], timing);
-				})
-			]
-		};
-		scroll.animations.forEach((animation) => animation.startTime = start);
 	}
 
 	/**
@@ -2601,81 +2898,13 @@ function BetterCarousel(element, userOptions = {}) {
 	 */
 	function onFocus(event) {
 		const index = slides.findIndex((node) => node.contains(event.target));
-		if (!geo || index < 0 || performance.now() - lastDown < 600) {
+		if (!geo || index < 0 || performance.now() - dragInput.pressed() < 600) {
 			return;
 		}
-		if (options.focus && !seen(location, 1).includes(index)) {
+		if (options.focus && !inView(geo.slides, location, geo.view, 1, geo.period).map(original).includes(index)) {
 			api.goToSlide(index);
 		}
 		events.emit('slidefocus');
-	}
-
-	/**
-	 * Move the carousel with the wheel: in a vertical carousel, and with wheel: 'both' also in a horizontal carousel. The carousel follows the wheel distance
-	 * with a short motion on the compositor. When the wheel stops, the carousel goes to a snap. At the first and the last location, the page scrolls.
-	 *
-	 * @param {WheelEvent} event
-	 */
-	function onWheel(event) {
-		const side = geo.axis === 'x' && Math.abs(event.deltaX) > Math.abs(event.deltaY),
-			delta = side ? event.deltaX * (geo.rtl ? -1 : 1) : event.deltaY;
-
-		if (event.ctrlKey || !delta || dragging) {
-			return;
-		}
-
-		const now = event.timeStamp,
-			gesture = now - wheelTime < 200,
-			base = scroll ? scrollAt() : location,
-			path = delta * (event.deltaMode === 1 ? 40 : event.deltaMode ? geo.view : 1);
-
-		let target = base - path;
-		if (!geo.period) {
-			target = Math.min(geo.max, Math.max(geo.min, target));
-		}
-
-		wheelTime = now;
-
-		// At the end, the page scrolls. The inertia of a gesture that moved the carousel does not scroll the page.
-		if (Math.abs(target - base) < 0.5) {
-			if (gesture && now - wheelMoved < 1000) {
-				event.preventDefault();
-			}
-			return;
-		}
-
-		event.preventDefault();
-		interrupt();
-
-		if (!wheelTimer) {
-			wheelSnap = selected;
-		}
-		wheelMoved = now;
-		wheelDirection = path > 0 ? 1 : -1;
-		requested = -1;
-		move(nearestSnap(geo.snaps, target, geo.period), target, WHEEL, EASE);
-
-		// With dragFree: true, the carousel stays where the wheel stops
-		clearTimeout(wheelTimer);
-		if (options.dragFree !== true) {
-			wheelTimer = setTimeout(wheelEnd, 150);
-		}
-	}
-
-	/**
-	 * Go to a snap when the wheel stops. A short wheel motion goes to the next snap in its direction, so that one wheel step always changes the slide.
-	 */
-	function wheelEnd() {
-		wheelTimer = 0;
-		const at = current(),
-			index = nearestSnap(geo.snaps, at, geo.period),
-			away = Math.abs(targetLocation(geo.snaps[index].location, at, geo.period) - at) > 10;
-
-		if (index === wheelSnap && away) {
-			go(wrap(index + wheelDirection), false, -1, wheelDirection);
-		} else {
-			go(index);
-		}
 	}
 
 	/**
@@ -2684,43 +2913,14 @@ function BetterCarousel(element, userOptions = {}) {
 	function onScroll() {
 		viewport.scrollLeft = viewport.scrollTop = 0;
 	}
-
-	function selectedSlide() {
-		// A carousel with the sync option selects the slide of the other carousel, also after a drag
-		if (followed > -1) {
-			return followed;
-		}
-		if (!geo) {
-			return Math.max(requested, 0);
-		}
-		return requested >= 0 && api.snapOfSlide(requested) === logical(selected) ? requested : original(geo.snaps[selected].slide);
-	}
-
-	/**
-	 * Merge new options and set up the carousel again. The selected slide stays.
-	 *
-	 * @param {object} [newOptions]
-	 */
-	function reInit(newOptions) {
-		if (newOptions) {
-			userOptions = merge(userOptions, newOptions);
-		}
-		const keep = geo ? selectedSlide() : requested;
-		teardown(true);
-		setup();
-		requested = keep;
-	}
-
-	/**
-	 * Remove the carousel and restore the DOM.
-	 */
-	function destroy() {
-		teardown(false);
-		events.emit('destroy');
-	}
 }
 
-// The site defaults. They merge over the library defaults.
+/*
+ * Entry point: the BetterCarousel function and its static members defaults, get() and initAll().
+ */
+
+
+// The site defaults. They merge over the library defaults. carousel.js reads them each time that it makes a carousel.
 BetterCarousel.defaults = {};
 
 /**
@@ -2729,7 +2929,7 @@ BetterCarousel.defaults = {};
  * @param {Element} element
  * @returns {object|undefined}
  */
-BetterCarousel.get = (element) => registry.get(element);
+BetterCarousel.get = find;
 
 /**
  * Make a carousel for each element that matches a selector and has no carousel.
@@ -2740,15 +2940,9 @@ BetterCarousel.get = (element) => registry.get(element);
  */
 BetterCarousel.initAll = (selector, options) => {
 	const elements = [...document.querySelectorAll(selector)];
-	// Read all boxes for the lazy option before the first setup() writes. Thus the reads cause one layout, not one for each carousel.
-	if (merge(defaults, BetterCarousel.defaults, options).lazy) {
-		elements.forEach((element) => boxes.set(element, element.getBoundingClientRect()));
-	}
-	return elements.map((element) => {
-		const carousel = BetterCarousel(element, options);
-		boxes.delete(element);
-		return carousel;
-	});
+	// Read the boxes of the lazy carousels before the first setup() writes. Then the reads cause one layout, not one for each carousel.
+	readBoxes(elements.filter((element) => !find(element) && resolve(element, BetterCarousel.defaults, options).lazy));
+	return elements.map((element) => BetterCarousel(element, options));
 };
 
 export { BetterCarousel as default };

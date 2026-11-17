@@ -1,7 +1,34 @@
-// Snap math. This module does not use the DOM.
-//
-// All values are on the main axis, in px. A slide is { start, end }: its border box at location 0, relative to the viewport start.
-// The location L is the translate of the container. A slide shows at start + L.
+/*
+ * Snap math: the snaps, the active slide, the slides in view and the progress. This module does not use the DOM.
+ *
+ * All values are on the main axis, in px. A slide is { start, end }: its border box at location 0, relative to the viewport start.
+ * The location L is the translate of the container. A slide shows at start + L.
+ * In loop mode, the period is the length of one copy of the slides. Without loop, it is 0.
+ */
+
+/**
+ * Keep a value between two limits.
+ *
+ * @param {number} value
+ * @param {number} min
+ * @param {number} max
+ * @returns {number}
+ */
+export function clamp(value, min, max) {
+	return Math.min(max, Math.max(min, value));
+}
+
+/**
+ * Get a valid snap index. In loop mode, the index goes around. Without loop, it stops at the first or the last snap.
+ *
+ * @param {number} index
+ * @param {number} count The number of snaps.
+ * @param {number} [period]
+ * @returns {number}
+ */
+export function snapIndex(index, count, period) {
+	return period ? (index % count + count) % count : clamp(index, 0, count - 1);
+}
 
 /**
  * Get the offset of a snap from the viewport start.
@@ -37,17 +64,6 @@ export function bounds(slides) {
 	}
 
 	return { start, end, size: end - start, max };
-}
-
-/**
- * Find if all slides fit in the viewport.
- *
- * @param {Array<{start: number, end: number}>} slides
- * @param {number} view
- * @returns {boolean}
- */
-export function fits(slides, view) {
-	return !slides.length || bounds(slides).size <= view + 1;
 }
 
 /**
@@ -140,7 +156,7 @@ export function snaps({ slides, view, align, slidesToScroll, containScroll, peri
 
 	if (!period) {
 		if (containScroll) {
-			list = list.map((location) => Math.min(max, Math.max(min, location)));
+			list = list.map((location) => clamp(location, min, max));
 		} else {
 			max = Math.max(...list);
 			min = Math.min(...list);
@@ -293,7 +309,7 @@ export function progress(location, min, max, period) {
 		const value = -location / period;
 		return value - Math.floor(value);
 	}
-	return max > min ? Math.min(1, Math.max(0, (max - location) / (max - min))) : 0;
+	return max > min ? clamp((max - location) / (max - min), 0, 1) : 0;
 }
 
 /**

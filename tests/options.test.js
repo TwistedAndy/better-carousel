@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { classNames, defaults, merge } from '../src/options.js';
+import { classNames, defaults, merge, settings } from '../src/scripts/options.js';
 
 test('class names: the root class is the prefix', () => {
 	assert.equal(classNames(null, '').root, 'better');
@@ -32,4 +32,11 @@ test('options: the defaults and the merge order', () => {
 	assert.equal(result.loop, false);
 	assert.equal(result.labels.prev, 'Back');
 	assert.equal(result.labels.next, 'Next slide');
+});
+
+test('settings: true keeps the defaults, a number sets the key, an object merges', () => {
+	const base = { delay: 4000, instant: false };
+	assert.deepEqual(settings(base, 'delay', true), base);
+	assert.deepEqual(settings(base, 'delay', 2000), { delay: 2000, instant: false });
+	assert.deepEqual(settings(base, 'delay', { instant: true }), { delay: 4000, instant: true });
 });

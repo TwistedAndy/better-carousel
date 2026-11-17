@@ -4,7 +4,7 @@
 
 <p>A small, fast and accessible JavaScript carousel.<br />The CSS sets the layout, and the motion runs on the compositor, also on slow phones.</p>
 
-[![Gzip size](https://flat.badgen.net/static/gzip/10.4%20KB/green)](dist/better-carousel.min.js)
+[![Gzip size](https://flat.badgen.net/static/gzip/10.7%20KB/green)](dist/better-carousel.min.js)
 [![MIT license](https://flat.badgen.net/static/license/MIT/purple)](LICENSE)
 [![No dependencies](https://flat.badgen.net/static/dependencies/0/blue)](package.json)
 
@@ -16,7 +16,7 @@
 
 - **Layout from CSS** - Your CSS sets the sizes of the slides, the space between them, the axis and the alignment. One carousel can show 1 slide on a phone and 4 slides on a desktop.
 - **Smooth** - Each motion is a Web Animations API animation of `translate`. No script runs on each frame, also during the auto scroll.
-- **Small** - <!-- generated:gzip -->10.4 KB<!-- /generated --> gzip with loop, autoplay, auto scroll, auto height, sync and the mouse wheel.
+- **Small** - <!-- generated:gzip -->10.7 KB<!-- /generated --> gzip with loop, autoplay, auto scroll, auto height, sync and the mouse wheel.
 - **Loop** - The loop moves the original slides. It adds clones only if the slides are too few.
 - **Vertical and grid** - A column layout makes a vertical carousel. A CSS grid with more rows also works.
 - **Accessible** - WCAG 2.1 AA: names for the carousel, the slides and the buttons, the keyboard focus, a live region and reduced motion.
@@ -47,8 +47,8 @@ Or add the files to the page with a `link` tag and a `script` tag. The script ad
 | `dist/better-carousel.min.js` | IIFE, minified | For a `script` tag. It adds the global `BetterCarousel` function. |
 | `dist/better-carousel.js` | ES module | For a bundler: `import BetterCarousel from 'better-carousel'`. |
 | `dist/better-carousel.css` | CSS | The styles with the default class names. |
-| `dist/better-carousel.d.ts` | TypeScript | The types. TypeScript and the editors find them automatically. |
-| `src/better-carousel.scss` | SCSS | The styles with your class names: `better-carousel/scss`. See [Styling](#styling). |
+| `src/types/better-carousel.d.ts` | TypeScript | The types. TypeScript and the editors find them automatically. |
+| `src/styles/better-carousel.scss` | SCSS | The styles with your class names: `better-carousel/scss`. See [Styling](#styling). |
 
 ## Quick start
 
@@ -128,7 +128,7 @@ A carousel can have fewer snaps than slides. For example, `slidesToScroll: 2` pu
 - `goToSlide()`, `selectedSlide()`, `slidesInView()` and `slideNodes()` use a slide index.
 - `snapOfSlide(index)` gives the snap index of a slide.
 
-## The layout comes from CSS
+## CSS layout
 
 The library does not set the size of the slides or the space between them. It reads these values from the CSS and moves only the container.
 
@@ -343,7 +343,7 @@ BetterCarousel(element, {
 | `slides` | `string` | `null` | The selector of the slides. With `null`, all children of the container are slides. |
 | `wrap` | `boolean` | `true` | Add the root and the viewport if the page does not have them. |
 | `arrows` | `boolean`, `Element`, `string` | `true` | Add the arrows to the root. `false`: no arrows. An element or a selector: add the arrows to that element. ([example](https://twistedandy.github.io/better-carousel/#heading)) |
-| `dots` | `boolean`, `Element`, `string` | `true` | Add the dots. The values are the same as for `arrows`. |
+| `dots` | `boolean`, `Element`, `string` | `true` | Add the dots. The values are the same as for `arrows`. ([example](https://twistedandy.github.io/better-carousel/#heading)) |
 | `labels` | `object` | English | The texts for screen readers: `carousel`, `slide` (`'%d of %n'`), `prev`, `next`, `dot` (`'Go to slide %d'`), `play`, `pause`. `%d` is the slide number, and `%n` is the number of slides. |
 | `classes` | `string`, `object` | `null` | A class prefix such as `'embla'`, or an object with the names to change. The [Classes](#classes) table gives all names. ([example](https://twistedandy.github.io/better-carousel/#embla)) |
 | `state` | `string` | `''` | The prefix of the state classes, such as `'is_'`. ([example](https://twistedandy.github.io/better-carousel/#state)) |
@@ -355,7 +355,7 @@ BetterCarousel(element, {
 
 ### autoplay
 
-The value is `true`, a delay in ms, or an object. A `data-delay` attribute on a slide sets the delay of that slide.
+The value is `true`, a delay in ms, or an object. In the object, `delay` can also be an array with one delay for each snap. A `data-delay` attribute on a slide sets the delay of that slide, and it has priority over `delay`.
 
 The autoplay pauses in these conditions:
 
@@ -368,7 +368,7 @@ If the user prefers reduced motion, the autoplay does not start. These are the d
 ```js
 BetterCarousel(element, {
   autoplay: {
-    delay: 4000,               // ms on each slide
+    delay: 4000,               // ms on each slide, or an array with ms for each snap
     stopOnInteraction: true,   // A drag, an arrow or a dot stops the autoplay
     stopOnMouseEnter: false,   // Pause while the mouse is on the carousel
     stopOnFocusIn: true,       // Pause while the keyboard focus is in the carousel
@@ -406,13 +406,15 @@ The `sync` option links two carousels, for example a gallery and its thumbnails:
 2. Use buttons for the thumbnails, so that the keyboard can select them.
 3. Set `sync` on the thumbnails carousel.
 
-The thumbnails follow the main gallery, and a click on a thumbnail selects its photo. A drag moves only the thumbnails. The thumbnail of the selected photo gets the `active` class.
+The thumbnails follow the main gallery, and a click on a thumbnail selects its photo. A drag moves only the thumbnails. The thumbnail of the selected photo gets the `active` class. In this example, the `arrows` option puts the arrows of the main gallery next to the thumbnails.
 
 ```html
-<div class="items carousel gallery_main" data-carousel='{"dots":false}'>...</div>
-<div class="items carousel gallery_thumbs" data-carousel='{"sync":".gallery_main","arrows":false,"dots":false}'>
-  <button type="button" class="item"><img src="thumb-1.jpg" alt="Show photo 1" /></button>
-  ...
+<div class="items carousel gallery_main" data-carousel='{"dots":false,"arrows":".gallery_nav"}'>...</div>
+<div class="gallery_nav">
+  <div class="items carousel gallery_thumbs" data-carousel='{"sync":".gallery_main","arrows":false,"dots":false}'>
+    <button type="button" class="item"><img src="thumb-1.jpg" alt="Show photo 1" /></button>
+    ...
+  </div>
 </div>
 ```
 
@@ -574,9 +576,9 @@ The library is made for slow phones. A motion runs on the compositor, and a caro
 <!-- generated:sizes -->
 | File | Minified | Gzip | Brotli |
 | --- | --- | --- | --- |
-| `better-carousel.min.js` | 26.4 KB | 10.4 KB | 9.5 KB |
+| `better-carousel.min.js` | 26.9 KB | 10.7 KB | 9.8 KB |
 | `better-carousel.css` | 3.9 KB | 1.2 KB | 1.0 KB |
-| Total | 30.3 KB | 11.6 KB | 10.5 KB |
+| Total | 30.8 KB | 11.9 KB | 10.8 KB |
 <!-- /generated -->
 
 The same features in Embla 9 (the core, three plugins and a wrapper) are 12.6 KB gzip.
@@ -602,6 +604,7 @@ An option, a method or an event that is also in Embla 9 has the same name. This 
 | Embla | Embla name | Better Carousel |
 | --- | --- | --- |
 | 9 | Handler `(api, event)` | Handler `(carousel, name)`. The events have no `detail`. |
+| 9 | Autoplay `delay` as a function that gives one delay for each snap | Autoplay `delay` as an array with one delay for each snap |
 | 8 | Option `startIndex` | `startSnap` |
 | 8 | Options `watchDrag`, `watchResize`, `watchSlides`, `watchFocus` | `draggable`, `resize`, `slideChanges`, `focus` |
 | 8 | `scrollTo(index, jump)` | `goTo(index, instant)` |
@@ -630,7 +633,7 @@ npm run e2e     # browser tests in Chrome
 
 The browser tests open `http://better.test/` in Chrome. To use a different address or a different Chrome, set `URL` and `CHROME`.
 
-The docs page is [`index.html`](index.html). Its scripts and styles are in [`demo/`](demo). The reference tables and the file sizes in README.md and index.html come from [`docs/reference.js`](docs/reference.js). Do not edit the parts in the `generated` HTML comments. Edit `docs/reference.js`, and then run `npm run docs`.
+The docs page is [`index.html`](index.html). Its scripts and styles are in [`demo/`](demo). The reference tables and the file sizes in README.md and index.html, and the `Options` interface in [`src/types/better-carousel.d.ts`](src/types/better-carousel.d.ts), come from [`scripts/reference.js`](scripts/reference.js). Do not edit the parts in the `generated` HTML comments. Edit `scripts/reference.js`, and then run `npm run docs`.
 
 ## License
 

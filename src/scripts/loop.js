@@ -1,33 +1,13 @@
-// Loop math. This module does not use the DOM.
-//
-// In loop mode, each slide is at start + k * period. The library writes k * period as the translate of the slide.
-
-/**
- * Get the loop period: the distance from the first slide start to the same point in the next copy of the slides.
+/*
+ * Loop math: the period, the clones and the place of each slide. This module does not use the DOM.
  *
- * @param {number} start The first slide start.
- * @param {number} end The last slide end.
- * @param {number} gap The gap between the last slide and the first slide of the next copy.
- * @returns {number}
+ * The values and the slides are the same as in geometry.js. In loop mode, each slide is at start + k * period.
+ * The library writes k * period as the translate of the slide.
  */
-export function period(start, end, gap) {
-	return end + gap - start;
-}
 
 /**
- * Find if the slides can loop with no clones. No slide can be necessary at two places at the same time.
- *
- * @param {number} length The loop period.
- * @param {number} view The viewport size.
- * @param {number} max The size of the largest slide.
- * @returns {boolean}
- */
-export function canLoop(length, view, max) {
-	return length >= view + max;
-}
-
-/**
- * Get the number of full copies of the slides that the loop needs.
+ * Get the number of full copies of the slides that the loop needs. With 0, the slides can loop with no clones:
+ * no slide is necessary at two places at the same time.
  *
  * @param {number} length The loop period of the original slides.
  * @param {number} view

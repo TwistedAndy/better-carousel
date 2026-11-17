@@ -154,7 +154,13 @@
 		margin: 0;
 	}
 
+	.better_dots {
+		order: 1;
+		margin: 0;
+	}
+
 	.better_button {
+		order: 2;
 		position: relative;
 	}
 
@@ -181,12 +187,28 @@
 
 	}
 
-	.gallery_thumbs {
+	.gallery_nav {
+		position: relative;
 		margin-top: 10px;
+		padding: 0 3.25rem;
+
+		.better_button {
+			top: 0;
+			height: auto;
+		}
+
+	}
+
+	// An odd number of columns: the row is centered, so it shows only whole thumbnails
+	.gallery_thumbs {
 		--gap-grid-x: 10px;
+		--columns-count: 5;
+
+		@include phone_large {
+			--columns-count: 3;
+		}
 
 		.item {
-			width: 120px;
 			min-height: 0;
 			padding: 0;
 			border: 0;

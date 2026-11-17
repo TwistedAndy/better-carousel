@@ -1887,7 +1887,12 @@ pre {
   flex: 1;
   margin: 0;
 }
+.demo_heading .heading .better_dots {
+  order: 1;
+  margin: 0;
+}
 .demo_heading .heading .better_button {
+  order: 2;
   position: relative;
 }
 
@@ -1906,12 +1911,25 @@ pre {
   height: 100%;
   object-fit: cover;
 }
-.product_box .gallery_thumbs {
+.product_box .gallery_nav {
+  position: relative;
   margin-top: 10px;
+  padding: 0 3.25rem;
+}
+.product_box .gallery_nav .better_button {
+  top: 0;
+  height: auto;
+}
+.product_box .gallery_thumbs {
   --gap-grid-x: 10px;
+  --columns-count: 5;
+}
+@media (max-width: 30rem) {
+  .product_box .gallery_thumbs {
+    --columns-count: 3;
+  }
 }
 .product_box .gallery_thumbs .item {
-  width: 120px;
   min-height: 0;
   padding: 0;
   border: 0;

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { bezier, EASE, GLIDE, goToDuration, locationAt, releaseDuration, releaseTarget, resist, velocity } from '../src/motion.js';
+import { bezier, EASE, GLIDE, goToDuration, releaseDuration, releaseTarget, velocity } from '../src/scripts/motion.js';
 
 // Find the easing value by a dense sample of the curve
 const sample = ([x1, y1, x2, y2], x) => {
@@ -26,7 +26,6 @@ test('easing', () => {
 	}
 
 	assert.ok(Math.abs(bezier([0.25, 0.25, 0.75, 0.75])(0.5) - 0.5) < 1e-4);
-	assert.equal(locationAt(0, -300, 200, 400, bezier([0, 0, 1, 1])), -150);
 });
 
 test('durations', () => {
@@ -86,10 +85,4 @@ test('release target', () => {
 	const loop = { snaps, current: 3, from: -960, period: 1280 };
 	assert.deepEqual(releaseTarget({ ...loop, location: -1000, velocity: -1 }), { location: -1280, snap: 0 });
 	assert.deepEqual(releaseTarget({ ...loop, current: 0, from: 0, location: 40, velocity: 1 }), { location: 320, snap: 3 });
-});
-
-test('rubber band', () => {
-	assert.equal(resist(40, -960, 0), 10);
-	assert.equal(resist(-1000, -960, 0), -970);
-	assert.equal(resist(-500, -960, 0), -500);
 });

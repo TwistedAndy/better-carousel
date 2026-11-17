@@ -1,21 +1,23 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { canLoop, cloneCount, normalize, pathFits, period, placement, steps } from '../src/loop.js';
+import { cloneCount, normalize, pathFits, placement, steps } from '../src/scripts/loop.js';
 
 const row = (count, size = 300, gap = 20) => Array.from({ length: count }, (item, index) => ({ start: index * (size + gap), end: index * (size + gap) + size }));
 
 const view = 940;
 
-test('period and the loop condition', () => {
-	assert.equal(period(0, 1900, 20), 1920);
-	assert.equal(canLoop(1920, view, 300), true);
-	assert.equal(canLoop(960, view, 300), false);
+test('the loop condition', () => {
+	// The slides can loop with no clones only if the period is at least the viewport plus the largest slide
+	assert.equal(cloneCount(1920, view, 300), 0);
+	assert.equal(cloneCount(1240, view, 300), 0);
+	assert.equal(cloneCount(1239, view, 300), 1);
+	assert.equal(cloneCount(960, view, 300), 1);
 });
 
 test('clone count', () => {
-	assert.equal(cloneCount(period(0, 940, 20), view, 300), 1);
-	assert.equal(cloneCount(period(0, 3180, 20), view, 300), 0);
-	assert.equal(cloneCount(period(0, 300, 20), view, 300), 3);
+	assert.equal(cloneCount(960, view, 300), 1);
+	assert.equal(cloneCount(3200, view, 300), 0);
+	assert.equal(cloneCount(320, view, 300), 3);
 	assert.equal(cloneCount(0, view, 300), 0);
 });
 

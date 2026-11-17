@@ -1,13 +1,13 @@
-// The reference data of the docs. scripts/docs.mjs writes these tables into README.md and index.html.
+// The reference data of the docs. docs.mjs writes these tables into README.md and index.html, and the options into the types.
 //
 // Text format: `code` and [label](#anchor). An anchor that README.md does not have links to the docs site.
-// "example" is the id of a live example on the docs site.
+// "example" is the id of a live example on the docs site. "ts" is the TypeScript type, if the "type" text is not TypeScript.
 
 export const site = 'https://twistedandy.github.io/better-carousel/';
 
 export const options = [
 	{ name: 'axis', type: "`'x'`, `'y'`, `'auto'`", default: 'auto', text: "The axis of the motion. With `'auto'`, the CSS of the container sets the axis.", example: 'switch' },
-	{ name: 'align', type: "`'start'`, `'center'`, `'end'`, `'auto'`, `function`", default: 'auto', text: "The position of the selected snap in the viewport. A function gets `(viewSize, snapSize, index)` and returns the offset in px. With `'auto'`, `justify-content` sets the alignment.", example: 'center' },
+	{ name: 'align', ts: "'start' | 'center' | 'end' | 'auto' | ((viewSize: number, snapSize: number, index: number) => number)", type: "`'start'`, `'center'`, `'end'`, `'auto'`, `function`", default: 'auto', text: "The position of the selected snap in the viewport. A function gets `(viewSize, snapSize, index)` and returns the offset in px. With `'auto'`, `justify-content` sets the alignment.", example: 'center' },
 	{ name: 'direction', type: "`'ltr'`, `'rtl'`, `'auto'`", default: 'auto', text: "The text direction. With `'auto'`, the CSS `direction` sets it." },
 	{ name: 'loop', type: '`boolean`', default: false, text: 'The first slide comes after the last slide.', example: 'loop' },
 	{ name: 'clones', type: "`'auto'`, `'fill'`, `false`", default: 'auto', text: "`'auto'`: add clones only if the loop needs them. `'fill'`: add clones that fill the window. `false`: add no clones.", example: 'clones' },
@@ -26,24 +26,25 @@ export const options = [
 	{ name: 'focus', type: '`boolean`', default: true, text: 'Go to a slide when it gets the keyboard focus.', example: 'controls' },
 	{ name: 'inViewThreshold', type: '`number`', default: 0, text: 'The part of a slide, from 0 to 1, that must show for `slidesInView()`.' },
 	{ name: 'active', type: '`boolean`', default: true, text: '`false`: do not start the carousel. Use it in `breakpoints`.' },
-	{ name: 'breakpoints', type: '`object`', default: {}, text: "The options for media queries: `{ '(min-width: 768px)': { loop: true } }`." },
+	{ name: 'breakpoints', ts: "Record<string, Options>", type: '`object`', default: {}, text: "The options for media queries: `{ '(min-width: 768px)': { loop: true } }`." },
 	{ name: 'container', type: '`string`', default: null, text: 'The selector of the container, if the element is the root.' },
 	{ name: 'slides', type: '`string`', default: null, text: 'The selector of the slides. With `null`, all children of the container are slides.' },
 	{ name: 'wrap', type: '`boolean`', default: true, text: 'Add the root and the viewport if the page does not have them.' },
 	{ name: 'arrows', type: '`boolean`, `Element`, `string`', default: true, text: 'Add the arrows to the root. `false`: no arrows. An element or a selector: add the arrows to that element.', example: 'heading' },
-	{ name: 'dots', type: '`boolean`, `Element`, `string`', default: true, text: 'Add the dots. The values are the same as for `arrows`.' },
+	{ name: 'dots', type: '`boolean`, `Element`, `string`', default: true, text: 'Add the dots. The values are the same as for `arrows`.', example: 'heading' },
 	{
 		name: 'labels',
+		ts: "Labels",
 		type: '`object`',
 		default: { carousel: 'Carousel', slide: '%d of %n', prev: 'Previous slide', next: 'Next slide', dot: 'Go to slide %d', play: 'Start the slide show', pause: 'Stop the slide show' },
 		shown: 'English',
 		text: "The texts for screen readers: `carousel`, `slide` (`'%d of %n'`), `prev`, `next`, `dot` (`'Go to slide %d'`), `play`, `pause`. `%d` is the slide number, and `%n` is the number of slides."
 	},
-	{ name: 'classes', type: '`string`, `object`', default: null, text: "A class prefix such as `'embla'`, or an object with the names to change. The [Classes](#classes) table gives all names.", example: 'embla' },
+	{ name: 'classes', ts: "string | ClassNames | null", type: '`string`, `object`', default: null, text: "A class prefix such as `'embla'`, or an object with the names to change. The [Classes](#classes) table gives all names.", example: 'embla' },
 	{ name: 'state', type: '`string`', default: '', text: "The prefix of the state classes, such as `'is_'`.", example: 'state' },
-	{ name: 'sync', type: 'carousel, `Element`, `string`', default: null, text: 'Another carousel, its container or a selector. This carousel follows the selected slide of the other carousel. A click on a slide selects it in the other carousel.', example: 'product' },
-	{ name: 'autoplay', type: '`boolean`, `number`, `object`', default: false, text: 'Go to the next slide after a delay. `true`, a delay in ms, or an object.', example: 'autoplay' },
-	{ name: 'autoScroll', type: '`boolean`, `number`, `object`', default: false, text: 'Move the slides at a constant speed. `true`, a speed in px/s, or an object.', example: 'logos' },
+	{ name: 'sync', ts: "Carousel | Element | string | null", type: 'carousel, `Element`, `string`', default: null, text: 'Another carousel, its container or a selector. This carousel follows the selected slide of the other carousel. A click on a slide selects it in the other carousel.', example: 'product' },
+	{ name: 'autoplay', ts: "boolean | number | AutoplayOptions", type: '`boolean`, `number`, `object`', default: false, text: 'Go to the next slide after a delay. `true`, a delay in ms, or an object.', example: 'autoplay' },
+	{ name: 'autoScroll', ts: "boolean | number | AutoScrollOptions", type: '`boolean`, `number`, `object`', default: false, text: 'Move the slides at a constant speed. `true`, a speed in px/s, or an object.', example: 'logos' },
 	{ name: 'autoHeight', type: '`boolean`', default: false, text: 'The viewport gets the height of the tallest slide in view.', example: 'height' }
 ];
 
@@ -108,6 +109,7 @@ export const classes = [
 // The differences from Embla 9 and Embla 8. "version" is the Embla version that has the name.
 export const embla = [
 	{ version: '9', name: 'Handler `(api, event)`', text: 'Handler `(carousel, name)`. The events have no `detail`.' },
+	{ version: '9', name: 'Autoplay `delay` as a function that gives one delay for each snap', text: 'Autoplay `delay` as an array with one delay for each snap' },
 	{ version: '8', name: 'Option `startIndex`', text: '`startSnap`' },
 	{ version: '8', name: 'Options `watchDrag`, `watchResize`, `watchSlides`, `watchFocus`', text: '`draggable`, `resize`, `slideChanges`, `focus`' },
 	{ version: '8', name: '`scrollTo(index, jump)`', text: '`goTo(index, instant)`' },

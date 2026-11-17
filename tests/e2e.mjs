@@ -123,7 +123,7 @@ for (const [id, key, skip] of [['start', 'start', 'last'], ['center', 'center', 
 	await new Promise((resolve) => setTimeout(resolve, 1300));
 	await frames();
 	const value = await page.evaluate(() => {
-		const carousel = window.byId('auto'),
+		const carousel = window.byId('autocenter'),
 			list = [];
 		carousel.snapList().forEach((snap, index) => {
 			carousel.goTo(index, true);
@@ -651,10 +651,10 @@ for (const [id, limit] of [['loop', 21], ['clones', 21]]) {
 {
 	await page.setViewport({ width: 1200, height: 900 });
 	await reload();
-	await page.evaluate(() => window.byId('auto').goToSlide(3, true));
+	await page.evaluate(() => window.byId('autocenter').goToSlide(3, true));
 	await wait(1600);
 	const late = await page.evaluate(() => {
-		const carousel = window.byId('auto');
+		const carousel = window.byId('autocenter');
 		return { slide: carousel.selectedSlide(), center: Math.round(window.box(carousel).center), width: Math.round(carousel.slideNodes()[3].getBoundingClientRect().width) };
 	});
 	check('dynamic widths: the selected slide stays in the center when late images change the widths', late.slide === 3 && Math.abs(late.center) <= 1 && late.width > 400, JSON.stringify(late));
