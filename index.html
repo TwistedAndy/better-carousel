@@ -75,8 +75,8 @@
 	</div>
 	<div class="content">
 	<h3>Script tag</h3><p>Add the stylesheet and the script to the page. The script adds the global <code>BetterCarousel</code> function. This page uses the library in this way.</p><div class="code"><div class="heading"><span class="label">HTML</span><button class="button" type="button" data-copy aria-label="Copy HTML code">Copy</button></div><pre><code class="language-html">&lt;link rel="stylesheet" href="dist/better-carousel.css"&gt;
-&lt;script src="dist/better-carousel.min.js"&gt;&lt;/script&gt;</code></pre></div><h3>npm</h3><p>Install the package. Then import the script and the stylesheet.</p><div class="code"><div class="heading"><span class="label">Terminal</span><button class="button" type="button" data-copy aria-label="Copy Terminal code">Copy</button></div><pre><code class="language-bash">npm install better-carousel</code></pre></div><div class="code"><div class="heading"><span class="label">JavaScript</span><button class="button" type="button" data-copy aria-label="Copy JavaScript code">Copy</button></div><pre><code class="language-javascript">import BetterCarousel from 'better-carousel';
-import 'better-carousel/css';</code></pre></div><h3>Files</h3><div class="table"><table><thead><tr><th>File</th><th>Format</th><th>Use</th></tr></thead><tbody><tr><td><code>dist/better-carousel.min.js</code></td><td>IIFE, minified</td><td>For a script tag. It adds the global <code>BetterCarousel</code> function.</td></tr><tr><td><code>dist/better-carousel.js</code></td><td>ES module</td><td>For a bundler: <code>import BetterCarousel from 'better-carousel'</code>.</td></tr><tr><td><code>dist/better-carousel.css</code></td><td>CSS</td><td>The styles with the default class names.</td></tr><tr><td><code>src/types/better-carousel.d.ts</code></td><td>TypeScript</td><td>The types. TypeScript and the editors find them automatically.</td></tr><tr><td><code>src/styles/better-carousel.scss</code></td><td>SCSS</td><td>The styles with your class names (see <a href="#styling">Styling</a>).</td></tr></tbody></table></div>
+&lt;script src="dist/better-carousel.min.js"&gt;&lt;/script&gt;</code></pre></div><h3>npm</h3><p>Install the package. Then import the script and the stylesheet.</p><div class="code"><div class="heading"><span class="label">Terminal</span><button class="button" type="button" data-copy aria-label="Copy Terminal code">Copy</button></div><pre><code class="language-bash">npm install @twistedandy/better-carousel</code></pre></div><div class="code"><div class="heading"><span class="label">JavaScript</span><button class="button" type="button" data-copy aria-label="Copy JavaScript code">Copy</button></div><pre><code class="language-javascript">import BetterCarousel from '@twistedandy/better-carousel';
+import '@twistedandy/better-carousel/css';</code></pre></div><h3>Files</h3><div class="table"><table><thead><tr><th>File</th><th>Format</th><th>Use</th></tr></thead><tbody><tr><td><code>dist/better-carousel.min.js</code></td><td>IIFE, minified</td><td>For a script tag. It adds the global <code>BetterCarousel</code> function.</td></tr><tr><td><code>dist/better-carousel.js</code></td><td>ES module</td><td>For a bundler: <code>import BetterCarousel from '@twistedandy/better-carousel'</code>.</td></tr><tr><td><code>dist/better-carousel.css</code></td><td>CSS</td><td>The styles with the default class names.</td></tr><tr><td><code>src/types/better-carousel.d.ts</code></td><td>TypeScript</td><td>The types. TypeScript and the editors find them automatically.</td></tr><tr><td><code>src/styles/better-carousel.scss</code></td><td>SCSS</td><td>The styles with your class names (see <a href="#styling">Styling</a>).</td></tr></tbody></table></div>
 	</div>
 </section>
 
@@ -215,8 +215,8 @@ $better-arrow: url(arrow.svg);
 	</div>
 	<div class="content">
 	<ol><li>Render the root and the viewport in the component.</li><li>When the component mounts, start the carousel on the viewport. The library finds the container in the viewport and adds no wrapper.</li><li>Before the component unmounts, destroy the carousel.</li></ol><h3>React</h3><p>Start the carousel in <code>useEffect</code>. Destroy it in the cleanup function. In Strict Mode, React runs each effect two times in development. The cleanup function destroys the first carousel, and the second carousel replaces it.</p><div class="code"><div class="heading"><span class="label">React</span><button class="button" type="button" data-copy aria-label="Copy React code">Copy</button></div><pre><code class="language-jsx">import { useEffect, useRef } from 'react';
-import BetterCarousel from 'better-carousel';
-import 'better-carousel/css';
+import BetterCarousel from '@twistedandy/better-carousel';
+import '@twistedandy/better-carousel/css';
 
 export default function Carousel({ slides, options }) {
   const viewport = useRef(null);
@@ -245,8 +245,8 @@ export default function Carousel({ slides, options }) {
   );
 }</code></pre></div><h3>Vue</h3><p>Start the carousel in <code>onMounted</code>. Destroy it in <code>onBeforeUnmount</code>.</p><div class="code"><div class="heading"><span class="label">Vue</span><button class="button" type="button" data-copy aria-label="Copy Vue code">Copy</button></div><pre><code class="language-html">&lt;script setup&gt;
 import { onMounted, onBeforeUnmount, ref } from 'vue';
-import BetterCarousel from 'better-carousel';
-import 'better-carousel/css';
+import BetterCarousel from '@twistedandy/better-carousel';
+import '@twistedandy/better-carousel/css';
 
 const props = defineProps({ slides: Array, options: Object });
 const viewport = ref(null);
@@ -271,8 +271,8 @@ onBeforeUnmount(() =&gt; carousel?.destroy());
   &lt;/div&gt;
 &lt;/template&gt;</code></pre></div><h3>Svelte</h3><p>Start the carousel in <code>onMount</code>. The function that <code>onMount</code> returns destroys the carousel. This example is for Svelte 5. For Svelte 4, use <code>export let slides</code> and <code>export let options</code> in place of <code>$props()</code>.</p><div class="code"><div class="heading"><span class="label">Svelte</span><button class="button" type="button" data-copy aria-label="Copy Svelte code">Copy</button></div><pre><code class="language-html">&lt;script&gt;
   import { onMount } from 'svelte';
-  import BetterCarousel from 'better-carousel';
-  import 'better-carousel/css';
+  import BetterCarousel from '@twistedandy/better-carousel';
+  import '@twistedandy/better-carousel/css';
 
   let { slides, options } = $props();
   let viewport;
@@ -294,8 +294,8 @@ onBeforeUnmount(() =&gt; carousel?.destroy());
     &lt;/div&gt;
   &lt;/div&gt;
 &lt;/div&gt;</code></pre></div><h3>Solid</h3><p>Start the carousel in <code>onMount</code>. Destroy it with <code>onCleanup</code>.</p><div class="code"><div class="heading"><span class="label">Solid</span><button class="button" type="button" data-copy aria-label="Copy Solid code">Copy</button></div><pre><code class="language-jsx">import { onMount, onCleanup, For } from 'solid-js';
-import BetterCarousel from 'better-carousel';
-import 'better-carousel/css';
+import BetterCarousel from '@twistedandy/better-carousel';
+import '@twistedandy/better-carousel/css';
 
 export default function Carousel(props) {
   let viewport;

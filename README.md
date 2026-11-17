@@ -43,21 +43,21 @@ Load the minified script and the stylesheet from jsDelivr. The script adds the g
 Or install the package from npm, and import the script and the stylesheet with a bundler:
 
 ```sh
-npm install better-carousel
+npm install @twistedandy/better-carousel
 ```
 
 ```js
-import BetterCarousel from 'better-carousel'
-import 'better-carousel/css'
+import BetterCarousel from '@twistedandy/better-carousel'
+import '@twistedandy/better-carousel/css'
 ```
 
 | File | Format | Use |
 | --- | --- | --- |
 | `dist/better-carousel.min.js` | IIFE, minified | For a `script` tag. It adds the global `BetterCarousel` function. |
-| `dist/better-carousel.js` | ES module | For a bundler: `import BetterCarousel from 'better-carousel'`. |
+| `dist/better-carousel.js` | ES module | For a bundler: `import BetterCarousel from '@twistedandy/better-carousel'`. |
 | `dist/better-carousel.css` | CSS | The styles with the default class names. |
 | `src/types/better-carousel.d.ts` | TypeScript | The types. TypeScript and the editors find them automatically. |
-| `src/styles/better-carousel.scss` | SCSS | The styles with your class names: `better-carousel/scss`. See [Styling](#styling). |
+| `src/styles/better-carousel.scss` | SCSS | The styles with your class names: `@twistedandy/better-carousel/scss`. See [Styling](#styling). |
 
 ## Quick start
 
@@ -169,8 +169,8 @@ In Strict Mode, React runs each effect two times in development. The cleanup fun
 
 ```jsx
 import { useEffect, useRef } from 'react'
-import BetterCarousel from 'better-carousel'
-import 'better-carousel/css'
+import BetterCarousel from '@twistedandy/better-carousel'
+import '@twistedandy/better-carousel/css'
 
 export default function Carousel({ slides, options }) {
   const viewport = useRef(null)
@@ -205,8 +205,8 @@ export default function Carousel({ slides, options }) {
 ```vue
 <script setup>
 import { onMounted, onBeforeUnmount, ref } from 'vue'
-import BetterCarousel from 'better-carousel'
-import 'better-carousel/css'
+import BetterCarousel from '@twistedandy/better-carousel'
+import '@twistedandy/better-carousel/css'
 
 const props = defineProps({ slides: Array, options: Object })
 const viewport = ref(null)
@@ -239,8 +239,8 @@ This example is for Svelte 5. For Svelte 4, use `export let slides` and `export 
 ```svelte
 <script>
   import { onMount } from 'svelte'
-  import BetterCarousel from 'better-carousel'
-  import 'better-carousel/css'
+  import BetterCarousel from '@twistedandy/better-carousel'
+  import '@twistedandy/better-carousel/css'
 
   let { slides, options } = $props()
   let viewport
@@ -266,8 +266,8 @@ This example is for Svelte 5. For Svelte 4, use `export let slides` and `export 
 
 ```jsx
 import { onMount, onCleanup, For } from 'solid-js'
-import BetterCarousel from 'better-carousel'
-import 'better-carousel/css'
+import BetterCarousel from '@twistedandy/better-carousel'
+import '@twistedandy/better-carousel/css'
 
 export default function Carousel(props) {
   let viewport
