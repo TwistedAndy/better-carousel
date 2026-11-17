@@ -20,12 +20,23 @@ export function nav(context) {
 		box = optionElement(options.dots, root),
 		buttons = [],
 		dots = [],
-		list = box && create('div', cls.dots);
+		// The window of 5 dots, or all dots with dotsStyle: 'all'
+		windowed = options.dotsStyle !== 'all',
+		// The window of the dots, the track that slides in it, and the marker of the selected dot
+		list = box && create('div', windowed ? cls.dots : cls.dots + ' ' + cls.dotsAll),
+		track = list && create('div', cls.dotsTrack);
 
 	let marks = new Map();
 
 	if (!arrows && !box) {
 		return;
+	}
+
+	// Add the window of the dots now: its CSS height is fixed, so the dots that the first measure adds do not shift the page
+	if (list) {
+		track.append(create('span', cls.dotsMarker));
+		list.append(track);
+		box.append(list);
 	}
 
 	if (arrows) {
@@ -49,7 +60,8 @@ export function nav(context) {
 				button.remove();
 			} else {
 				if (!button.isConnected) {
-					arrows.append(button);
+					// Before the dots, for the tab order
+					list?.parentNode === arrows ? list.before(button) : arrows.append(button);
 				}
 				const disabled = !(index ? api.canGoToNext() : api.canGoToPrev());
 				if (button.disabled !== disabled) {
@@ -79,10 +91,12 @@ export function nav(context) {
 			dot.setAttribute('aria-label', labels.dot.replace('%d', index + 1));
 			dot.setAttribute('aria-controls', context.container.id);
 			// The window of the dots hides the dots out of the zoom: keep them out of the tab order
-			dot.tabIndex = -1;
+			if (windowed) {
+				dot.tabIndex = -1;
+			}
 			dot.addEventListener('click', () => api.goToSnap(index));
 			dots.push(dot);
-			list.append(dot);
+			track.append(dot);
 		}
 
 		if (!list.isConnected) {
@@ -102,7 +116,7 @@ export function nav(context) {
 			if (next.get(index) !== name) {
 				setClass(dots[index], name, false);
 				setAttribute(dots[index], 'aria-current', false);
-				dots[index].tabIndex = -1;
+				dots[index].tabIndex = windowed ? -1 : 0;
 			}
 		});
 
@@ -114,10 +128,17 @@ export function nav(context) {
 
 		marks = next;
 
-		// Center the group of up to 5 dots in the window of the dots. The CSS moves the dots with "translate".
-		const shift = 2 - (Math.max(0, selected - 2) + Math.min(count - 1, selected + 2)) / 2;
-		if (list.style.getPropertyValue('--better-shift') !== String(shift)) {
-			list.style.setProperty('--better-shift', shift);
+		// Center the group of up to 5 dots in the window of the dots, and move the marker to the selected dot. The CSS moves the track and the marker with "translate".
+		if (windowed) {
+			variable('--better-shift', 2 - (Math.max(0, selected - 2) + Math.min(count - 1, selected + 2)) / 2);
+		}
+		variable('--better-dot', selected);
+	}
+
+	// Set a CSS variable on the window of the dots, if its value changes
+	function variable(name, value) {
+		if (list.style.getPropertyValue(name) !== String(value)) {
+			list.style.setProperty(name, value);
 		}
 	}
 

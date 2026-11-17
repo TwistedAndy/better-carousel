@@ -1,0 +1,12 @@
+/* The slide sizes and the gap of Better Carousel come from CSS, as in its README */
+.items {
+	display: flex;
+	width: calc(100% + var(--gap));
+	margin-right: calc(-1 * var(--gap));
+}
+
+.items .item {
+	flex: none;
+	width: calc(100% / var(--per) - var(--gap));
+	margin-right: var(--gap);
+}

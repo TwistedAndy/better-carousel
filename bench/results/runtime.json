@@ -1,0 +1,4955 @@
+{
+	"environment": {
+		"date": "2026-11-17T17:51:07.090Z",
+		"browser": "Chrome/157.0.8103.51",
+		"headless": true,
+		"os": "Windows_NT 10.0.26300 x64",
+		"cpu": "12th Gen Intel(R) Core(TM) i9-12900HK, 20 threads",
+		"memory": "64 GB",
+		"node": "v26.11.1",
+		"puppeteer": "25.17.0",
+		"esbuild": "0.28.2",
+		"commit": "084e03a",
+		"dirty": true,
+		"power": "Not measured. Run on mains power, with other apps closed."
+	},
+	"settings": {
+		"rounds": 3,
+		"seed": 1,
+		"profiles": {
+			"mobile": {
+				"viewport": {
+					"width": 412,
+					"height": 823,
+					"deviceScaleFactor": 1.75,
+					"isMobile": true,
+					"hasTouch": true
+				},
+				"userAgent": "Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36",
+				"cpu": 4,
+				"per": 1
+			},
+			"desktop": {
+				"viewport": {
+					"width": 1350,
+					"height": 940,
+					"deviceScaleFactor": 1,
+					"isMobile": false,
+					"hasTouch": false
+				},
+				"userAgent": null,
+				"cpu": 1,
+				"per": 3
+			}
+		},
+		"libs": [
+			"better",
+			"swiper",
+			"embla",
+			"glide",
+			"none"
+		],
+		"scenarios": {
+			"load": {
+				"count": 10,
+				"autoplay": 0,
+				"settle": 1000
+			},
+			"idle": {
+				"count": 1,
+				"autoplay": 0,
+				"settle": 1000,
+				"action": "(page) => sleep(2000)"
+			},
+			"navigate": {
+				"count": 1,
+				"autoplay": 0,
+				"settle": 1000,
+				"action": "(page) => steps(page, 6, 700)"
+			},
+			"autoplay": {
+				"count": 1,
+				"autoplay": 1500,
+				"settle": 1000,
+				"action": "(page) => sleep(4500)"
+			},
+			"drag": {
+				"count": 1,
+				"autoplay": 0,
+				"settle": 1000,
+				"action": "(page, profile) => drags(page, profile, 5)"
+			},
+			"busy": {
+				"count": 1,
+				"autoplay": 0,
+				"settle": 1000,
+				"busy": true,
+				"action": "(page) => steps(page, 6, 700)"
+			}
+		},
+		"headless": true,
+		"chrome": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+	},
+	"results": [
+		{
+			"lib": "none",
+			"profile": "mobile",
+			"scenario": "load",
+			"errors": [],
+			"init": 0.3999999761581421,
+			"tbt": 0,
+			"cls": 0,
+			"script": 9.742,
+			"task": 116.509,
+			"layouts": 4,
+			"styles": 4,
+			"layoutTime": 22.988000000000003,
+			"styleTime": 3.305,
+			"nodes": 550,
+			"heap": 759.3828125,
+			"round": 0
+		},
+		{
+			"lib": "embla",
+			"profile": "mobile",
+			"scenario": "load",
+			"errors": [],
+			"init": 57,
+			"tbt": 20,
+			"cls": 0,
+			"script": 44.205,
+			"task": 190.21699999999998,
+			"layouts": 25,
+			"styles": 24,
+			"layoutTime": 35.259,
+			"styleTime": 9.908999999999999,
+			"nodes": 860,
+			"heap": 1216.9765625,
+			"round": 0
+		},
+		{
+			"lib": "swiper",
+			"profile": "mobile",
+			"scenario": "load",
+			"errors": [],
+			"init": 98.29999995231628,
+			"tbt": 61,
+			"cls": 0,
+			"script": 83.97699999999999,
+			"task": 234.631,
+			"layouts": 23,
+			"styles": 135,
+			"layoutTime": 25.823999999999998,
+			"styleTime": 18.598,
+			"nodes": 740,
+			"heap": 1476.37109375,
+			"round": 0
+		},
+		{
+			"lib": "better",
+			"profile": "mobile",
+			"scenario": "load",
+			"errors": [],
+			"init": 12.700000047683716,
+			"tbt": 27,
+			"cls": 0,
+			"script": 38.919000000000004,
+			"task": 202.095,
+			"layouts": 5,
+			"styles": 5,
+			"layoutTime": 30.713,
+			"styleTime": 17.769,
+			"nodes": 843,
+			"heap": 1136.625,
+			"round": 0
+		},
+		{
+			"lib": "glide",
+			"profile": "mobile",
+			"scenario": "load",
+			"errors": [],
+			"init": 92.39999997615814,
+			"tbt": 59,
+			"cls": 0,
+			"script": 45.824,
+			"task": 221.035,
+			"layouts": 33,
+			"styles": 49,
+			"layoutTime": 43.553000000000004,
+			"styleTime": 27.778000000000002,
+			"nodes": 930,
+			"heap": 1119.75390625,
+			"round": 0
+		},
+		{
+			"lib": "better",
+			"profile": "mobile",
+			"scenario": "idle",
+			"errors": [],
+			"seconds": 2.008,
+			"task": 2.6319999999999952,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 0,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0
+			],
+			"cpu": 0.13107569721115514,
+			"round": 0
+		},
+		{
+			"lib": "embla",
+			"profile": "mobile",
+			"scenario": "idle",
+			"errors": [],
+			"seconds": 2.015,
+			"task": 3.249000000000002,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 0,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0
+			],
+			"cpu": 0.16124069478908196,
+			"round": 0
+		},
+		{
+			"lib": "glide",
+			"profile": "mobile",
+			"scenario": "idle",
+			"errors": [],
+			"seconds": 2.01,
+			"task": 2.2230000000000305,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 0,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0
+			],
+			"cpu": 0.11059701492537467,
+			"round": 0
+		},
+		{
+			"lib": "swiper",
+			"profile": "mobile",
+			"scenario": "idle",
+			"errors": [],
+			"seconds": 2.004,
+			"task": 2.0820000000000007,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 3,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0
+			],
+			"cpu": 0.10389221556886231,
+			"round": 0
+		},
+		{
+			"lib": "none",
+			"profile": "mobile",
+			"scenario": "idle",
+			"errors": [],
+			"seconds": 2.006,
+			"task": 4.186000000000009,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 6,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0
+			],
+			"cpu": 0.20867397806580307,
+			"round": 0
+		},
+		{
+			"lib": "none",
+			"profile": "mobile",
+			"scenario": "navigate",
+			"errors": [],
+			"seconds": 4.268,
+			"task": 14.170999999999989,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 3,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0,
+				0,
+				0,
+				0,
+				0,
+				0
+			],
+			"cpu": 0.33202905342080574,
+			"round": 0
+		},
+		{
+			"lib": "better",
+			"profile": "mobile",
+			"scenario": "navigate",
+			"errors": [],
+			"seconds": 4.3,
+			"task": 174.398,
+			"script": 7.314000000000001,
+			"layoutTime": 2.950000000000001,
+			"styleTime": 24.598000000000003,
+			"layouts": 6,
+			"styles": 35,
+			"paints": 12,
+			"frames": {
+				"updates": 256,
+				"presented": 250,
+				"partial": 0,
+				"dropped": 3
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 4.055767441860465,
+			"round": 0
+		},
+		{
+			"lib": "swiper",
+			"profile": "mobile",
+			"scenario": "navigate",
+			"errors": [],
+			"seconds": 4.298,
+			"task": 154.926,
+			"script": 4.000999999999998,
+			"layoutTime": 2.6470000000000002,
+			"styleTime": 15.148000000000001,
+			"layouts": 6,
+			"styles": 34,
+			"paints": 12,
+			"frames": {
+				"updates": 264,
+				"presented": 252,
+				"partial": 0,
+				"dropped": 8
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 3.604606793857608,
+			"round": 0
+		},
+		{
+			"lib": "glide",
+			"profile": "mobile",
+			"scenario": "navigate",
+			"errors": [],
+			"seconds": 4.287,
+			"task": 132.486,
+			"script": 3.016999999999999,
+			"layoutTime": 0,
+			"styleTime": 35.138000000000005,
+			"layouts": 0,
+			"styles": 58,
+			"paints": 22,
+			"frames": {
+				"updates": 437,
+				"presented": 421,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 3.0904128761371585,
+			"round": 0
+		},
+		{
+			"lib": "embla",
+			"profile": "mobile",
+			"scenario": "navigate",
+			"errors": [],
+			"seconds": 4.272,
+			"task": 1181.597,
+			"script": 181.516,
+			"layoutTime": 0,
+			"styleTime": 147.475,
+			"layouts": 0,
+			"styles": 428,
+			"paints": 12,
+			"frames": {
+				"updates": 850,
+				"presented": 425,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 27.659105805243446,
+			"round": 0
+		},
+		{
+			"lib": "glide",
+			"profile": "mobile",
+			"scenario": "autoplay",
+			"errors": [],
+			"seconds": 4.506,
+			"task": 43.70899999999998,
+			"script": 4.370000000000003,
+			"layoutTime": 0,
+			"styleTime": 10.149000000000001,
+			"layouts": 0,
+			"styles": 16,
+			"paints": 4,
+			"frames": {
+				"updates": 113,
+				"presented": 110,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				2
+			],
+			"cpu": 0.9700177541056365,
+			"round": 0
+		},
+		{
+			"lib": "embla",
+			"profile": "mobile",
+			"scenario": "autoplay",
+			"errors": [],
+			"seconds": 4.516,
+			"task": 766.141,
+			"script": 151.639,
+			"layoutTime": 0,
+			"styleTime": 105.76299999999999,
+			"layouts": 0,
+			"styles": 300,
+			"paints": 6,
+			"frames": {
+				"updates": 419,
+				"presented": 299,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				3
+			],
+			"cpu": 16.965035429583704,
+			"round": 0
+		},
+		{
+			"lib": "none",
+			"profile": "mobile",
+			"scenario": "autoplay",
+			"errors": [],
+			"seconds": 4.512,
+			"task": 5.631999999999998,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 2,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0
+			],
+			"cpu": 0.12482269503546095,
+			"round": 0
+		},
+		{
+			"lib": "swiper",
+			"profile": "mobile",
+			"scenario": "autoplay",
+			"errors": [],
+			"seconds": 4.506,
+			"task": 761.817,
+			"script": 136.21899999999997,
+			"layoutTime": 1.5839999999999985,
+			"styleTime": 51.62500000000001,
+			"layouts": 3,
+			"styles": 105,
+			"paints": 6,
+			"frames": {
+				"updates": 103,
+				"presented": 103,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				3
+			],
+			"cpu": 16.906724367509987,
+			"round": 0
+		},
+		{
+			"lib": "better",
+			"profile": "mobile",
+			"scenario": "autoplay",
+			"errors": [],
+			"seconds": 4.512,
+			"task": 25.91099999999999,
+			"script": 4.222,
+			"layoutTime": 0.38900000000000046,
+			"styleTime": 2.8489999999999993,
+			"layouts": 1,
+			"styles": 6,
+			"paints": 2,
+			"frames": {
+				"updates": 43,
+				"presented": 41,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				2
+			],
+			"cpu": 0.5742686170212763,
+			"round": 0
+		},
+		{
+			"lib": "glide",
+			"profile": "mobile",
+			"scenario": "drag",
+			"errors": [],
+			"seconds": 6.405,
+			"task": 708.097,
+			"script": 100.377,
+			"layoutTime": 0,
+			"styleTime": 217.217,
+			"layouts": 0,
+			"styles": 218,
+			"paints": 20,
+			"frames": {
+				"updates": 297,
+				"presented": 291,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5
+			],
+			"cpu": 11.055378610460577,
+			"round": 0
+		},
+		{
+			"lib": "none",
+			"profile": "mobile",
+			"scenario": "drag",
+			"errors": [],
+			"seconds": 6.866,
+			"task": 150.522,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 2,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0,
+				0,
+				0,
+				0,
+				0
+			],
+			"cpu": 2.1922808039615496,
+			"round": 0
+		},
+		{
+			"lib": "swiper",
+			"profile": "mobile",
+			"scenario": "drag",
+			"errors": [],
+			"seconds": 7.02,
+			"task": 464.06699999999995,
+			"script": 69.193,
+			"layoutTime": 2.1800000000000015,
+			"styleTime": 44.43,
+			"layouts": 5,
+			"styles": 112,
+			"paints": 10,
+			"frames": {
+				"updates": 290,
+				"presented": 288,
+				"partial": 0,
+				"dropped": 2
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5
+			],
+			"cpu": 6.610641025641025,
+			"round": 0
+		},
+		{
+			"lib": "better",
+			"profile": "mobile",
+			"scenario": "drag",
+			"errors": [],
+			"seconds": 6.576,
+			"task": 645.838,
+			"script": 62.495999999999995,
+			"layoutTime": 1.7789999999999992,
+			"styleTime": 104.256,
+			"layouts": 4,
+			"styles": 157,
+			"paints": 8,
+			"frames": {
+				"updates": 516,
+				"presented": 512,
+				"partial": 0,
+				"dropped": 3
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5
+			],
+			"cpu": 9.821137469586375,
+			"round": 0
+		},
+		{
+			"lib": "embla",
+			"profile": "mobile",
+			"scenario": "drag",
+			"errors": [],
+			"seconds": 7.262,
+			"task": 1981.6600000000003,
+			"script": 266.133,
+			"layoutTime": 0,
+			"styleTime": 227.103,
+			"layouts": 0,
+			"styles": 693,
+			"paints": 10,
+			"frames": {
+				"updates": 694,
+				"presented": 691,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5
+			],
+			"cpu": 27.28807491049298,
+			"round": 0
+		},
+		{
+			"lib": "none",
+			"profile": "mobile",
+			"scenario": "busy",
+			"errors": [],
+			"seconds": 4.403,
+			"task": 2791.385,
+			"script": 2741.2319999999995,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 2,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0,
+				0,
+				0,
+				0,
+				0,
+				0
+			],
+			"cpu": 63.39734272087214,
+			"round": 0
+		},
+		{
+			"lib": "embla",
+			"profile": "mobile",
+			"scenario": "busy",
+			"errors": [],
+			"seconds": 4.488,
+			"task": 4053.2330000000006,
+			"script": 3252.504,
+			"layoutTime": 0,
+			"styleTime": 97.33699999999999,
+			"layouts": 0,
+			"styles": 263,
+			"paints": 12,
+			"frames": {
+				"updates": 703,
+				"presented": 263,
+				"partial": 0,
+				"dropped": 184
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 90.31267825311944,
+			"round": 0
+		},
+		{
+			"lib": "glide",
+			"profile": "mobile",
+			"scenario": "busy",
+			"errors": [],
+			"seconds": 4.453,
+			"task": 3347.28,
+			"script": 3110.258,
+			"layoutTime": 0,
+			"styleTime": 36.853,
+			"layouts": 0,
+			"styles": 42,
+			"paints": 22,
+			"frames": {
+				"updates": 455,
+				"presented": 412,
+				"partial": 3,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 75.16909948349428,
+			"round": 0
+		},
+		{
+			"lib": "better",
+			"profile": "mobile",
+			"scenario": "busy",
+			"errors": [],
+			"seconds": 4.442,
+			"task": 3129.79,
+			"script": 2924.648,
+			"layoutTime": 5.8679999999999986,
+			"styleTime": 27.121,
+			"layouts": 6,
+			"styles": 26,
+			"paints": 12,
+			"frames": {
+				"updates": 274,
+				"presented": 251,
+				"partial": 6,
+				"dropped": 4
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 70.4590274651058,
+			"round": 0
+		},
+		{
+			"lib": "swiper",
+			"profile": "mobile",
+			"scenario": "busy",
+			"errors": [],
+			"seconds": 4.452,
+			"task": 3149.353,
+			"script": 2927.7929999999997,
+			"layoutTime": 3.266999999999999,
+			"styleTime": 13.545000000000002,
+			"layouts": 6,
+			"styles": 26,
+			"paints": 12,
+			"frames": {
+				"updates": 280,
+				"presented": 253,
+				"partial": 5,
+				"dropped": 7
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 70.7401841868823,
+			"round": 0
+		},
+		{
+			"lib": "swiper",
+			"profile": "desktop",
+			"scenario": "load",
+			"errors": [],
+			"init": 18.199999928474426,
+			"tbt": 0,
+			"cls": 0,
+			"script": 15.626999999999999,
+			"task": 50.421,
+			"layouts": 23,
+			"styles": 135,
+			"layoutTime": 5.571000000000001,
+			"styleTime": 3.359,
+			"nodes": 740,
+			"heap": 1494,
+			"round": 0
+		},
+		{
+			"lib": "none",
+			"profile": "desktop",
+			"scenario": "load",
+			"errors": [],
+			"init": 0.10000002384185791,
+			"tbt": 0,
+			"cls": 0,
+			"script": 2.1940000000000004,
+			"task": 36.686,
+			"layouts": 3,
+			"styles": 3,
+			"layoutTime": 5.753,
+			"styleTime": 0.7380000000000001,
+			"nodes": 550,
+			"heap": 719.38671875,
+			"round": 0
+		},
+		{
+			"lib": "better",
+			"profile": "desktop",
+			"scenario": "load",
+			"errors": [],
+			"init": 2.100000023841858,
+			"tbt": 0,
+			"cls": 0,
+			"script": 7.026,
+			"task": 39.718,
+			"layouts": 4,
+			"styles": 4,
+			"layoutTime": 6.881,
+			"styleTime": 3.254,
+			"nodes": 843,
+			"heap": 1095.8828125,
+			"round": 0
+		},
+		{
+			"lib": "glide",
+			"profile": "desktop",
+			"scenario": "load",
+			"errors": [],
+			"init": 17.700000047683716,
+			"tbt": 0,
+			"cls": 0,
+			"script": 9.234,
+			"task": 48.328,
+			"layouts": 33,
+			"styles": 51,
+			"layoutTime": 9.401,
+			"styleTime": 4.5440000000000005,
+			"nodes": 1230,
+			"heap": 1126.26953125,
+			"round": 0
+		},
+		{
+			"lib": "embla",
+			"profile": "desktop",
+			"scenario": "load",
+			"errors": [],
+			"init": 11.100000023841858,
+			"tbt": 0,
+			"cls": 0,
+			"script": 8.031,
+			"task": 41.519,
+			"layouts": 24,
+			"styles": 24,
+			"layoutTime": 7.625,
+			"styleTime": 2.079,
+			"nodes": 860,
+			"heap": 1192.92578125,
+			"round": 0
+		},
+		{
+			"lib": "swiper",
+			"profile": "desktop",
+			"scenario": "idle",
+			"errors": [],
+			"seconds": 2.01,
+			"task": 0.9349999999999983,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 0,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0
+			],
+			"cpu": 0.046517412935323306,
+			"round": 0
+		},
+		{
+			"lib": "better",
+			"profile": "desktop",
+			"scenario": "idle",
+			"errors": [],
+			"seconds": 2.006,
+			"task": 1.0420000000000011,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 0,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0
+			],
+			"cpu": 0.05194416749750754,
+			"round": 0
+		},
+		{
+			"lib": "none",
+			"profile": "desktop",
+			"scenario": "idle",
+			"errors": [],
+			"seconds": 2.006,
+			"task": 1.0539999999999994,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 0,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0
+			],
+			"cpu": 0.05254237288135591,
+			"round": 0
+		},
+		{
+			"lib": "embla",
+			"profile": "desktop",
+			"scenario": "idle",
+			"errors": [],
+			"seconds": 2.012,
+			"task": 0.8610000000000007,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 0,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0
+			],
+			"cpu": 0.04279324055666007,
+			"round": 0
+		},
+		{
+			"lib": "glide",
+			"profile": "desktop",
+			"scenario": "idle",
+			"errors": [],
+			"seconds": 2.007,
+			"task": 0.7759999999999989,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 0,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0
+			],
+			"cpu": 0.03866467364225206,
+			"round": 0
+		},
+		{
+			"lib": "better",
+			"profile": "desktop",
+			"scenario": "navigate",
+			"errors": [],
+			"seconds": 4.289,
+			"task": 34.009,
+			"script": 1.3099999999999996,
+			"layoutTime": 0.9159999999999993,
+			"styleTime": 5.502,
+			"layouts": 6,
+			"styles": 34,
+			"paints": 12,
+			"frames": {
+				"updates": 250,
+				"presented": 248,
+				"partial": 0,
+				"dropped": 1
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 0.7929354161809279,
+			"round": 0
+		},
+		{
+			"lib": "none",
+			"profile": "desktop",
+			"scenario": "navigate",
+			"errors": [],
+			"seconds": 4.275,
+			"task": 3.453000000000001,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 0,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0,
+				0,
+				0,
+				0,
+				0,
+				0
+			],
+			"cpu": 0.08077192982456144,
+			"round": 0
+		},
+		{
+			"lib": "embla",
+			"profile": "desktop",
+			"scenario": "navigate",
+			"errors": [],
+			"seconds": 4.296,
+			"task": 273.49899999999997,
+			"script": 31.49,
+			"layoutTime": 0,
+			"styleTime": 30.855,
+			"layouts": 0,
+			"styles": 430,
+			"paints": 12,
+			"frames": {
+				"updates": 428,
+				"presented": 428,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 6.366364059590316,
+			"round": 0
+		},
+		{
+			"lib": "swiper",
+			"profile": "desktop",
+			"scenario": "navigate",
+			"errors": [],
+			"seconds": 4.246,
+			"task": 29.097,
+			"script": 0.6530000000000008,
+			"layoutTime": 0.6719999999999998,
+			"styleTime": 3.2640000000000002,
+			"layouts": 6,
+			"styles": 37,
+			"paints": 12,
+			"frames": {
+				"updates": 259,
+				"presented": 251,
+				"partial": 0,
+				"dropped": 4
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 0.6852802637776731,
+			"round": 0
+		},
+		{
+			"lib": "glide",
+			"profile": "desktop",
+			"scenario": "navigate",
+			"errors": [],
+			"seconds": 4.294,
+			"task": 50.806000000000004,
+			"script": 1.4160000000000006,
+			"layoutTime": 0,
+			"styleTime": 11.795,
+			"layouts": 0,
+			"styles": 66,
+			"paints": 26,
+			"frames": {
+				"updates": 434,
+				"presented": 425,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 1.1831858407079647,
+			"round": 0
+		},
+		{
+			"lib": "none",
+			"profile": "desktop",
+			"scenario": "autoplay",
+			"errors": [],
+			"seconds": 4.504,
+			"task": 1.5219999999999991,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 0,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0
+			],
+			"cpu": 0.033792184724689145,
+			"round": 0
+		},
+		{
+			"lib": "embla",
+			"profile": "desktop",
+			"scenario": "autoplay",
+			"errors": [],
+			"seconds": 4.513,
+			"task": 259.367,
+			"script": 32.967999999999996,
+			"layoutTime": 0,
+			"styleTime": 26.993,
+			"layouts": 0,
+			"styles": 354,
+			"paints": 6,
+			"frames": {
+				"updates": 471,
+				"presented": 353,
+				"partial": 0,
+				"dropped": 1
+			},
+			"indexes": [
+				0,
+				4
+			],
+			"cpu": 5.747108353645026,
+			"round": 0
+		},
+		{
+			"lib": "better",
+			"profile": "desktop",
+			"scenario": "autoplay",
+			"errors": [],
+			"seconds": 4.517,
+			"task": 24.173000000000002,
+			"script": 4.730999999999999,
+			"layoutTime": 0.5970000000000003,
+			"styleTime": 4.061,
+			"layouts": 2,
+			"styles": 15,
+			"paints": 4,
+			"frames": {
+				"updates": 103,
+				"presented": 103,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				3
+			],
+			"cpu": 0.5351560770422847,
+			"round": 0
+		},
+		{
+			"lib": "glide",
+			"profile": "desktop",
+			"scenario": "autoplay",
+			"errors": [],
+			"seconds": 4.515,
+			"task": 31.981999999999996,
+			"script": 2.294,
+			"layoutTime": 0,
+			"styleTime": 7.269000000000001,
+			"layouts": 0,
+			"styles": 39,
+			"paints": 14,
+			"frames": {
+				"updates": 225,
+				"presented": 219,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				3
+			],
+			"cpu": 0.7083499446290142,
+			"round": 0
+		},
+		{
+			"lib": "swiper",
+			"profile": "desktop",
+			"scenario": "autoplay",
+			"errors": [],
+			"seconds": 4.519,
+			"task": 165.44,
+			"script": 26.321,
+			"layoutTime": 0.4310000000000004,
+			"styleTime": 10.445999999999998,
+			"layouts": 3,
+			"styles": 105,
+			"paints": 6,
+			"frames": {
+				"updates": 108,
+				"presented": 103,
+				"partial": 0,
+				"dropped": 5
+			},
+			"indexes": [
+				0,
+				3
+			],
+			"cpu": 3.6609869440141622,
+			"round": 0
+		},
+		{
+			"lib": "none",
+			"profile": "desktop",
+			"scenario": "drag",
+			"errors": [],
+			"seconds": 6.385,
+			"task": 44.968,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 0,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0,
+				0,
+				0,
+				0,
+				0
+			],
+			"cpu": 0.704275646045419,
+			"round": 0
+		},
+		{
+			"lib": "swiper",
+			"profile": "desktop",
+			"scenario": "drag",
+			"errors": [],
+			"seconds": 6.388,
+			"task": 170.77499999999998,
+			"script": 28.153000000000006,
+			"layoutTime": 1.6849999999999998,
+			"styleTime": 15.572,
+			"layouts": 8,
+			"styles": 117,
+			"paints": 16,
+			"frames": {
+				"updates": 292,
+				"presented": 292,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				2,
+				4,
+				6,
+				8,
+				0
+			],
+			"cpu": 2.6733719474013773,
+			"round": 0
+		},
+		{
+			"lib": "glide",
+			"profile": "desktop",
+			"scenario": "drag",
+			"errors": [],
+			"seconds": 6.403,
+			"task": 313.303,
+			"script": 31.405999999999995,
+			"layoutTime": 0,
+			"styleTime": 104.763,
+			"layouts": 0,
+			"styles": 246,
+			"paints": 22,
+			"frames": {
+				"updates": 315,
+				"presented": 302,
+				"partial": 0,
+				"dropped": 6
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5
+			],
+			"cpu": 4.893065750429486,
+			"round": 0
+		},
+		{
+			"lib": "better",
+			"profile": "desktop",
+			"scenario": "drag",
+			"errors": [],
+			"seconds": 6.412,
+			"task": 199.824,
+			"script": 17.328999999999997,
+			"layoutTime": 2.4490000000000007,
+			"styleTime": 42.551,
+			"layouts": 13,
+			"styles": 221,
+			"paints": 30,
+			"frames": {
+				"updates": 602,
+				"presented": 597,
+				"partial": 0,
+				"dropped": 4
+			},
+			"indexes": [
+				0,
+				3,
+				6,
+				9,
+				2,
+				5
+			],
+			"cpu": 3.1164067373674365,
+			"round": 0
+		},
+		{
+			"lib": "embla",
+			"profile": "desktop",
+			"scenario": "drag",
+			"errors": [],
+			"seconds": 6.374,
+			"task": 547.2950000000001,
+			"script": 55.386,
+			"layoutTime": 0,
+			"styleTime": 51.14999999999999,
+			"layouts": 0,
+			"styles": 633,
+			"paints": 60,
+			"frames": {
+				"updates": 755,
+				"presented": 627,
+				"partial": 0,
+				"dropped": 1
+			},
+			"indexes": [
+				0,
+				2,
+				4,
+				6,
+				8,
+				0
+			],
+			"cpu": 8.586366488860998,
+			"round": 0
+		},
+		{
+			"lib": "swiper",
+			"profile": "desktop",
+			"scenario": "busy",
+			"errors": [],
+			"seconds": 4.379,
+			"task": 3070.024,
+			"script": 3042.7819999999997,
+			"layoutTime": 0.7430000000000002,
+			"styleTime": 2.149,
+			"layouts": 6,
+			"styles": 23,
+			"paints": 12,
+			"frames": {
+				"updates": 252,
+				"presented": 246,
+				"partial": 3,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 70.10787851107558,
+			"round": 0
+		},
+		{
+			"lib": "none",
+			"profile": "desktop",
+			"scenario": "busy",
+			"errors": [],
+			"seconds": 4.435,
+			"task": 3088.114,
+			"script": 3077.7129999999997,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 0,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0,
+				0,
+				0,
+				0,
+				0,
+				0
+			],
+			"cpu": 69.63052987598647,
+			"round": 0
+		},
+		{
+			"lib": "glide",
+			"profile": "desktop",
+			"scenario": "busy",
+			"errors": [],
+			"seconds": 4.396,
+			"task": 3078.067,
+			"script": 3043.779,
+			"layoutTime": 0,
+			"styleTime": 6.99,
+			"layouts": 0,
+			"styles": 51,
+			"paints": 26,
+			"frames": {
+				"updates": 442,
+				"presented": 419,
+				"partial": 3,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 70.01972247497726,
+			"round": 0
+		},
+		{
+			"lib": "better",
+			"profile": "desktop",
+			"scenario": "busy",
+			"errors": [],
+			"seconds": 4.446,
+			"task": 3110.125,
+			"script": 3078.741,
+			"layoutTime": 0.7049999999999998,
+			"styleTime": 4.206999999999999,
+			"layouts": 6,
+			"styles": 25,
+			"paints": 12,
+			"frames": {
+				"updates": 270,
+				"presented": 254,
+				"partial": 0,
+				"dropped": 5
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 69.95332883490778,
+			"round": 0
+		},
+		{
+			"lib": "embla",
+			"profile": "desktop",
+			"scenario": "busy",
+			"errors": [],
+			"seconds": 4.33,
+			"task": 3155.8289999999997,
+			"script": 3024.0660000000003,
+			"layoutTime": 0,
+			"styleTime": 17.098,
+			"layouts": 0,
+			"styles": 342,
+			"paints": 12,
+			"frames": {
+				"updates": 765,
+				"presented": 340,
+				"partial": 0,
+				"dropped": 91
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 72.88288683602771,
+			"round": 0
+		},
+		{
+			"lib": "embla",
+			"profile": "mobile",
+			"scenario": "load",
+			"errors": [],
+			"init": 52.299999952316284,
+			"tbt": 15,
+			"cls": 0,
+			"script": 40.367,
+			"task": 189.692,
+			"layouts": 24,
+			"styles": 24,
+			"layoutTime": 34.852000000000004,
+			"styleTime": 9.190999999999999,
+			"nodes": 860,
+			"heap": 1216.9765625,
+			"round": 1
+		},
+		{
+			"lib": "swiper",
+			"profile": "mobile",
+			"scenario": "load",
+			"errors": [],
+			"init": 114.40000009536743,
+			"tbt": 75,
+			"cls": 0,
+			"script": 99.121,
+			"task": 259.056,
+			"layouts": 24,
+			"styles": 135,
+			"layoutTime": 33.725,
+			"styleTime": 19.778,
+			"nodes": 740,
+			"heap": 1474.50390625,
+			"round": 1
+		},
+		{
+			"lib": "better",
+			"profile": "mobile",
+			"scenario": "load",
+			"errors": [],
+			"init": 10.100000023841858,
+			"tbt": 28,
+			"cls": 0,
+			"script": 37.494,
+			"task": 184.922,
+			"layouts": 5,
+			"styles": 5,
+			"layoutTime": 33.858,
+			"styleTime": 15.921999999999999,
+			"nodes": 843,
+			"heap": 1136.625,
+			"round": 1
+		},
+		{
+			"lib": "none",
+			"profile": "mobile",
+			"scenario": "load",
+			"errors": [],
+			"init": 0.10000002384185791,
+			"tbt": 0,
+			"cls": 0,
+			"script": 8.889,
+			"task": 108.877,
+			"layouts": 4,
+			"styles": 4,
+			"layoutTime": 19.354,
+			"styleTime": 3.2239999999999998,
+			"nodes": 550,
+			"heap": 759.3828125,
+			"round": 1
+		},
+		{
+			"lib": "glide",
+			"profile": "mobile",
+			"scenario": "load",
+			"errors": [],
+			"init": 75.89999997615814,
+			"tbt": 39,
+			"cls": 0,
+			"script": 40.690999999999995,
+			"task": 200.942,
+			"layouts": 34,
+			"styles": 50,
+			"layoutTime": 34.82,
+			"styleTime": 20.431,
+			"nodes": 930,
+			"heap": 1119.75390625,
+			"round": 1
+		},
+		{
+			"lib": "embla",
+			"profile": "mobile",
+			"scenario": "idle",
+			"errors": [],
+			"seconds": 2.014,
+			"task": 1.593999999999998,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 3,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0
+			],
+			"cpu": 0.07914597815292941,
+			"round": 1
+		},
+		{
+			"lib": "none",
+			"profile": "mobile",
+			"scenario": "idle",
+			"errors": [],
+			"seconds": 2.01,
+			"task": 4.424000000000011,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 4,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0
+			],
+			"cpu": 0.22009950248756274,
+			"round": 1
+		},
+		{
+			"lib": "better",
+			"profile": "mobile",
+			"scenario": "idle",
+			"errors": [],
+			"seconds": 2.007,
+			"task": 3.231999999999985,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 0,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0
+			],
+			"cpu": 0.16103637269556476,
+			"round": 1
+		},
+		{
+			"lib": "swiper",
+			"profile": "mobile",
+			"scenario": "idle",
+			"errors": [],
+			"seconds": 2.017,
+			"task": 1.243999999999995,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 3,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0
+			],
+			"cpu": 0.06167575607337607,
+			"round": 1
+		},
+		{
+			"lib": "glide",
+			"profile": "mobile",
+			"scenario": "idle",
+			"errors": [],
+			"seconds": 2.015,
+			"task": 1.8610000000000015,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 3,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0
+			],
+			"cpu": 0.09235732009925565,
+			"round": 1
+		},
+		{
+			"lib": "better",
+			"profile": "mobile",
+			"scenario": "navigate",
+			"errors": [],
+			"seconds": 4.309,
+			"task": 238.705,
+			"script": 7.407,
+			"layoutTime": 4.824999999999999,
+			"styleTime": 40.980000000000004,
+			"layouts": 6,
+			"styles": 37,
+			"paints": 12,
+			"frames": {
+				"updates": 271,
+				"presented": 256,
+				"partial": 0,
+				"dropped": 5
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 5.539684381527037,
+			"round": 1
+		},
+		{
+			"lib": "swiper",
+			"profile": "mobile",
+			"scenario": "navigate",
+			"errors": [],
+			"seconds": 4.309,
+			"task": 239.882,
+			"script": 7.116999999999998,
+			"layoutTime": 5.155999999999997,
+			"styleTime": 21.339999999999996,
+			"layouts": 6,
+			"styles": 37,
+			"paints": 12,
+			"frames": {
+				"updates": 269,
+				"presented": 255,
+				"partial": 0,
+				"dropped": 6
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 5.56699930378278,
+			"round": 1
+		},
+		{
+			"lib": "embla",
+			"profile": "mobile",
+			"scenario": "navigate",
+			"errors": [],
+			"seconds": 4.299,
+			"task": 1787.1699999999998,
+			"script": 262.466,
+			"layoutTime": 0,
+			"styleTime": 189.505,
+			"layouts": 0,
+			"styles": 429,
+			"paints": 12,
+			"frames": {
+				"updates": 673,
+				"presented": 426,
+				"partial": 0,
+				"dropped": 2
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 41.571760874622,
+			"round": 1
+		},
+		{
+			"lib": "glide",
+			"profile": "mobile",
+			"scenario": "navigate",
+			"errors": [],
+			"seconds": 4.308,
+			"task": 328.604,
+			"script": 9.430000000000001,
+			"layoutTime": 0,
+			"styleTime": 86.743,
+			"layouts": 0,
+			"styles": 61,
+			"paints": 24,
+			"frames": {
+				"updates": 448,
+				"presented": 427,
+				"partial": 1,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 7.627762302692664,
+			"round": 1
+		},
+		{
+			"lib": "none",
+			"profile": "mobile",
+			"scenario": "navigate",
+			"errors": [],
+			"seconds": 4.282,
+			"task": 37.06999999999999,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 5,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0,
+				0,
+				0,
+				0,
+				0,
+				0
+			],
+			"cpu": 0.865716954694068,
+			"round": 1
+		},
+		{
+			"lib": "swiper",
+			"profile": "mobile",
+			"scenario": "autoplay",
+			"errors": [],
+			"seconds": 4.515,
+			"task": 1103.383,
+			"script": 181.88000000000002,
+			"layoutTime": 3.112,
+			"styleTime": 61.075,
+			"layouts": 3,
+			"styles": 108,
+			"paints": 6,
+			"frames": {
+				"updates": 110,
+				"presented": 107,
+				"partial": 1,
+				"dropped": 1
+			},
+			"indexes": [
+				0,
+				3
+			],
+			"cpu": 24.43816168327796,
+			"round": 1
+		},
+		{
+			"lib": "embla",
+			"profile": "mobile",
+			"scenario": "autoplay",
+			"errors": [],
+			"seconds": 4.505,
+			"task": 1449.695,
+			"script": 240.941,
+			"layoutTime": 0,
+			"styleTime": 153.976,
+			"layouts": 0,
+			"styles": 298,
+			"paints": 6,
+			"frames": {
+				"updates": 450,
+				"presented": 297,
+				"partial": 0,
+				"dropped": 5
+			},
+			"indexes": [
+				0,
+				3
+			],
+			"cpu": 32.17968923418424,
+			"round": 1
+		},
+		{
+			"lib": "better",
+			"profile": "mobile",
+			"scenario": "autoplay",
+			"errors": [],
+			"seconds": 4.511,
+			"task": 93.08000000000001,
+			"script": 11.312,
+			"layoutTime": 1.0340000000000003,
+			"styleTime": 14.274000000000001,
+			"layouts": 2,
+			"styles": 13,
+			"paints": 4,
+			"frames": {
+				"updates": 86,
+				"presented": 83,
+				"partial": 0,
+				"dropped": 1
+			},
+			"indexes": [
+				0,
+				2
+			],
+			"cpu": 2.0634005763688763,
+			"round": 1
+		},
+		{
+			"lib": "glide",
+			"profile": "mobile",
+			"scenario": "autoplay",
+			"errors": [],
+			"seconds": 4.515,
+			"task": 110.079,
+			"script": 8.915000000000003,
+			"layoutTime": 0,
+			"styleTime": 16.142999999999997,
+			"layouts": 0,
+			"styles": 25,
+			"paints": 8,
+			"frames": {
+				"updates": 151,
+				"presented": 147,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				3
+			],
+			"cpu": 2.4380730897009966,
+			"round": 1
+		},
+		{
+			"lib": "none",
+			"profile": "mobile",
+			"scenario": "autoplay",
+			"errors": [],
+			"seconds": 4.515,
+			"task": 1.6089999999999993,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 2,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0
+			],
+			"cpu": 0.03563676633444073,
+			"round": 1
+		},
+		{
+			"lib": "better",
+			"profile": "mobile",
+			"scenario": "drag",
+			"errors": [],
+			"seconds": 6.592,
+			"task": 1052.833,
+			"script": 90.225,
+			"layoutTime": 2.5759999999999983,
+			"styleTime": 153.555,
+			"layouts": 4,
+			"styles": 163,
+			"paints": 8,
+			"frames": {
+				"updates": 539,
+				"presented": 518,
+				"partial": 5,
+				"dropped": 5
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5
+			],
+			"cpu": 15.971374393203885,
+			"round": 1
+		},
+		{
+			"lib": "glide",
+			"profile": "mobile",
+			"scenario": "drag",
+			"errors": [],
+			"seconds": 6.62,
+			"task": 1777.033,
+			"script": 207.363,
+			"layoutTime": 0,
+			"styleTime": 554.7990000000001,
+			"layouts": 0,
+			"styles": 216,
+			"paints": 20,
+			"frames": {
+				"updates": 349,
+				"presented": 310,
+				"partial": 0,
+				"dropped": 19
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5
+			],
+			"cpu": 26.843398791540785,
+			"round": 1
+		},
+		{
+			"lib": "embla",
+			"profile": "mobile",
+			"scenario": "drag",
+			"errors": [],
+			"seconds": 7.734,
+			"task": 3587.0580000000004,
+			"script": 499.179,
+			"layoutTime": 0,
+			"styleTime": 392.782,
+			"layouts": 0,
+			"styles": 734,
+			"paints": 10,
+			"frames": {
+				"updates": 1170,
+				"presented": 734,
+				"partial": 0,
+				"dropped": 7
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5
+			],
+			"cpu": 46.38037238169124,
+			"round": 1
+		},
+		{
+			"lib": "swiper",
+			"profile": "mobile",
+			"scenario": "drag",
+			"errors": [],
+			"seconds": 7.22,
+			"task": 1024.168,
+			"script": 129.017,
+			"layoutTime": 3.521,
+			"styleTime": 75.121,
+			"layouts": 5,
+			"styles": 109,
+			"paints": 10,
+			"frames": {
+				"updates": 317,
+				"presented": 300,
+				"partial": 0,
+				"dropped": 13
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5
+			],
+			"cpu": 14.185152354570635,
+			"round": 1
+		},
+		{
+			"lib": "none",
+			"profile": "mobile",
+			"scenario": "drag",
+			"errors": [],
+			"seconds": 6.995,
+			"task": 398.105,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 9,
+				"presented": 1,
+				"partial": 0,
+				"dropped": 3
+			},
+			"indexes": [
+				0,
+				0,
+				0,
+				0,
+				0,
+				0
+			],
+			"cpu": 5.691279485346676,
+			"round": 1
+		},
+		{
+			"lib": "glide",
+			"profile": "mobile",
+			"scenario": "busy",
+			"errors": [],
+			"seconds": 4.444,
+			"task": 3407.477,
+			"script": 3119.601,
+			"layoutTime": 0,
+			"styleTime": 48.681000000000004,
+			"layouts": 0,
+			"styles": 45,
+			"paints": 22,
+			"frames": {
+				"updates": 457,
+				"presented": 416,
+				"partial": 7,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 76.675900090009,
+			"round": 1
+		},
+		{
+			"lib": "swiper",
+			"profile": "mobile",
+			"scenario": "busy",
+			"errors": [],
+			"seconds": 4.487,
+			"task": 3371.973,
+			"script": 3142.84,
+			"layoutTime": 2.4869999999999997,
+			"styleTime": 13.898000000000001,
+			"layouts": 6,
+			"styles": 27,
+			"paints": 12,
+			"frames": {
+				"updates": 283,
+				"presented": 252,
+				"partial": 8,
+				"dropped": 4
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 75.14983285045687,
+			"round": 1
+		},
+		{
+			"lib": "better",
+			"profile": "mobile",
+			"scenario": "busy",
+			"errors": [],
+			"seconds": 4.496,
+			"task": 3306.112,
+			"script": 3070.541,
+			"layoutTime": 7.408000000000001,
+			"styleTime": 30.657999999999998,
+			"layouts": 6,
+			"styles": 29,
+			"paints": 12,
+			"frames": {
+				"updates": 284,
+				"presented": 250,
+				"partial": 6,
+				"dropped": 3
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 73.53451957295374,
+			"round": 1
+		},
+		{
+			"lib": "embla",
+			"profile": "mobile",
+			"scenario": "busy",
+			"errors": [],
+			"seconds": 4.49,
+			"task": 4062.035,
+			"script": 3231.92,
+			"layoutTime": 0,
+			"styleTime": 100.65899999999999,
+			"layouts": 0,
+			"styles": 262,
+			"paints": 12,
+			"frames": {
+				"updates": 707,
+				"presented": 261,
+				"partial": 0,
+				"dropped": 185
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 90.4684855233853,
+			"round": 1
+		},
+		{
+			"lib": "none",
+			"profile": "mobile",
+			"scenario": "busy",
+			"errors": [],
+			"seconds": 4.485,
+			"task": 2814.796,
+			"script": 2749.12,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 1,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0,
+				0,
+				0,
+				0,
+				0,
+				0
+			],
+			"cpu": 62.76022296544035,
+			"round": 1
+		},
+		{
+			"lib": "swiper",
+			"profile": "desktop",
+			"scenario": "load",
+			"errors": [],
+			"init": 23,
+			"tbt": 0,
+			"cls": 0,
+			"script": 19.703,
+			"task": 57.354,
+			"layouts": 23,
+			"styles": 135,
+			"layoutTime": 7.409,
+			"styleTime": 4.4079999999999995,
+			"nodes": 740,
+			"heap": 1494,
+			"round": 1
+		},
+		{
+			"lib": "glide",
+			"profile": "desktop",
+			"scenario": "load",
+			"errors": [],
+			"init": 15.899999976158142,
+			"tbt": 0,
+			"cls": 0,
+			"script": 8.052999999999999,
+			"task": 46.275,
+			"layouts": 33,
+			"styles": 51,
+			"layoutTime": 8.468,
+			"styleTime": 4.036,
+			"nodes": 1230,
+			"heap": 1126.26953125,
+			"round": 1
+		},
+		{
+			"lib": "embla",
+			"profile": "desktop",
+			"scenario": "load",
+			"errors": [],
+			"init": 10.899999976158142,
+			"tbt": 0,
+			"cls": 0,
+			"script": 7.745,
+			"task": 44.378,
+			"layouts": 24,
+			"styles": 24,
+			"layoutTime": 7.822000000000001,
+			"styleTime": 1.9620000000000002,
+			"nodes": 860,
+			"heap": 1192.92578125,
+			"round": 1
+		},
+		{
+			"lib": "better",
+			"profile": "desktop",
+			"scenario": "load",
+			"errors": [],
+			"init": 1.7000000476837158,
+			"tbt": 0,
+			"cls": 0,
+			"script": 6.603000000000001,
+			"task": 40.391999999999996,
+			"layouts": 4,
+			"styles": 5,
+			"layoutTime": 7.2459999999999996,
+			"styleTime": 3.4880000000000004,
+			"nodes": 843,
+			"heap": 1095.89453125,
+			"round": 1
+		},
+		{
+			"lib": "none",
+			"profile": "desktop",
+			"scenario": "load",
+			"errors": [],
+			"init": 0.09999990463256836,
+			"tbt": 0,
+			"cls": 0,
+			"script": 1.838,
+			"task": 29.987,
+			"layouts": 4,
+			"styles": 3,
+			"layoutTime": 5.662999999999999,
+			"styleTime": 0.62,
+			"nodes": 550,
+			"heap": 719.38671875,
+			"round": 1
+		},
+		{
+			"lib": "embla",
+			"profile": "desktop",
+			"scenario": "idle",
+			"errors": [],
+			"seconds": 2.003,
+			"task": 0.8310000000000018,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 0,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0
+			],
+			"cpu": 0.04148776834747887,
+			"round": 1
+		},
+		{
+			"lib": "glide",
+			"profile": "desktop",
+			"scenario": "idle",
+			"errors": [],
+			"seconds": 2.016,
+			"task": 0.840999999999998,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 0,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0
+			],
+			"cpu": 0.04171626984126974,
+			"round": 1
+		},
+		{
+			"lib": "none",
+			"profile": "desktop",
+			"scenario": "idle",
+			"errors": [],
+			"seconds": 2.006,
+			"task": 1.0410000000000004,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 0,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0
+			],
+			"cpu": 0.051894317048853465,
+			"round": 1
+		},
+		{
+			"lib": "better",
+			"profile": "desktop",
+			"scenario": "idle",
+			"errors": [],
+			"seconds": 2.012,
+			"task": 0.9909999999999988,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 0,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0
+			],
+			"cpu": 0.049254473161033735,
+			"round": 1
+		},
+		{
+			"lib": "swiper",
+			"profile": "desktop",
+			"scenario": "idle",
+			"errors": [],
+			"seconds": 2.011,
+			"task": 0.7480000000000021,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 0,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0
+			],
+			"cpu": 0.03719542516161124,
+			"round": 1
+		},
+		{
+			"lib": "none",
+			"profile": "desktop",
+			"scenario": "navigate",
+			"errors": [],
+			"seconds": 4.26,
+			"task": 2.3379999999999996,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 0,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0,
+				0,
+				0,
+				0,
+				0,
+				0
+			],
+			"cpu": 0.054882629107981216,
+			"round": 1
+		},
+		{
+			"lib": "better",
+			"profile": "desktop",
+			"scenario": "navigate",
+			"errors": [],
+			"seconds": 4.274,
+			"task": 36.858000000000004,
+			"script": 1.1649999999999994,
+			"layoutTime": 0.8859999999999997,
+			"styleTime": 6.517,
+			"layouts": 6,
+			"styles": 38,
+			"paints": 12,
+			"frames": {
+				"updates": 260,
+				"presented": 253,
+				"partial": 0,
+				"dropped": 3
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 0.8623771642489472,
+			"round": 1
+		},
+		{
+			"lib": "swiper",
+			"profile": "desktop",
+			"scenario": "navigate",
+			"errors": [],
+			"seconds": 4.276,
+			"task": 33.105,
+			"script": 0.5729999999999988,
+			"layoutTime": 0.8679999999999999,
+			"styleTime": 3.746,
+			"layouts": 6,
+			"styles": 38,
+			"paints": 12,
+			"frames": {
+				"updates": 250,
+				"presented": 250,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 0.7742048643592141,
+			"round": 1
+		},
+		{
+			"lib": "embla",
+			"profile": "desktop",
+			"scenario": "navigate",
+			"errors": [],
+			"seconds": 4.277,
+			"task": 265.82099999999997,
+			"script": 27.939000000000004,
+			"layoutTime": 0,
+			"styleTime": 30.284,
+			"layouts": 0,
+			"styles": 428,
+			"paints": 12,
+			"frames": {
+				"updates": 851,
+				"presented": 425,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 6.215127425765723,
+			"round": 1
+		},
+		{
+			"lib": "glide",
+			"profile": "desktop",
+			"scenario": "navigate",
+			"errors": [],
+			"seconds": 4.28,
+			"task": 33.016999999999996,
+			"script": 0.8240000000000001,
+			"layoutTime": 0,
+			"styleTime": 7.688000000000001,
+			"layouts": 0,
+			"styles": 63,
+			"paints": 26,
+			"frames": {
+				"updates": 436,
+				"presented": 425,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 0.7714252336448597,
+			"round": 1
+		},
+		{
+			"lib": "swiper",
+			"profile": "desktop",
+			"scenario": "autoplay",
+			"errors": [],
+			"seconds": 4.504,
+			"task": 146.73199999999997,
+			"script": 23.955,
+			"layoutTime": 0.3939999999999998,
+			"styleTime": 7.941999999999999,
+			"layouts": 3,
+			"styles": 105,
+			"paints": 6,
+			"frames": {
+				"updates": 108,
+				"presented": 103,
+				"partial": 0,
+				"dropped": 5
+			},
+			"indexes": [
+				0,
+				3
+			],
+			"cpu": 3.257815275310834,
+			"round": 1
+		},
+		{
+			"lib": "embla",
+			"profile": "desktop",
+			"scenario": "autoplay",
+			"errors": [],
+			"seconds": 4.508,
+			"task": 242.125,
+			"script": 32.065999999999995,
+			"layoutTime": 0,
+			"styleTime": 24.207,
+			"layouts": 0,
+			"styles": 355,
+			"paints": 6,
+			"frames": {
+				"updates": 353,
+				"presented": 352,
+				"partial": 0,
+				"dropped": 1
+			},
+			"indexes": [
+				0,
+				4
+			],
+			"cpu": 5.37100709849157,
+			"round": 1
+		},
+		{
+			"lib": "better",
+			"profile": "desktop",
+			"scenario": "autoplay",
+			"errors": [],
+			"seconds": 4.509,
+			"task": 17.741,
+			"script": 2.521,
+			"layoutTime": 0.4339999999999995,
+			"styleTime": 2.7279999999999998,
+			"layouts": 2,
+			"styles": 14,
+			"paints": 4,
+			"frames": {
+				"updates": 102,
+				"presented": 102,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				3
+			],
+			"cpu": 0.3934575293856731,
+			"round": 1
+		},
+		{
+			"lib": "glide",
+			"profile": "desktop",
+			"scenario": "autoplay",
+			"errors": [],
+			"seconds": 4.508,
+			"task": 25.748,
+			"script": 1.8199999999999996,
+			"layoutTime": 0,
+			"styleTime": 5.917999999999999,
+			"layouts": 0,
+			"styles": 37,
+			"paints": 14,
+			"frames": {
+				"updates": 223,
+				"presented": 217,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				3
+			],
+			"cpu": 0.5711623779946762,
+			"round": 1
+		},
+		{
+			"lib": "none",
+			"profile": "desktop",
+			"scenario": "autoplay",
+			"errors": [],
+			"seconds": 4.507,
+			"task": 1.4750000000000005,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 0,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0
+			],
+			"cpu": 0.03272686931439983,
+			"round": 1
+		},
+		{
+			"lib": "none",
+			"profile": "desktop",
+			"scenario": "drag",
+			"errors": [],
+			"seconds": 6.373,
+			"task": 45.30799999999999,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 0,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0,
+				0,
+				0,
+				0,
+				0
+			],
+			"cpu": 0.7109367644751293,
+			"round": 1
+		},
+		{
+			"lib": "embla",
+			"profile": "desktop",
+			"scenario": "drag",
+			"errors": [],
+			"seconds": 6.365,
+			"task": 475.328,
+			"script": 50.55,
+			"layoutTime": 0,
+			"styleTime": 47.211,
+			"layouts": 0,
+			"styles": 629,
+			"paints": 60,
+			"frames": {
+				"updates": 876,
+				"presented": 624,
+				"partial": 0,
+				"dropped": 1
+			},
+			"indexes": [
+				0,
+				2,
+				4,
+				6,
+				8,
+				0
+			],
+			"cpu": 7.467839748625295,
+			"round": 1
+		},
+		{
+			"lib": "better",
+			"profile": "desktop",
+			"scenario": "drag",
+			"errors": [],
+			"seconds": 6.396,
+			"task": 173.687,
+			"script": 16.861,
+			"layoutTime": 1.5939999999999999,
+			"styleTime": 33.160999999999994,
+			"layouts": 13,
+			"styles": 221,
+			"paints": 30,
+			"frames": {
+				"updates": 601,
+				"presented": 594,
+				"partial": 0,
+				"dropped": 6
+			},
+			"indexes": [
+				0,
+				3,
+				6,
+				9,
+				2,
+				5
+			],
+			"cpu": 2.7155565978736713,
+			"round": 1
+		},
+		{
+			"lib": "glide",
+			"profile": "desktop",
+			"scenario": "drag",
+			"errors": [],
+			"seconds": 6.411,
+			"task": 303.375,
+			"script": 29.272000000000002,
+			"layoutTime": 0,
+			"styleTime": 94.659,
+			"layouts": 0,
+			"styles": 247,
+			"paints": 22,
+			"frames": {
+				"updates": 315,
+				"presented": 302,
+				"partial": 0,
+				"dropped": 7
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5
+			],
+			"cpu": 4.732101076275152,
+			"round": 1
+		},
+		{
+			"lib": "swiper",
+			"profile": "desktop",
+			"scenario": "drag",
+			"errors": [],
+			"seconds": 6.384,
+			"task": 132.766,
+			"script": 20.807,
+			"layoutTime": 1.2269999999999999,
+			"styleTime": 11.935,
+			"layouts": 8,
+			"styles": 117,
+			"paints": 16,
+			"frames": {
+				"updates": 298,
+				"presented": 294,
+				"partial": 0,
+				"dropped": 4
+			},
+			"indexes": [
+				0,
+				2,
+				4,
+				6,
+				8,
+				0
+			],
+			"cpu": 2.0796679197994985,
+			"round": 1
+		},
+		{
+			"lib": "swiper",
+			"profile": "desktop",
+			"scenario": "busy",
+			"errors": [],
+			"seconds": 4.392,
+			"task": 3071.224,
+			"script": 3042.5180000000005,
+			"layoutTime": 0.6770000000000005,
+			"styleTime": 2.0740000000000003,
+			"layouts": 6,
+			"styles": 26,
+			"paints": 12,
+			"frames": {
+				"updates": 251,
+				"presented": 249,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 69.92768670309655,
+			"round": 1
+		},
+		{
+			"lib": "none",
+			"profile": "desktop",
+			"scenario": "busy",
+			"errors": [],
+			"seconds": 4.393,
+			"task": 3053.0119999999997,
+			"script": 3042.986,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 0,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0,
+				0,
+				0,
+				0,
+				0,
+				0
+			],
+			"cpu": 69.49720009105394,
+			"round": 1
+		},
+		{
+			"lib": "better",
+			"profile": "desktop",
+			"scenario": "busy",
+			"errors": [],
+			"seconds": 4.484,
+			"task": 3144.378,
+			"script": 3113.588,
+			"layoutTime": 0.7330000000000001,
+			"styleTime": 4.537,
+			"layouts": 6,
+			"styles": 29,
+			"paints": 12,
+			"frames": {
+				"updates": 247,
+				"presented": 247,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 70.12439785905443,
+			"round": 1
+		},
+		{
+			"lib": "embla",
+			"profile": "desktop",
+			"scenario": "busy",
+			"errors": [],
+			"seconds": 4.396,
+			"task": 3195.43,
+			"script": 3058.448,
+			"layoutTime": 0,
+			"styleTime": 17.177,
+			"layouts": 0,
+			"styles": 323,
+			"paints": 12,
+			"frames": {
+				"updates": 749,
+				"presented": 319,
+				"partial": 0,
+				"dropped": 119
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 72.68949044585987,
+			"round": 1
+		},
+		{
+			"lib": "glide",
+			"profile": "desktop",
+			"scenario": "busy",
+			"errors": [],
+			"seconds": 4.383,
+			"task": 3080.579,
+			"script": 3045.052,
+			"layoutTime": 0,
+			"styleTime": 6.967,
+			"layouts": 0,
+			"styles": 50,
+			"paints": 26,
+			"frames": {
+				"updates": 442,
+				"presented": 417,
+				"partial": 4,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 70.28471366643852,
+			"round": 1
+		},
+		{
+			"lib": "embla",
+			"profile": "mobile",
+			"scenario": "load",
+			"errors": [],
+			"init": 56.799999952316284,
+			"tbt": 18,
+			"cls": 0,
+			"script": 45.041,
+			"task": 183.894,
+			"layouts": 24,
+			"styles": 24,
+			"layoutTime": 34.778999999999996,
+			"styleTime": 8.691,
+			"nodes": 860,
+			"heap": 1216.9765625,
+			"round": 2
+		},
+		{
+			"lib": "swiper",
+			"profile": "mobile",
+			"scenario": "load",
+			"errors": [],
+			"init": 100.60000002384186,
+			"tbt": 61,
+			"cls": 0,
+			"script": 88.426,
+			"task": 238.813,
+			"layouts": 24,
+			"styles": 135,
+			"layoutTime": 26.735,
+			"styleTime": 19.485,
+			"nodes": 740,
+			"heap": 1474.12890625,
+			"round": 2
+		},
+		{
+			"lib": "glide",
+			"profile": "mobile",
+			"scenario": "load",
+			"errors": [],
+			"init": 79.79999995231628,
+			"tbt": 42,
+			"cls": 0,
+			"script": 55.679,
+			"task": 225.993,
+			"layouts": 43,
+			"styles": 58,
+			"layoutTime": 41.446,
+			"styleTime": 26.252000000000002,
+			"nodes": 930,
+			"heap": 1131.09375,
+			"round": 2
+		},
+		{
+			"lib": "none",
+			"profile": "mobile",
+			"scenario": "load",
+			"errors": [],
+			"init": 0.19999992847442627,
+			"tbt": 0,
+			"cls": 0,
+			"script": 10.874,
+			"task": 121.662,
+			"layouts": 4,
+			"styles": 4,
+			"layoutTime": 22.534,
+			"styleTime": 2.854,
+			"nodes": 550,
+			"heap": 759.3828125,
+			"round": 2
+		},
+		{
+			"lib": "better",
+			"profile": "mobile",
+			"scenario": "load",
+			"errors": [],
+			"init": 12.800000071525574,
+			"tbt": 32,
+			"cls": 0,
+			"script": 41.656,
+			"task": 198.178,
+			"layouts": 4,
+			"styles": 4,
+			"layoutTime": 33.507000000000005,
+			"styleTime": 17.957,
+			"nodes": 843,
+			"heap": 1136.625,
+			"round": 2
+		},
+		{
+			"lib": "none",
+			"profile": "mobile",
+			"scenario": "idle",
+			"errors": [],
+			"seconds": 2.016,
+			"task": 3.8760000000000043,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 3,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0
+			],
+			"cpu": 0.19226190476190497,
+			"round": 2
+		},
+		{
+			"lib": "embla",
+			"profile": "mobile",
+			"scenario": "idle",
+			"errors": [],
+			"seconds": 2.011,
+			"task": 4.876999999999993,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 0,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0
+			],
+			"cpu": 0.24251616111387328,
+			"round": 2
+		},
+		{
+			"lib": "swiper",
+			"profile": "mobile",
+			"scenario": "idle",
+			"errors": [],
+			"seconds": 2.015,
+			"task": 3.2939999999999916,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 0,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0
+			],
+			"cpu": 0.16347394540942886,
+			"round": 2
+		},
+		{
+			"lib": "better",
+			"profile": "mobile",
+			"scenario": "idle",
+			"errors": [],
+			"seconds": 2.02,
+			"task": 3.584999999999991,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 2,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0
+			],
+			"cpu": 0.17747524752475202,
+			"round": 2
+		},
+		{
+			"lib": "glide",
+			"profile": "mobile",
+			"scenario": "idle",
+			"errors": [],
+			"seconds": 2.021,
+			"task": 4.209000000000004,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 0,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0
+			],
+			"cpu": 0.2082632360217716,
+			"round": 2
+		},
+		{
+			"lib": "embla",
+			"profile": "mobile",
+			"scenario": "navigate",
+			"errors": [],
+			"seconds": 4.29,
+			"task": 1584.0869999999998,
+			"script": 241.606,
+			"layoutTime": 0,
+			"styleTime": 194.35,
+			"layouts": 0,
+			"styles": 428,
+			"paints": 12,
+			"frames": {
+				"updates": 667,
+				"presented": 425,
+				"partial": 0,
+				"dropped": 2
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 36.92510489510489,
+			"round": 2
+		},
+		{
+			"lib": "none",
+			"profile": "mobile",
+			"scenario": "navigate",
+			"errors": [],
+			"seconds": 4.284,
+			"task": 13.608999999999982,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 1,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0,
+				0,
+				0,
+				0,
+				0,
+				0
+			],
+			"cpu": 0.3176704014939305,
+			"round": 2
+		},
+		{
+			"lib": "better",
+			"profile": "mobile",
+			"scenario": "navigate",
+			"errors": [],
+			"seconds": 4.308,
+			"task": 179.748,
+			"script": 6.273999999999998,
+			"layoutTime": 4.736000000000001,
+			"styleTime": 30.979,
+			"layouts": 6,
+			"styles": 36,
+			"paints": 12,
+			"frames": {
+				"updates": 261,
+				"presented": 253,
+				"partial": 0,
+				"dropped": 1
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 4.17242339832869,
+			"round": 2
+		},
+		{
+			"lib": "glide",
+			"profile": "mobile",
+			"scenario": "navigate",
+			"errors": [],
+			"seconds": 4.314,
+			"task": 347.45500000000004,
+			"script": 4.335999999999999,
+			"layoutTime": 0,
+			"styleTime": 79.21000000000001,
+			"layouts": 0,
+			"styles": 61,
+			"paints": 22,
+			"frames": {
+				"updates": 452,
+				"presented": 425,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 8.054126101066297,
+			"round": 2
+		},
+		{
+			"lib": "swiper",
+			"profile": "mobile",
+			"scenario": "navigate",
+			"errors": [],
+			"seconds": 4.317,
+			"task": 221.257,
+			"script": 4.858000000000001,
+			"layoutTime": 4.237999999999999,
+			"styleTime": 15.988999999999999,
+			"layouts": 6,
+			"styles": 35,
+			"paints": 12,
+			"frames": {
+				"updates": 264,
+				"presented": 253,
+				"partial": 0,
+				"dropped": 5
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 5.125249015520037,
+			"round": 2
+		},
+		{
+			"lib": "swiper",
+			"profile": "mobile",
+			"scenario": "autoplay",
+			"errors": [],
+			"seconds": 4.509,
+			"task": 1144.808,
+			"script": 209.684,
+			"layoutTime": 1.8219999999999972,
+			"styleTime": 43.961,
+			"layouts": 3,
+			"styles": 106,
+			"paints": 6,
+			"frames": {
+				"updates": 105,
+				"presented": 104,
+				"partial": 0,
+				"dropped": 1
+			},
+			"indexes": [
+				0,
+				3
+			],
+			"cpu": 25.38939897981814,
+			"round": 2
+		},
+		{
+			"lib": "embla",
+			"profile": "mobile",
+			"scenario": "autoplay",
+			"errors": [],
+			"seconds": 4.523,
+			"task": 1605.551,
+			"script": 288.83299999999997,
+			"layoutTime": 0,
+			"styleTime": 137.13599999999997,
+			"layouts": 0,
+			"styles": 298,
+			"paints": 6,
+			"frames": {
+				"updates": 496,
+				"presented": 298,
+				"partial": 0,
+				"dropped": 4
+			},
+			"indexes": [
+				0,
+				3
+			],
+			"cpu": 35.497479548971924,
+			"round": 2
+		},
+		{
+			"lib": "better",
+			"profile": "mobile",
+			"scenario": "autoplay",
+			"errors": [],
+			"seconds": 4.512,
+			"task": 41.078,
+			"script": 6.245999999999998,
+			"layoutTime": 0.3830000000000014,
+			"styleTime": 7.039999999999999,
+			"layouts": 1,
+			"styles": 9,
+			"paints": 2,
+			"frames": {
+				"updates": 67,
+				"presented": 62,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				2
+			],
+			"cpu": 0.9104166666666667,
+			"round": 2
+		},
+		{
+			"lib": "glide",
+			"profile": "mobile",
+			"scenario": "autoplay",
+			"errors": [],
+			"seconds": 4.507,
+			"task": 123.55699999999997,
+			"script": 8.991999999999997,
+			"layoutTime": 0,
+			"styleTime": 22.019,
+			"layouts": 0,
+			"styles": 26,
+			"paints": 8,
+			"frames": {
+				"updates": 156,
+				"presented": 149,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				3
+			],
+			"cpu": 2.741446638562236,
+			"round": 2
+		},
+		{
+			"lib": "none",
+			"profile": "mobile",
+			"scenario": "autoplay",
+			"errors": [],
+			"seconds": 4.508,
+			"task": 2.601000000000006,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 3,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0
+			],
+			"cpu": 0.05769742679680582,
+			"round": 2
+		},
+		{
+			"lib": "embla",
+			"profile": "mobile",
+			"scenario": "drag",
+			"errors": [],
+			"seconds": 7.832,
+			"task": 3774.186,
+			"script": 549.275,
+			"layoutTime": 0,
+			"styleTime": 383.411,
+			"layouts": 0,
+			"styles": 748,
+			"paints": 10,
+			"frames": {
+				"updates": 1256,
+				"presented": 749,
+				"partial": 0,
+				"dropped": 5
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5
+			],
+			"cpu": 48.18930030643514,
+			"round": 2
+		},
+		{
+			"lib": "swiper",
+			"profile": "mobile",
+			"scenario": "drag",
+			"errors": [],
+			"seconds": 7.459,
+			"task": 1192.495,
+			"script": 156.44000000000003,
+			"layoutTime": 3.4770000000000008,
+			"styleTime": 100.76100000000001,
+			"layouts": 5,
+			"styles": 109,
+			"paints": 10,
+			"frames": {
+				"updates": 341,
+				"presented": 310,
+				"partial": 0,
+				"dropped": 27
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5
+			],
+			"cpu": 15.987330741386243,
+			"round": 2
+		},
+		{
+			"lib": "none",
+			"profile": "mobile",
+			"scenario": "drag",
+			"errors": [],
+			"seconds": 6.996,
+			"task": 353.873,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 10,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 3
+			},
+			"indexes": [
+				0,
+				0,
+				0,
+				0,
+				0,
+				0
+			],
+			"cpu": 5.058218982275585,
+			"round": 2
+		},
+		{
+			"lib": "glide",
+			"profile": "mobile",
+			"scenario": "drag",
+			"errors": [],
+			"seconds": 6.545,
+			"task": 1731.8669999999997,
+			"script": 199.263,
+			"layoutTime": 0,
+			"styleTime": 559.151,
+			"layouts": 0,
+			"styles": 221,
+			"paints": 20,
+			"frames": {
+				"updates": 335,
+				"presented": 310,
+				"partial": 0,
+				"dropped": 12
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5
+			],
+			"cpu": 26.460916730328492,
+			"round": 2
+		},
+		{
+			"lib": "better",
+			"profile": "mobile",
+			"scenario": "drag",
+			"errors": [],
+			"seconds": 6.626,
+			"task": 1281.744,
+			"script": 122.23699999999998,
+			"layoutTime": 8.713000000000003,
+			"styleTime": 200.667,
+			"layouts": 4,
+			"styles": 159,
+			"paints": 8,
+			"frames": {
+				"updates": 551,
+				"presented": 522,
+				"partial": 10,
+				"dropped": 8
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5
+			],
+			"cpu": 19.344159372170235,
+			"round": 2
+		},
+		{
+			"lib": "embla",
+			"profile": "mobile",
+			"scenario": "busy",
+			"errors": [],
+			"seconds": 4.508,
+			"task": 4008.7819999999992,
+			"script": 3246.731,
+			"layoutTime": 0,
+			"styleTime": 87.11399999999999,
+			"layouts": 0,
+			"styles": 281,
+			"paints": 12,
+			"frames": {
+				"updates": 723,
+				"presented": 280,
+				"partial": 0,
+				"dropped": 167
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 88.92595385980478,
+			"round": 2
+		},
+		{
+			"lib": "swiper",
+			"profile": "mobile",
+			"scenario": "busy",
+			"errors": [],
+			"seconds": 4.544,
+			"task": 3295.7699999999995,
+			"script": 3068.5800000000004,
+			"layoutTime": 3.291000000000002,
+			"styleTime": 10.357,
+			"layouts": 6,
+			"styles": 27,
+			"paints": 12,
+			"frames": {
+				"updates": 278,
+				"presented": 251,
+				"partial": 8,
+				"dropped": 6
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 72.53014964788731,
+			"round": 2
+		},
+		{
+			"lib": "glide",
+			"profile": "mobile",
+			"scenario": "busy",
+			"errors": [],
+			"seconds": 4.455,
+			"task": 3373.4990000000003,
+			"script": 3115.5429999999997,
+			"layoutTime": 0,
+			"styleTime": 38.464999999999996,
+			"layouts": 0,
+			"styles": 44,
+			"paints": 22,
+			"frames": {
+				"updates": 455,
+				"presented": 409,
+				"partial": 6,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 75.72388327721661,
+			"round": 2
+		},
+		{
+			"lib": "better",
+			"profile": "mobile",
+			"scenario": "busy",
+			"errors": [],
+			"seconds": 4.462,
+			"task": 2994.137,
+			"script": 2789.428,
+			"layoutTime": 4.161000000000001,
+			"styleTime": 29.687000000000005,
+			"layouts": 6,
+			"styles": 29,
+			"paints": 12,
+			"frames": {
+				"updates": 272,
+				"presented": 250,
+				"partial": 5,
+				"dropped": 2
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 67.10302554908112,
+			"round": 2
+		},
+		{
+			"lib": "none",
+			"profile": "mobile",
+			"scenario": "busy",
+			"errors": [],
+			"seconds": 4.507,
+			"task": 2547.3480000000004,
+			"script": 2468.823,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 2,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0,
+				0,
+				0,
+				0,
+				0,
+				0
+			],
+			"cpu": 56.51981362325272,
+			"round": 2
+		},
+		{
+			"lib": "swiper",
+			"profile": "desktop",
+			"scenario": "load",
+			"errors": [],
+			"init": 17.199999928474426,
+			"tbt": 0,
+			"cls": 0,
+			"script": 15.206000000000001,
+			"task": 50.806999999999995,
+			"layouts": 23,
+			"styles": 135,
+			"layoutTime": 5.432,
+			"styleTime": 3.213,
+			"nodes": 740,
+			"heap": 1492.9140625,
+			"round": 2
+		},
+		{
+			"lib": "embla",
+			"profile": "desktop",
+			"scenario": "load",
+			"errors": [],
+			"init": 9.699999928474426,
+			"tbt": 0,
+			"cls": 0,
+			"script": 7.087000000000001,
+			"task": 41.946999999999996,
+			"layouts": 24,
+			"styles": 24,
+			"layoutTime": 6.98,
+			"styleTime": 1.796,
+			"nodes": 860,
+			"heap": 1192.92578125,
+			"round": 2
+		},
+		{
+			"lib": "better",
+			"profile": "desktop",
+			"scenario": "load",
+			"errors": [],
+			"init": 2,
+			"tbt": 0,
+			"cls": 0,
+			"script": 6.633,
+			"task": 38.589999999999996,
+			"layouts": 4,
+			"styles": 5,
+			"layoutTime": 6.841,
+			"styleTime": 3.261,
+			"nodes": 843,
+			"heap": 1095.89453125,
+			"round": 2
+		},
+		{
+			"lib": "none",
+			"profile": "desktop",
+			"scenario": "load",
+			"errors": [],
+			"init": 0,
+			"tbt": 0,
+			"cls": 0,
+			"script": 1.933,
+			"task": 26.286,
+			"layouts": 3,
+			"styles": 3,
+			"layoutTime": 4.9319999999999995,
+			"styleTime": 0.647,
+			"nodes": 550,
+			"heap": 719.38671875,
+			"round": 2
+		},
+		{
+			"lib": "glide",
+			"profile": "desktop",
+			"scenario": "load",
+			"errors": [],
+			"init": 16.300000071525574,
+			"tbt": 0,
+			"cls": 0,
+			"script": 7.93,
+			"task": 46.5,
+			"layouts": 33,
+			"styles": 52,
+			"layoutTime": 8.97,
+			"styleTime": 4.557,
+			"nodes": 1230,
+			"heap": 1126.26953125,
+			"round": 2
+		},
+		{
+			"lib": "embla",
+			"profile": "desktop",
+			"scenario": "idle",
+			"errors": [],
+			"seconds": 2.013,
+			"task": 1.3470000000000009,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 0,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0
+			],
+			"cpu": 0.06691505216095384,
+			"round": 2
+		},
+		{
+			"lib": "none",
+			"profile": "desktop",
+			"scenario": "idle",
+			"errors": [],
+			"seconds": 2.01,
+			"task": 1.288000000000001,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 0,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0
+			],
+			"cpu": 0.0640796019900498,
+			"round": 2
+		},
+		{
+			"lib": "glide",
+			"profile": "desktop",
+			"scenario": "idle",
+			"errors": [],
+			"seconds": 2.008,
+			"task": 1.0430000000000024,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 0,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0
+			],
+			"cpu": 0.05194223107569733,
+			"round": 2
+		},
+		{
+			"lib": "swiper",
+			"profile": "desktop",
+			"scenario": "idle",
+			"errors": [],
+			"seconds": 2.009,
+			"task": 1.236000000000001,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 0,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0
+			],
+			"cpu": 0.06152314584370339,
+			"round": 2
+		},
+		{
+			"lib": "better",
+			"profile": "desktop",
+			"scenario": "idle",
+			"errors": [],
+			"seconds": 2.009,
+			"task": 0.8149999999999997,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 0,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0
+			],
+			"cpu": 0.04056744649079143,
+			"round": 2
+		},
+		{
+			"lib": "better",
+			"profile": "desktop",
+			"scenario": "navigate",
+			"errors": [],
+			"seconds": 4.295,
+			"task": 41.89900000000001,
+			"script": 1.3880000000000003,
+			"layoutTime": 1.1279999999999997,
+			"styleTime": 6.877000000000001,
+			"layouts": 6,
+			"styles": 37,
+			"paints": 12,
+			"frames": {
+				"updates": 256,
+				"presented": 252,
+				"partial": 0,
+				"dropped": 2
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 0.9755296856810246,
+			"round": 2
+		},
+		{
+			"lib": "glide",
+			"profile": "desktop",
+			"scenario": "navigate",
+			"errors": [],
+			"seconds": 4.299,
+			"task": 48.73800000000001,
+			"script": 1.3949999999999996,
+			"layoutTime": 0,
+			"styleTime": 10.593,
+			"layouts": 0,
+			"styles": 68,
+			"paints": 26,
+			"frames": {
+				"updates": 437,
+				"presented": 426,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 1.1337055129099791,
+			"round": 2
+		},
+		{
+			"lib": "embla",
+			"profile": "desktop",
+			"scenario": "navigate",
+			"errors": [],
+			"seconds": 4.278,
+			"task": 259.71200000000005,
+			"script": 31.726999999999997,
+			"layoutTime": 0,
+			"styleTime": 27.67,
+			"layouts": 0,
+			"styles": 428,
+			"paints": 12,
+			"frames": {
+				"updates": 426,
+				"presented": 426,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 6.070874240299206,
+			"round": 2
+		},
+		{
+			"lib": "swiper",
+			"profile": "desktop",
+			"scenario": "navigate",
+			"errors": [],
+			"seconds": 4.285,
+			"task": 25.767999999999997,
+			"script": 0.5580000000000012,
+			"layoutTime": 0.66,
+			"styleTime": 2.816,
+			"layouts": 6,
+			"styles": 37,
+			"paints": 12,
+			"frames": {
+				"updates": 252,
+				"presented": 250,
+				"partial": 0,
+				"dropped": 1
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 0.6013535589264877,
+			"round": 2
+		},
+		{
+			"lib": "none",
+			"profile": "desktop",
+			"scenario": "navigate",
+			"errors": [],
+			"seconds": 4.283,
+			"task": 3.306,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 0,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0,
+				0,
+				0,
+				0,
+				0,
+				0
+			],
+			"cpu": 0.07718888629465327,
+			"round": 2
+		},
+		{
+			"lib": "swiper",
+			"profile": "desktop",
+			"scenario": "autoplay",
+			"errors": [],
+			"seconds": 4.517,
+			"task": 151.251,
+			"script": 22.826,
+			"layoutTime": 0.37000000000000055,
+			"styleTime": 8.736,
+			"layouts": 3,
+			"styles": 105,
+			"paints": 6,
+			"frames": {
+				"updates": 104,
+				"presented": 103,
+				"partial": 0,
+				"dropped": 1
+			},
+			"indexes": [
+				0,
+				3
+			],
+			"cpu": 3.3484835067522694,
+			"round": 2
+		},
+		{
+			"lib": "none",
+			"profile": "desktop",
+			"scenario": "autoplay",
+			"errors": [],
+			"seconds": 4.506,
+			"task": 1.1549999999999998,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 0,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0
+			],
+			"cpu": 0.02563249001331557,
+			"round": 2
+		},
+		{
+			"lib": "better",
+			"profile": "desktop",
+			"scenario": "autoplay",
+			"errors": [],
+			"seconds": 4.518,
+			"task": 17.683,
+			"script": 3.4650000000000003,
+			"layoutTime": 0.3709999999999998,
+			"styleTime": 2.434,
+			"layouts": 2,
+			"styles": 12,
+			"paints": 4,
+			"frames": {
+				"updates": 104,
+				"presented": 104,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				3
+			],
+			"cpu": 0.39138999557326254,
+			"round": 2
+		},
+		{
+			"lib": "embla",
+			"profile": "desktop",
+			"scenario": "autoplay",
+			"errors": [],
+			"seconds": 4.511,
+			"task": 254.14199999999997,
+			"script": 31.301999999999996,
+			"layoutTime": 0,
+			"styleTime": 25.559,
+			"layouts": 0,
+			"styles": 353,
+			"paints": 6,
+			"frames": {
+				"updates": 352,
+				"presented": 351,
+				"partial": 0,
+				"dropped": 1
+			},
+			"indexes": [
+				0,
+				4
+			],
+			"cpu": 5.633828419419197,
+			"round": 2
+		},
+		{
+			"lib": "glide",
+			"profile": "desktop",
+			"scenario": "autoplay",
+			"errors": [],
+			"seconds": 4.519,
+			"task": 24.555,
+			"script": 2.0679999999999996,
+			"layoutTime": 0,
+			"styleTime": 5.053,
+			"layouts": 0,
+			"styles": 35,
+			"paints": 14,
+			"frames": {
+				"updates": 224,
+				"presented": 218,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				3
+			],
+			"cpu": 0.5433724275282141,
+			"round": 2
+		},
+		{
+			"lib": "embla",
+			"profile": "desktop",
+			"scenario": "drag",
+			"errors": [],
+			"seconds": 6.41,
+			"task": 518.0590000000001,
+			"script": 51.115,
+			"layoutTime": 0,
+			"styleTime": 47.765,
+			"layouts": 0,
+			"styles": 637,
+			"paints": 60,
+			"frames": {
+				"updates": 886,
+				"presented": 632,
+				"partial": 0,
+				"dropped": 1
+			},
+			"indexes": [
+				0,
+				2,
+				4,
+				6,
+				8,
+				0
+			],
+			"cpu": 8.08204368174727,
+			"round": 2
+		},
+		{
+			"lib": "none",
+			"profile": "desktop",
+			"scenario": "drag",
+			"errors": [],
+			"seconds": 6.364,
+			"task": 50.272999999999996,
+			"script": 0,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 0,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0,
+				0,
+				0,
+				0,
+				0
+			],
+			"cpu": 0.7899591451917033,
+			"round": 2
+		},
+		{
+			"lib": "glide",
+			"profile": "desktop",
+			"scenario": "drag",
+			"errors": [],
+			"seconds": 6.407,
+			"task": 299.529,
+			"script": 29.259,
+			"layoutTime": 0,
+			"styleTime": 97.263,
+			"layouts": 0,
+			"styles": 243,
+			"paints": 22,
+			"frames": {
+				"updates": 311,
+				"presented": 301,
+				"partial": 0,
+				"dropped": 5
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5
+			],
+			"cpu": 4.675027313875449,
+			"round": 2
+		},
+		{
+			"lib": "better",
+			"profile": "desktop",
+			"scenario": "drag",
+			"errors": [],
+			"seconds": 6.388,
+			"task": 161.637,
+			"script": 14.328999999999999,
+			"layoutTime": 1.9490000000000003,
+			"styleTime": 33.354,
+			"layouts": 13,
+			"styles": 220,
+			"paints": 30,
+			"frames": {
+				"updates": 601,
+				"presented": 597,
+				"partial": 0,
+				"dropped": 3
+			},
+			"indexes": [
+				0,
+				3,
+				6,
+				9,
+				2,
+				5
+			],
+			"cpu": 2.5303224796493424,
+			"round": 2
+		},
+		{
+			"lib": "swiper",
+			"profile": "desktop",
+			"scenario": "drag",
+			"errors": [],
+			"seconds": 6.37,
+			"task": 146.413,
+			"script": 23.283,
+			"layoutTime": 1.5039999999999998,
+			"styleTime": 13.676,
+			"layouts": 8,
+			"styles": 117,
+			"paints": 16,
+			"frames": {
+				"updates": 292,
+				"presented": 292,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				2,
+				4,
+				6,
+				8,
+				0
+			],
+			"cpu": 2.298477237048666,
+			"round": 2
+		},
+		{
+			"lib": "swiper",
+			"profile": "desktop",
+			"scenario": "busy",
+			"errors": [],
+			"seconds": 4.449,
+			"task": 3105.891,
+			"script": 3078.023,
+			"layoutTime": 0.6369999999999996,
+			"styleTime": 2.219,
+			"layouts": 6,
+			"styles": 26,
+			"paints": 12,
+			"frames": {
+				"updates": 248,
+				"presented": 245,
+				"partial": 3,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 69.81099123398516,
+			"round": 2
+		},
+		{
+			"lib": "embla",
+			"profile": "desktop",
+			"scenario": "busy",
+			"errors": [],
+			"seconds": 4.434,
+			"task": 3230.3830000000003,
+			"script": 3092.731,
+			"layoutTime": 0,
+			"styleTime": 17.102,
+			"layouts": 0,
+			"styles": 324,
+			"paints": 12,
+			"frames": {
+				"updates": 756,
+				"presented": 322,
+				"partial": 0,
+				"dropped": 119
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 72.85482634190348,
+			"round": 2
+		},
+		{
+			"lib": "glide",
+			"profile": "desktop",
+			"scenario": "busy",
+			"errors": [],
+			"seconds": 4.433,
+			"task": 3115.1040000000003,
+			"script": 3079.96,
+			"layoutTime": 0,
+			"styleTime": 7.082,
+			"layouts": 0,
+			"styles": 48,
+			"paints": 26,
+			"frames": {
+				"updates": 435,
+				"presented": 415,
+				"partial": 2,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 70.2707872772389,
+			"round": 2
+		},
+		{
+			"lib": "better",
+			"profile": "desktop",
+			"scenario": "busy",
+			"errors": [],
+			"seconds": 4.396,
+			"task": 3078.917,
+			"script": 3044.931,
+			"layoutTime": 0.8149999999999997,
+			"styleTime": 4.706,
+			"layouts": 6,
+			"styles": 29,
+			"paints": 12,
+			"frames": {
+				"updates": 259,
+				"presented": 251,
+				"partial": 1,
+				"dropped": 3
+			},
+			"indexes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"cpu": 70.03905823475887,
+			"round": 2
+		},
+		{
+			"lib": "none",
+			"profile": "desktop",
+			"scenario": "busy",
+			"errors": [],
+			"seconds": 4.444,
+			"task": 3089.156,
+			"script": 3078.625,
+			"layoutTime": 0,
+			"styleTime": 0,
+			"layouts": 0,
+			"styles": 0,
+			"paints": 0,
+			"frames": {
+				"updates": 0,
+				"presented": 0,
+				"partial": 0,
+				"dropped": 0
+			},
+			"indexes": [
+				0,
+				0,
+				0,
+				0,
+				0,
+				0,
+				0
+			],
+			"cpu": 69.51296129612962,
+			"round": 2
+		}
+	]
+}

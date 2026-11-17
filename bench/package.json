@@ -1,0 +1,23 @@
+{
+	"name": "better-carousel-bench",
+	"private": true,
+	"type": "module",
+	"description": "Compares Better Carousel to other carousel libraries: bundle size, CPU work, frames and features.",
+	"scripts": {
+		"start": "node build.mjs && node run.mjs",
+		"quick": "node build.mjs && node run.mjs --quick",
+		"report": "node report.mjs"
+	},
+	"devDependencies": {
+		"@glidejs/glide": "3.7.1",
+		"embla-carousel": "8.6.0",
+		"embla-carousel-auto-height": "8.6.0",
+		"embla-carousel-auto-scroll": "8.6.0",
+		"embla-carousel-autoplay": "8.6.0",
+		"embla-carousel-class-names": "8.6.0",
+		"embla-carousel-wheel-gestures": "8.1.0",
+		"esbuild": "0.28.2",
+		"puppeteer-core": "25.17.0",
+		"swiper": "14.4.0"
+	}
+}

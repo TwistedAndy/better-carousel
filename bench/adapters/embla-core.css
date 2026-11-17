@@ -1,0 +1,17 @@
+/* The CSS that Embla needs, from its documentation. Embla takes the slide sizes and the gap from CSS. */
+.embla__viewport {
+	overflow: hidden;
+}
+
+.embla__container {
+	display: flex;
+	touch-action: pan-y pinch-zoom;
+	margin-left: calc(-1 * var(--gap));
+}
+
+.embla__slide {
+	flex: 0 0 calc(100% / var(--per));
+	min-width: 0;
+	padding-left: var(--gap);
+	box-sizing: border-box;
+}

@@ -1,0 +1,312 @@
+{
+	"built": "2026-11-17T18:08:09.025Z",
+	"esbuild": "0.28.2",
+	"settings": {
+		"bundle": true,
+		"minify": true,
+		"format": "iife",
+		"target": "es2020",
+		"platform": "browser",
+		"legalComments": "none",
+		"logLevel": "warning",
+		"define": {
+			"process.env.NODE_ENV": "\"production\""
+		},
+		"gzip": "level 9",
+		"brotli": "quality 11"
+	},
+	"libs": [
+		{
+			"name": "Better Carousel",
+			"id": "better",
+			"version": "1.0.0",
+			"released": null,
+			"sets": {
+				"core": {
+					"js": {
+						"min": 29860,
+						"gzip": 12251,
+						"brotli": 11169
+					},
+					"css": {
+						"min": 4967,
+						"gzip": 1416,
+						"brotli": 1207
+					},
+					"total": {
+						"min": 34827,
+						"gzip": 13667,
+						"brotli": 12376
+					}
+				},
+				"typical": {
+					"js": {
+						"min": 29860,
+						"gzip": 12251,
+						"brotli": 11169
+					},
+					"css": {
+						"min": 4967,
+						"gzip": 1416,
+						"brotli": 1207
+					},
+					"total": {
+						"min": 34827,
+						"gzip": 13667,
+						"brotli": 12376
+					}
+				},
+				"parity": {
+					"js": {
+						"min": 29860,
+						"gzip": 12251,
+						"brotli": 11169
+					},
+					"css": {
+						"min": 4967,
+						"gzip": 1416,
+						"brotli": 1207
+					},
+					"total": {
+						"min": 34827,
+						"gzip": 13667,
+						"brotli": 12376
+					}
+				}
+			},
+			"cdn": {
+				"file": "../dist/better-carousel.min.js",
+				"js": {
+					"min": 29578,
+					"gzip": 11858,
+					"brotli": 10815
+				},
+				"css": {
+					"min": 4823,
+					"gzip": 1380,
+					"brotli": 1171
+				},
+				"total": {
+					"min": 34401,
+					"gzip": 13238,
+					"brotli": 11986
+				}
+			}
+		},
+		{
+			"name": "Swiper",
+			"id": "swiper",
+			"version": "14.4.0",
+			"released": "2026-10-30",
+			"sets": {
+				"core": {
+					"js": {
+						"min": 67623,
+						"gzip": 21104,
+						"brotli": 18691
+					},
+					"css": {
+						"min": 4669,
+						"gzip": 1125,
+						"brotli": 935
+					},
+					"total": {
+						"min": 72292,
+						"gzip": 22229,
+						"brotli": 19626
+					}
+				},
+				"typical": {
+					"js": {
+						"min": 91499,
+						"gzip": 28081,
+						"brotli": 24876
+					},
+					"css": {
+						"min": 13497,
+						"gzip": 2289,
+						"brotli": 1975
+					},
+					"total": {
+						"min": 104996,
+						"gzip": 30370,
+						"brotli": 26851
+					}
+				},
+				"parity": {
+					"js": {
+						"min": 102794,
+						"gzip": 31410,
+						"brotli": 27761
+					},
+					"css": {
+						"min": 13497,
+						"gzip": 2289,
+						"brotli": 1975
+					},
+					"total": {
+						"min": 116291,
+						"gzip": 33699,
+						"brotli": 29736
+					}
+				}
+			},
+			"cdn": {
+				"file": "swiper/swiper-bundle.min.js",
+				"js": {
+					"min": 154826,
+					"gzip": 44417,
+					"brotli": 38629
+				},
+				"css": {
+					"min": 14613,
+					"gzip": 2931,
+					"brotli": 2527
+				},
+				"total": {
+					"min": 169439,
+					"gzip": 47348,
+					"brotli": 41156
+				}
+			}
+		},
+		{
+			"name": "Embla Carousel",
+			"id": "embla",
+			"version": "8.6.0",
+			"released": "2025-04-04",
+			"sets": {
+				"core": {
+					"js": {
+						"min": 18307,
+						"gzip": 7620,
+						"brotli": 6882
+					},
+					"css": {
+						"min": 234,
+						"gzip": 187,
+						"brotli": 142
+					},
+					"total": {
+						"min": 18541,
+						"gzip": 7807,
+						"brotli": 7024
+					}
+				},
+				"typical": {
+					"js": {
+						"min": 23605,
+						"gzip": 9316,
+						"brotli": 8430
+					},
+					"css": {
+						"min": 1571,
+						"gzip": 595,
+						"brotli": 490
+					},
+					"total": {
+						"min": 25176,
+						"gzip": 9911,
+						"brotli": 8920
+					}
+				},
+				"parity": {
+					"js": {
+						"min": 34756,
+						"gzip": 13182,
+						"brotli": 11885
+					},
+					"css": {
+						"min": 1571,
+						"gzip": 595,
+						"brotli": 490
+					},
+					"total": {
+						"min": 36327,
+						"gzip": 13777,
+						"brotli": 12375
+					}
+				}
+			},
+			"cdn": {
+				"file": "embla-carousel/embla-carousel.umd.js",
+				"js": {
+					"min": 17946,
+					"gzip": 7141,
+					"brotli": 6467
+				},
+				"css": {
+					"min": 0,
+					"gzip": 0,
+					"brotli": 0
+				},
+				"total": {
+					"min": 17946,
+					"gzip": 7141,
+					"brotli": 6467
+				}
+			}
+		},
+		{
+			"name": "Glide",
+			"id": "glide",
+			"version": "3.7.1",
+			"released": "2024-11-22",
+			"sets": {
+				"core": {
+					"js": {
+						"min": 21990,
+						"gzip": 6698,
+						"brotli": 6048
+					},
+					"css": {
+						"min": 753,
+						"gzip": 348,
+						"brotli": 267
+					},
+					"total": {
+						"min": 22743,
+						"gzip": 7046,
+						"brotli": 6315
+					}
+				},
+				"typical": {
+					"js": {
+						"min": 26507,
+						"gzip": 7754,
+						"brotli": 6972
+					},
+					"css": {
+						"min": 1985,
+						"gzip": 753,
+						"brotli": 609
+					},
+					"total": {
+						"min": 28492,
+						"gzip": 8507,
+						"brotli": 7581
+					}
+				},
+				"parity": null
+			},
+			"cdn": {
+				"file": "@glidejs/glide/dist/glide.min.js",
+				"js": {
+					"min": 27790,
+					"gzip": 7976,
+					"brotli": 7145
+				},
+				"css": {
+					"min": 2164,
+					"gzip": 938,
+					"brotli": 740
+				},
+				"total": {
+					"min": 29954,
+					"gzip": 8914,
+					"brotli": 7885
+				}
+			}
+		}
+	]
+}

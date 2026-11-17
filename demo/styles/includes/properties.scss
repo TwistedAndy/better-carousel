@@ -69,6 +69,10 @@
 	--button-base-active: var(--theme-primary-alt);
 	--button-text-active: var(--theme-primary-text);
 
+	--button-border-disabled: var(--theme-border);
+	--button-base-disabled: var(--theme-background);
+	--button-text-disabled: var(--theme-muted);
+
 	/* Shadows */
 	--shadow-small: 0 1px 3px #{rgbo(--color-shadow, 12%)};
 	--shadow-regular: 0 12px 30px #{rgbo(--color-shadow, 35%)};

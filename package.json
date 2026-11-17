@@ -1,7 +1,13 @@
 {
 	"name": "better-carousel",
-	"version": "0.1.0",
+	"version": "1.0.0",
 	"description": "A small and fast carousel that takes all sizes, gaps and the layout from CSS.",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/TwistedAndy/better-carousel.git"
+	},
+	"homepage": "https://twistedandy.github.io/better-carousel/",
+	"bugs": "https://github.com/TwistedAndy/better-carousel/issues",
 	"type": "module",
 	"main": "./dist/better-carousel.js",
 	"module": "./dist/better-carousel.js",
@@ -28,7 +34,8 @@
 		"dev": "rollup -c -w",
 		"docs": "node scripts/docs.mjs",
 		"test": "node --test tests/",
-		"e2e": "node tests/e2e.mjs"
+		"e2e": "node tests/e2e.mjs",
+		"bench": "npm run build && npm install --prefix bench --no-audit --no-fund && npm start --prefix bench --"
 	},
 	"keywords": [
 		"carousel",

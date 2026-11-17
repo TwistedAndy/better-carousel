@@ -1526,6 +1526,7 @@ const defaults = {
 	lazy: false,
 	drag: true,
 	wheel: true,
+	keys: true,
 	resize: true,
 	slideChanges: true,
 	focus: true,
@@ -1537,6 +1538,7 @@ const defaults = {
 	wrapper: true,
 	arrows: true,
 	dots: true,
+	dotsStyle: 'zoom',
 	labels: { carousel: 'Carousel', slide: '%d of %n', prev: 'Previous slide', next: 'Next slide', dot: 'Go to slide %d', play: 'Start the slide show', pause: 'Stop the slide show' },
 	classes: null,
 	state: '',
@@ -1562,6 +1564,9 @@ const names = (prefix) => ({
 	prevButton: prefix + '_prev',
 	nextButton: prefix + '_next',
 	dots: prefix + '_dots',
+	dotsTrack: prefix + '_dots_track',
+	dotsMarker: prefix + '_dots_marker',
+	dotsAll: prefix + '_dots_all',
 	dot: prefix + '_dot',
 	playButton: prefix + '_play',
 	clone: 'clone',
@@ -2485,7 +2490,7 @@ function carousel(element, userOptions, defaults, features) {
 }
 
 /*
- * Input: the pointer drag, the mouse wheel, the keyboard focus, and the target of the motion after a drag.
+ * Input: the pointer drag, the mouse wheel, the arrow keys, the keyboard focus, and the target of the motion after a drag.
  *
  * Each feature takes the context of a carousel (see carousel.js). It returns nothing if its option is off, or an object with remove().
  */
@@ -2719,9 +2724,13 @@ function drag(context) {
 
 	const prevent = (event) => event.preventDefault();
 
+	// Stop a text selection during a drag. A "user-select" rule on the dragging class does the same, but its change paints all layers of the carousel.
+	const select = (event) => context.dragging() && event.preventDefault();
+
 	viewport.addEventListener('pointerdown', down);
 	viewport.addEventListener('click', click, true);
 	viewport.addEventListener('dragstart', prevent);
+	viewport.addEventListener('selectstart', select);
 
 	return {
 		remove() {
@@ -2729,6 +2738,7 @@ function drag(context) {
 			viewport.removeEventListener('pointerdown', down);
 			viewport.removeEventListener('click', click, true);
 			viewport.removeEventListener('dragstart', prevent);
+			viewport.removeEventListener('selectstart', select);
 		}
 	};
 }
@@ -2833,6 +2843,42 @@ function wheel(context) {
 }
 
 /**
+ * Make the arrow keys move the carousel while the keyboard focus is in its root: left and right in a horizontal carousel, up and down
+ * in a vertical carousel. In a right-to-left carousel, the left arrow goes to the next slide. A key in a form field does not move the carousel.
+ *
+ * @param {object} context What the features share. See carousel.js.
+ * @returns {{remove: () => void}|undefined}
+ */
+function keys(context) {
+	const { api, root, options } = context;
+
+	if (!options.keys) {
+		return;
+	}
+
+	function onKey(event) {
+		const geo = context.geo(),
+			{ key, target } = event,
+			// -1 for the previous slide, 1 for the next slide. A right-to-left carousel has the next slide at the left.
+			direction = geo && !geo.fit && (geo.axis === 'y' ? { ArrowUp: -1, ArrowDown: 1 } : { ArrowLeft: -geo.sign, ArrowRight: geo.sign })[key],
+			name = direction > 0 ? 'Next' : 'Prev';
+		// At the first and the last slide, the key scrolls the page
+		if (direction && !(event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) && api['canGoTo' + name]()) {
+			event.preventDefault();
+			api['goTo' + name]();
+		}
+	}
+
+	root.addEventListener('keydown', onKey);
+
+	return {
+		remove() {
+			root.removeEventListener('keydown', onKey);
+		}
+	};
+}
+
+/**
  * Go to a slide that gets the keyboard focus, if it does not show fully. A focus soon after a pointer press does not move the carousel.
  *
  * @param {object} context What the features share. See carousel.js.
@@ -2894,12 +2940,23 @@ function nav(context) {
 		box = optionElement(options.dots, root),
 		buttons = [],
 		dots = [],
-		list = box && create('div', cls.dots);
+		// The window of 5 dots, or all dots with dotsStyle: 'all'
+		windowed = options.dotsStyle !== 'all',
+		// The window of the dots, the track that slides in it, and the marker of the selected dot
+		list = box && create('div', windowed ? cls.dots : cls.dots + ' ' + cls.dotsAll),
+		track = list && create('div', cls.dotsTrack);
 
 	let marks = new Map();
 
 	if (!arrows && !box) {
 		return;
+	}
+
+	// Add the window of the dots now: its CSS height is fixed, so the dots that the first measure adds do not shift the page
+	if (list) {
+		track.append(create('span', cls.dotsMarker));
+		list.append(track);
+		box.append(list);
 	}
 
 	if (arrows) {
@@ -2923,7 +2980,8 @@ function nav(context) {
 				button.remove();
 			} else {
 				if (!button.isConnected) {
-					arrows.append(button);
+					// Before the dots, for the tab order
+					list?.parentNode === arrows ? list.before(button) : arrows.append(button);
 				}
 				const disabled = !(index ? api.canGoToNext() : api.canGoToPrev());
 				if (button.disabled !== disabled) {
@@ -2953,10 +3011,12 @@ function nav(context) {
 			dot.setAttribute('aria-label', labels.dot.replace('%d', index + 1));
 			dot.setAttribute('aria-controls', context.container.id);
 			// The window of the dots hides the dots out of the zoom: keep them out of the tab order
-			dot.tabIndex = -1;
+			if (windowed) {
+				dot.tabIndex = -1;
+			}
 			dot.addEventListener('click', () => api.goToSnap(index));
 			dots.push(dot);
-			list.append(dot);
+			track.append(dot);
 		}
 
 		if (!list.isConnected) {
@@ -2976,7 +3036,7 @@ function nav(context) {
 			if (next.get(index) !== name) {
 				setClass(dots[index], name, false);
 				setAttribute(dots[index], 'aria-current', false);
-				dots[index].tabIndex = -1;
+				dots[index].tabIndex = windowed ? -1 : 0;
 			}
 		});
 
@@ -2988,10 +3048,17 @@ function nav(context) {
 
 		marks = next;
 
-		// Center the group of up to 5 dots in the window of the dots. The CSS moves the dots with "translate".
-		const shift = 2 - (Math.max(0, selected - 2) + Math.min(count - 1, selected + 2)) / 2;
-		if (list.style.getPropertyValue('--better-shift') !== String(shift)) {
-			list.style.setProperty('--better-shift', shift);
+		// Center the group of up to 5 dots in the window of the dots, and move the marker to the selected dot. The CSS moves the track and the marker with "translate".
+		if (windowed) {
+			variable('--better-shift', 2 - (Math.max(0, selected - 2) + Math.min(count - 1, selected + 2)) / 2);
+		}
+		variable('--better-dot', selected);
+	}
+
+	// Set a CSS variable on the window of the dots, if its value changes
+	function variable(name, value) {
+		if (list.style.getPropertyValue(name) !== String(value)) {
+			list.style.setProperty(name, value);
 		}
 	}
 
@@ -3067,7 +3134,7 @@ function sync(context) {
 
 
 // The features. Their event handlers run in this order.
-const features = [drag, wheel, focus, nav, autoplay, autoScroll, sync];
+const features = [drag, wheel, keys, focus, nav, autoplay, autoScroll, sync];
 
 /**
  * Make a carousel, or get the carousel of an element that has one.

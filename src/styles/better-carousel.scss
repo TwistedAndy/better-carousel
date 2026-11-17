@@ -14,8 +14,8 @@ $better-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'
 	display: block;
 	position: relative;
 
+	// No "user-select" here: its change paints all layers of the carousel. The drag stops the text selection with script.
 	&.#{$better-state}dragging {
-		user-select: none;
 		cursor: grabbing;
 	}
 
@@ -147,8 +147,8 @@ $better-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'
 		clip-path: none;
 	}
 
-	// The dots: a window of 5 dots. The dots slide with "translate", and the zoom is a "transform" of each circle.
-	// Both run on the compositor: a change of the selected dot needs no layout and no paint on each frame.
+	// The dots: a window of 5 dots. The track of the dots slides with "translate", and the marker of the selected dot glides with "translate".
+	// Only these two elements animate. Each animation costs work on the main thread at its start and its end, so the dots change size at once.
 	.#{$better}_dots {
 		display: flex;
 		position: relative;
@@ -173,14 +173,9 @@ $better-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'
 		border-radius: 50%;
 		background: none;
 		color: var(--button-text-disabled, #767676);
-		translate: calc(var(--better-shift, 0) * 1.5rem);
-		transition: translate 0.2s;
+		// A color transition runs on the main thread. It runs only on hover: a select does not change the color of a dot.
+		transition: color 0.2s;
 		cursor: pointer;
-
-		// In a right-to-left carousel, the first dot is at the right
-		&:dir(rtl) {
-			translate: calc(var(--better-shift, 0) * -1.5rem);
-		}
 
 		// In the dot, because the window of the dots cuts what is outside
 		&:focus-visible {
@@ -195,9 +190,7 @@ $better-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'
 			height: 0.875rem;
 			border-radius: 50%;
 			background: currentColor;
-			transition: transform 0.2s;
 			transform: scale(0);
-			will-change: transform;
 		}
 
 		&.#{$better-state}last:before,
@@ -210,8 +203,8 @@ $better-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'
 			transform: scale(0.666);
 		}
 
+		// The marker covers the selected dot
 		&.#{$better-state}current:before {
-			background-color: var(--button-base, #222);
 			transform: scale(1);
 		}
 
@@ -219,6 +212,55 @@ $better-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'
 			&:hover {
 				color: var(--button-base-active, #000);
 			}
+		}
+
+	}
+
+	.#{$better}_dots_track {
+		display: flex;
+		position: relative;
+		flex: none;
+		translate: calc(var(--better-shift, 0) * 1.5rem);
+		transition: translate 0.4s;
+
+		// In a right-to-left carousel, the first dot is at the right
+		&:dir(rtl) {
+			translate: calc(var(--better-shift, 0) * -1.5rem);
+		}
+
+	}
+
+	// The selected dot, on top of the dots, also if the CSS of the site positions the buttons. It does not get the clicks.
+	.#{$better}_dots_marker {
+		position: absolute;
+		z-index: 1;
+		top: 0.3125rem;
+		inset-inline-start: 0.3125rem;
+		width: 0.875rem;
+		height: 0.875rem;
+		border-radius: 50%;
+		background: var(--button-base, #222);
+		translate: calc(var(--better-dot, 0) * 1.5rem);
+		transition: translate 0.4s;
+		pointer-events: none;
+
+		&:dir(rtl) {
+			translate: calc(var(--better-dot, 0) * -1.5rem);
+		}
+
+	}
+
+	// dotsStyle: 'all'. All dots show with the same size, and the track does not slide.
+	.#{$better}_dots.#{$better}_dots_all {
+		width: max-content;
+		max-width: 100%;
+
+		.#{$better}_dots_track {
+			translate: none;
+		}
+
+		.#{$better}_dot:before {
+			transform: scale(0.666);
 		}
 
 	}
@@ -262,8 +304,18 @@ $better-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'
 			transform: translateY(-50%);
 		}
 
-		.#{$better}_dot {
+		.#{$better}_dots_track {
+			flex-direction: column;
 			translate: 0 calc(var(--better-shift, 0) * 1.5rem);
+		}
+
+		.#{$better}_dots_marker {
+			translate: 0 calc(var(--better-dot, 0) * 1.5rem);
+		}
+
+		.#{$better}_dots_all {
+			height: auto;
+			max-height: 100%;
 		}
 
 	}

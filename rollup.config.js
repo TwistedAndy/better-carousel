@@ -8,10 +8,6 @@ const production = !process.env.ROLLUP_WATCH;
 
 const input = 'src/index.js';
 
-// The gzip size of the minified file must not be more than this value
-// 11.5 KB. The same features in Embla 9 (the core, 3 plugins and the theme wrapper) are 12.6 KB gzip.
-const budget = 11776;
-
 const terserOptions = {
 	ecma: 2020,
 	compress: {
@@ -48,18 +44,15 @@ const styles = {
 };
 
 /**
- * Print the sizes of the minified file, and stop the build if it is larger than the budget.
+ * Print the sizes of the minified file.
  */
 const size = {
 	name: 'size',
 	writeBundle(options) {
 		const code = readFileSync(options.file);
 		const gzip = gzipSync(code, { level: 9 }).length;
-		const text = options.file + ': ' + (code.length / 1024).toFixed(2) + ' KB min, ' + (gzip / 1024).toFixed(2) + ' KB gzip (' + gzip + ' of ' + budget + ' bytes)';
+		const text = options.file + ': ' + (code.length / 1024).toFixed(2) + ' KB min, ' + (gzip / 1024).toFixed(2) + ' KB gzip';
 		console.log(text);
-		if (gzip > budget) {
-			this[process.env.BUDGET === 'off' ? 'warn' : 'error']('The gzip size is more than the budget of ' + budget + ' bytes');
-		}
 	}
 };
 

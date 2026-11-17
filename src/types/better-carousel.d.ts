@@ -100,7 +100,14 @@ export interface ClassNames {
 	button?: string;
 	prevButton?: string;
 	nextButton?: string;
+	/** The window of the dots. */
 	dots?: string;
+	/** The row of the dots that slides in the window. */
+	dotsTrack?: string;
+	/** The marker of the selected dot, on top of the dots. */
+	dotsMarker?: string;
+	/** On the window of the dots, with `dotsStyle: 'all'`. */
+	dotsAll?: string;
 	dot?: string;
 	playButton?: string;
 	/** @default 'clone' */
@@ -160,6 +167,8 @@ export interface Options {
 	drag?: boolean;
 	/** The mouse wheel moves a vertical carousel. `'both'`: also a horizontal carousel. `false`: the wheel does not move the carousel. @default true @see {@link https://twistedandy.github.io/better-carousel/#vertical | example} */
 	wheel?: boolean | 'both';
+	/** The arrow keys move the carousel while the keyboard focus is in it: left and right in a horizontal carousel, up and down in a vertical carousel. A key in a form field does not move the carousel. @default true */
+	keys?: boolean;
 	/** Measure again when a size changes. @default true @see {@link https://twistedandy.github.io/better-carousel/#options-usage | example} */
 	resize?: boolean;
 	/** Measure again when the page adds or removes a slide. @default true @see {@link https://twistedandy.github.io/better-carousel/#changes | example} */
@@ -182,6 +191,8 @@ export interface Options {
 	arrows?: boolean | Element | string;
 	/** Add the dots. The values are the same as for `arrows`. @default true @see {@link https://twistedandy.github.io/better-carousel/#heading | example} */
 	dots?: boolean | Element | string;
+	/** The style of the dots. `'zoom'`: a window of 5 dots that slides, with smaller dots at the ends. `'all'`: all dots with the same size. @default 'zoom' */
+	dotsStyle?: 'zoom' | 'all';
 	/** The texts for screen readers: `carousel`, `slide` (`'%d of %n'`), `prev`, `next`, `dot` (`'Go to slide %d'`), `play`, `pause`. `%d` is the slide number, and `%n` is the number of slides. @see {@link https://twistedandy.github.io/better-carousel/#accessibility | example} */
 	labels?: Labels;
 	/** A class prefix such as `'embla'`, or an object with the names to change. The Classes table gives all names. @default null @see {@link https://twistedandy.github.io/better-carousel/#embla | example} */

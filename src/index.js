@@ -4,13 +4,13 @@
 
 import { autoplay, autoScroll } from './scripts/autoplay.js';
 import carousel, { find } from './scripts/carousel.js';
-import { drag, focus, wheel } from './scripts/input.js';
+import { drag, focus, keys, wheel } from './scripts/input.js';
 import { readBoxes } from './scripts/layout.js';
 import { nav, sync } from './scripts/navigation.js';
 import { resolve } from './scripts/options.js';
 
 // The features. Their event handlers run in this order.
-const features = [drag, wheel, focus, nav, autoplay, autoScroll, sync];
+const features = [drag, wheel, keys, focus, nav, autoplay, autoScroll, sync];
 
 /**
  * Make a carousel, or get the carousel of an element that has one.

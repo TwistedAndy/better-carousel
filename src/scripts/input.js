@@ -1,5 +1,5 @@
 /*
- * Input: the pointer drag, the mouse wheel, the keyboard focus, and the target of the motion after a drag.
+ * Input: the pointer drag, the mouse wheel, the arrow keys, the keyboard focus, and the target of the motion after a drag.
  *
  * Each feature takes the context of a carousel (see carousel.js). It returns nothing if its option is off, or an object with remove().
  */
@@ -235,9 +235,13 @@ export function drag(context) {
 
 	const prevent = (event) => event.preventDefault();
 
+	// Stop a text selection during a drag. A "user-select" rule on the dragging class does the same, but its change paints all layers of the carousel.
+	const select = (event) => context.dragging() && event.preventDefault();
+
 	viewport.addEventListener('pointerdown', down);
 	viewport.addEventListener('click', click, true);
 	viewport.addEventListener('dragstart', prevent);
+	viewport.addEventListener('selectstart', select);
 
 	return {
 		remove() {
@@ -245,6 +249,7 @@ export function drag(context) {
 			viewport.removeEventListener('pointerdown', down);
 			viewport.removeEventListener('click', click, true);
 			viewport.removeEventListener('dragstart', prevent);
+			viewport.removeEventListener('selectstart', select);
 		}
 	};
 }
@@ -344,6 +349,42 @@ export function wheel(context) {
 		remove() {
 			viewport.removeEventListener('wheel', onWheel);
 			clearTimeout(timer);
+		}
+	};
+}
+
+/**
+ * Make the arrow keys move the carousel while the keyboard focus is in its root: left and right in a horizontal carousel, up and down
+ * in a vertical carousel. In a right-to-left carousel, the left arrow goes to the next slide. A key in a form field does not move the carousel.
+ *
+ * @param {object} context What the features share. See carousel.js.
+ * @returns {{remove: () => void}|undefined}
+ */
+export function keys(context) {
+	const { api, root, options } = context;
+
+	if (!options.keys) {
+		return;
+	}
+
+	function onKey(event) {
+		const geo = context.geo(),
+			{ key, target } = event,
+			// -1 for the previous slide, 1 for the next slide. A right-to-left carousel has the next slide at the left.
+			direction = geo && !geo.fit && (geo.axis === 'y' ? { ArrowUp: -1, ArrowDown: 1 } : { ArrowLeft: -geo.sign, ArrowRight: geo.sign })[key],
+			name = direction > 0 ? 'Next' : 'Prev';
+		// At the first and the last slide, the key scrolls the page
+		if (direction && !(event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) && api['canGoTo' + name]()) {
+			event.preventDefault();
+			api['goTo' + name]();
+		}
+	}
+
+	root.addEventListener('keydown', onKey);
+
+	return {
+		remove() {
+			root.removeEventListener('keydown', onKey);
 		}
 	};
 }

@@ -4,7 +4,7 @@
 
 <p>A small, fast and accessible JavaScript carousel.<br />The CSS sets the layout, and the motion runs on the compositor, also on slow phones.</p>
 
-[![Gzip size](https://flat.badgen.net/static/gzip/11.2%20KB/green)](dist/better-carousel.min.js)
+[![Gzip size](https://flat.badgen.net/static/gzip/11.6%20KB/green)](dist/better-carousel.min.js)
 [![MIT license](https://flat.badgen.net/static/license/MIT/purple)](LICENSE)
 [![No dependencies](https://flat.badgen.net/static/dependencies/0/blue)](package.json)
 
@@ -16,7 +16,7 @@
 
 - **Layout from CSS** - Your CSS sets the sizes of the slides, the space between them, the axis and the alignment. One carousel can show 1 slide on a phone and 4 slides on a desktop.
 - **Smooth** - Each motion is a Web Animations API animation of `translate`. No script runs on each frame, also during the auto scroll.
-- **Small** - <!-- generated:gzip -->11.2 KB<!-- /generated --> gzip with loop, autoplay, auto scroll, auto height, sync and the mouse wheel.
+- **Small** - <!-- generated:gzip -->11.6 KB<!-- /generated --> gzip with loop, autoplay, auto scroll, auto height, sync and the mouse wheel.
 - **Loop** - The loop moves the original slides. It adds clones only if the slides are too few.
 - **Vertical and grid** - A column layout makes a vertical carousel. A CSS grid with more rows also works.
 - **Accessible** - WCAG 2.1 AA: names for the carousel, the slides and the buttons, the keyboard focus, a live region and reduced motion.
@@ -346,6 +346,7 @@ BetterCarousel(element, {
 | `lazy` | `boolean`, `number` | `false` | `true`: start when the carousel comes within one screen of the view. A number: the distance in px. ([example](https://twistedandy.github.io/better-carousel/#lazy)) |
 | `drag` | `boolean` | `true` | Drag with the mouse, the pen and the finger. |
 | `wheel` | `boolean`, `'both'` | `true` | The mouse wheel moves a vertical carousel. `'both'`: also a horizontal carousel. `false`: the wheel does not move the carousel. ([example](https://twistedandy.github.io/better-carousel/#vertical)) |
+| `keys` | `boolean` | `true` | The arrow keys move the carousel while the keyboard focus is in it: left and right in a horizontal carousel, up and down in a vertical carousel. A key in a form field does not move the carousel. |
 | `resize` | `boolean` | `true` | Measure again when a size changes. ([example](https://twistedandy.github.io/better-carousel/#options-usage)) |
 | `slideChanges` | `boolean` | `true` | Measure again when the page adds or removes a slide. ([example](https://twistedandy.github.io/better-carousel/#changes)) |
 | `focus` | `boolean` | `true` | Go to a slide when it gets the keyboard focus. ([example](https://twistedandy.github.io/better-carousel/#controls)) |
@@ -357,6 +358,7 @@ BetterCarousel(element, {
 | `wrapper` | `boolean` | `true` | Add the root and the viewport if the page does not have them. ([example](https://twistedandy.github.io/better-carousel/#options-usage)) |
 | `arrows` | `boolean`, `Element`, `string` | `true` | Add the arrows to the root. `false`: no arrows. An element or a selector: add the arrows to that element. ([example](https://twistedandy.github.io/better-carousel/#heading)) |
 | `dots` | `boolean`, `Element`, `string` | `true` | Add the dots. The values are the same as for `arrows`. ([example](https://twistedandy.github.io/better-carousel/#heading)) |
+| `dotsStyle` | `'zoom'`, `'all'` | `'zoom'` | The style of the dots. `'zoom'`: a window of 5 dots that slides, with smaller dots at the ends. `'all'`: all dots with the same size. |
 | `labels` | `object` | English | The texts for screen readers: `carousel`, `slide` (`'%d of %n'`), `prev`, `next`, `dot` (`'Go to slide %d'`), `play`, `pause`. `%d` is the slide number, and `%n` is the number of slides. ([example](#accessibility)) |
 | `classes` | `string`, `object` | `null` | A class prefix such as `'embla'`, or an object with the names to change. The [Classes](#classes) table gives all names. ([example](https://twistedandy.github.io/better-carousel/#embla)) |
 | `state` | `string` | `''` | The prefix of the state classes, such as `'is_'`. ([example](https://twistedandy.github.io/better-carousel/#embla)) |
@@ -653,7 +655,9 @@ These are the default class names. A prefix in `classes` changes the first part 
 | `better_fit` | On the root, if all slides fit |
 | `better_auto_height` | On the root, with `autoHeight` |
 | `better_button`, `better_prev`, `better_next`, `better_play` | The buttons |
-| `better_dots`, `better_dot` | The dots |
+| `better_dots`, `better_dots_track`, `better_dot` | The window of the dots, the row that slides in it, and the dots |
+| `better_dots_marker` | The marker of the selected dot |
+| `better_dots_all` | On the window of the dots, with `dotsStyle: 'all'` |
 | `selected` | The selected slide |
 | `clone` | A clone of a slide |
 | `dragging` | On the root, during a drag |
@@ -676,6 +680,7 @@ The carousel follows the carousel pattern of the WAI-ARIA Authoring Practices an
 - The root is a region with the name "Carousel". Each slide has a name such as "2 of 8". A slide that is an `article` or a list item keeps its own role.
 - The arrows and the dots are buttons with names. A screen reader reads each new slide (`aria-live`), but not during the autoplay.
 - Tab moves the focus through the links and the fields in the slides. The carousel moves to show the focused element.
+- While the focus is in the carousel, the arrow keys go to the previous and the next slide. To turn them off, set `keys: false`.
 - Clones are `inert` and hidden from screen readers.
 - The autoplay and the auto scroll have a play and pause button (WCAG 2.2.2). The keyboard focus pauses them. If the user prefers reduced motion, they do not start.
 - A drag across the axis scrolls the page. A link opens on a click, but not after a drag.
@@ -703,12 +708,12 @@ The library is made for slow phones. A motion runs on the compositor, and a caro
 <!-- generated:sizes -->
 | File | Minified | Gzip | Brotli |
 | --- | --- | --- | --- |
-| `better-carousel.min.js` | 28.0 KB | 11.2 KB | 10.3 KB |
-| `better-carousel.css` | 4.0 KB | 1.3 KB | 1.0 KB |
-| Total | 32.1 KB | 12.5 KB | 11.3 KB |
+| `better-carousel.min.js` | 28.9 KB | 11.6 KB | 10.6 KB |
+| `better-carousel.css` | 4.7 KB | 1.3 KB | 1.1 KB |
+| Total | 33.6 KB | 12.9 KB | 11.7 KB |
 <!-- /generated -->
 
-The same features in Embla 9 (the core, three plugins and a wrapper) are 12.6 KB gzip.
+The [Comparison](#comparison) section gives the sizes and the runtime costs of other carousel libraries.
 
 | Measure, on a phone with a CPU 4 times slower | Better Carousel |
 | --- | --- |
@@ -720,42 +725,90 @@ The same features in Embla 9 (the core, three plugins and a wrapper) are 12.6 KB
 - A motion is a Web Animations API animation of `translate`. No script runs on each frame.
 - The auto scroll is one animation that does not stop. During the motion, the browser does no script, style, layout or paint work.
 - One `ResizeObserver` serves all carousels. It reads the layout of all carousels first, and then it writes. For this reason, the browser calculates the layout only one time.
-- The dots move with `translate` and change size with `transform`. A click on a dot causes no layout work.
+- Only two elements of the dots animate: the row of the dots and the marker of the selected dot. Both move with `translate`. A click on a dot causes no layout work.
 - The listeners for the autoplay and the mouse wheel exist only while they can do something.
 - The `progress` and `offset` options run a script on each frame of a motion. For this reason, they are off by default.
 
-## Coming from Embla
+## Comparison
 
-This table gives the names and the behavior that are different from Embla 9 and Embla 8. The other options, methods and events have the same names as in Embla.
+This benchmark compares Better Carousel with Swiper, Embla Carousel and Glide in Chrome. All libraries make the same carousel: 10 slides, the loop, the drag, the arrows, the dots and a motion of 400 ms. Embla uses the arrows, the dots and the CSS of its own examples, and the plugins for the same features. [bench/README.md](bench/README.md) gives the method, the metrics, the profiles and the steps to run the benchmark on your computer.
 
-<!-- generated:embla -->
-| Embla | Embla name | Better Carousel |
-| --- | --- | --- |
-| 9 | Handler `(api, event)` | Handler `(carousel, name)`. The events have no `detail`. |
-| 9 | Autoplay `delay` as a function that gives one delay for each snap | Autoplay `delay` as an array with one delay for each snap |
-| 8 | Option `startIndex` | `startSnap` |
-| 8 | Options `watchDrag`, `watchResize`, `watchSlides`, `watchFocus` | `drag`, `resize`, `slideChanges`, `focus` |
-| 9 | Option `draggable` | `drag` |
-| 8, 9 | Options `slidesToScroll`, `direction` | `slidesPerSnap`, `dir` |
-| 8, 9 | Autoplay and AutoScroll `stopOnMouseEnter`, `stopOnFocusIn` | `pauseOnHover`, `pauseOnFocus` |
-| 8, 9 | AutoScroll `direction: 'forward'`, `'backward'` | `direction: 'next'`, `'prev'` |
-| 8 | Autoplay `jump` | `instant` |
-| 8 | `scrollTo(index, jump)` | `goToSnap(index, instant)` |
-| 9 | `goTo(index, instant)` | `goToSnap(index, instant)` |
-| 8 | `scrollNext()`, `scrollPrev()` | `goToNext()`, `goToPrev()` |
-| 8 | `canScrollNext()`, `canScrollPrev()` | `canGoToNext()`, `canGoToPrev()` |
-| 8 | `selectedScrollSnap()`, `previousScrollSnap()` | `selectedSnap()`, `previousSnap()` |
-| 8 | `scrollSnapList()` | `snapProgress()` |
-| 9 | `snapList()` | `snapProgress()` |
-| 8, 9 | `scrollProgress()`, `reInit()` | `progress()`, `reinit()` |
-| 8 | Events `reInit`, `slidesInView`, `slidesChanged`, `slideFocus` | `reinit`, `slidesinview`, `slideschanged`, `slidefocus` |
-| 8 | Events `pointerDown`, `pointerUp` | `dragstart`, `dragend` |
-| 9 | Events `pointerdown`, `pointerup` | `dragstart`, `dragend` |
-| 8, 9 | Plugins `Autoplay`, `AutoScroll`, `AutoHeight` | The options `autoplay`, `autoScroll`, `autoHeight` |
-| 8, 9 | `plugins().autoplay`, `plugins().autoScroll` | `carousel.autoplay`, `carousel.autoScroll` |
-| 8, 9 | Plugin `ClassNames` | The options `classes` and `state` |
-| 8, 9 | Plugin `WheelGestures` (a separate package) | The option `wheel` |
-<!-- /generated -->
+On a phone with a CPU 4 times slower:
+
+- With all features, Better Carousel is 13.3 KB gzip. Embla is 13.5 KB and Swiper 32.9 KB with the same features. Embla still has no names for screen readers and no arrow keys. Glide does not have all of these features.
+- 6 slide changes take 180 ms of main-thread time. Swiper takes 221 ms, Glide 329 ms and Embla 1584 ms.
+- The autoplay uses 0.9% of the CPU. Glide uses 2.4%, Swiper 24.4% and Embla 32.2%.
+- 5 drags take 1053 ms, about the same as Swiper (1024 ms). Glide takes 1732 ms and Embla 3587 ms. A drag causes the fewest paints of all libraries, and no layout shift.
+- A page with 10 carousels has 28 ms of Total Blocking Time. Swiper has 61 ms and Glide 42 ms. Embla has 18 ms.
+
+Measured with Chrome 157.0.8103.51 (headless) on 12th Gen Intel(R) Core(TM) i9-12900HK, 20 threads, 64 GB of memory, 2026-11-17. Each value is the median of 3 rounds.
+
+### Bundle size
+
+![Typical setup, JS + CSS, gzip](bench/results/charts/size.svg)
+
+| Library | Core | Typical | Typical, brotli | All features | Shipped files |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| **Better Carousel 1.0.0** | 13.3 | **13.3** | 12.1 | 13.3 | 12.9 |
+| Swiper 14.4.0 | 21.7 | **29.7** | 26.2 | 32.9 | 46.2 |
+| Embla Carousel 8.6.0 | 7.6 | **9.7** | 8.7 | 13.5 | 7.0 |
+| Glide 3.7.1 | 6.9 | **8.3** | 7.4 | not available | 8.7 |
+
+KB after gzip, JS and CSS. Core: the smallest setup that the user can drag. Typical: the setup of the tests below, with the loop, the arrows, the dots, the autoplay and the accessibility module. All features: the typical setup, the mouse wheel, the auto scroll, the auto height, the free drag and the sync. Shipped files: the minified JS and CSS files of the package, as they are.
+
+### Mobile, CPU 4 times slower
+
+![Mobile: main-thread time, 6 slide changes](bench/results/charts/navigate.svg)
+
+![Mobile: main-thread time, 5 drags](bench/results/charts/drag.svg)
+
+![Mobile: CPU load of the autoplay](bench/results/charts/autoplay.svg)
+
+![Mobile: Total Blocking Time, page with 10 carousels](bench/results/charts/blocking.svg)
+
+| Library | Load, ms | Blocking, ms | Layout shift | Idle CPU, % | Navigate, ms | Navigate paints | Autoplay CPU, % | Drag, ms | Drag paints | Busy: bad frames, % |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| **Better Carousel** | 198 | 28 | 0.000 | 0.2 | 180 | 12 | 0.9 | 1053 | 8 | 3.2 |
+| Swiper | 239 | 61 | 0.000 | 0.1 | 221 | 12 | 24.4 | 1024 | 10 | 4.3 |
+| Embla Carousel | 190 | 18 | 0.000 | 0.2 | 1584 | 12 | 32.2 | 3587 | 10 | 26.2 |
+| Glide | 221 | 42 | 0.000 | 0.1 | 329 | 22 | 2.4 | 1732 | 20 | 1.3 |
+| No carousel | 117 | 0 | 0.000 | 0.2 | 14 | 0 | 0.1 | 354 | 0 | - |
+
+### Desktop
+
+| Library | Load, ms | Blocking, ms | Layout shift | Idle CPU, % | Navigate, ms | Navigate paints | Autoplay CPU, % | Drag, ms | Drag paints | Busy: bad frames, % |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| **Better Carousel** | 40 | 0 | 0.000 | 0.0 | 37 | 12 | 0.4 | 174 | 30 | 1.5 |
+| Swiper | 51 | 0 | 0.000 | 0.0 | 29 | 12 | 3.3 | 146 | 16 | 1.2 |
+| Embla Carousel | 42 | 0 | 0.000 | 0.0 | 266 | 12 | 5.6 | 518 | 60 | 15.7 |
+| Glide | 47 | 0 | 0.000 | 0.0 | 49 | 26 | 0.6 | 303 | 22 | 0.7 |
+| No carousel | 30 | 0 | 0.000 | 0.1 | 3 | 0 | 0.0 | 45 | 0 | - |
+
+Load: the main-thread time and the Total Blocking Time of a page with 10 carousels. Navigate: 6 calls of `next()`. Drag: 5 drags. Busy: the share of frames that were dropped or late during navigate, while another script blocks the main thread. Less is better in all columns.
+
+### Features
+
+| Feature | Better | Swiper | Embla | Glide |
+| --- | ---: | ---: | ---: | ---: |
+| Slide sizes and gaps from CSS | yes | partly (`slidesPerView: 'auto'`) | yes | no |
+| Loop without clones | yes | yes | yes | no |
+| Vertical | yes | yes | yes | no |
+| Right-to-left | yes | yes | yes | yes |
+| Breakpoints | yes | yes | yes | yes |
+| Free drag with momentum | yes | module | yes | no |
+| Arrows and dots | yes | modules | no | your markup |
+| Autoplay | yes | module | plugin | yes |
+| Auto scroll without stops | yes | partly (autoplay with delay 0) | plugin | no |
+| Auto height | yes | yes | plugin | no |
+| Sync of two carousels | yes | module | no | no |
+| Mouse wheel | yes | module | plugin of a third party | no |
+| Arrow keys | yes | module | no | yes |
+| Names for screen readers | yes | module | no | no |
+| Start only when near the screen | yes | no | no | no |
+| Fade and other effects | no | modules (fade, cube, flip, coverflow, cards, creative) | plugin (fade) | no |
+| TypeScript types | yes | yes | yes | separate package |
+
+Run the benchmark: `npm run bench`. The [bench/README.md](bench/README.md) file gives the method and the options.
 
 ## Development
 

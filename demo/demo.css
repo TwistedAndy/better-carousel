@@ -54,6 +54,9 @@
   --button-border-active: var(--theme-primary-alt);
   --button-base-active: var(--theme-primary-alt);
   --button-text-active: var(--theme-primary-text);
+  --button-border-disabled: var(--theme-border);
+  --button-base-disabled: var(--theme-background);
+  --button-text-disabled: var(--theme-muted);
   /* Shadows */
   --shadow-small: 0 1px 3px rgb(from var(--color-shadow) r g b / 12%);
   --shadow-regular: 0 12px 30px rgb(from var(--color-shadow) r g b / 35%);
@@ -643,7 +646,6 @@ pre {
     color: var(--button-text-active);
   }
 }
-
 .button_code, .button_outline {
   --button-border: var(--color-border);
   --button-base: var(--color-background);
@@ -651,6 +653,15 @@ pre {
   --button-border-active: var(--color-muted);
   --button-base-active: var(--color-light);
   --button-text-active: var(--color-heading);
+}
+
+.button:disabled {
+  --button-border: var(--button-border-disabled);
+  --button-base: var(--button-base-disabled);
+  --button-text: var(--button-text-disabled);
+  --button-border-active: var(--button-border-disabled);
+  --button-base-active: var(--button-base-disabled);
+  --button-text-active: var(--button-text-disabled);
 }
 
 .button_code {
@@ -1234,7 +1245,6 @@ pre {
   position: relative;
 }
 .better.dragging {
-  user-select: none;
   cursor: grabbing;
 }
 
@@ -1367,12 +1377,8 @@ pre {
   border-radius: 50%;
   background: none;
   color: var(--button-text-disabled, #767676);
-  translate: calc(var(--better-shift, 0) * 1.5rem);
-  transition: translate 0.2s;
+  transition: color 0.2s;
   cursor: pointer;
-}
-.better_dot:dir(rtl) {
-  translate: calc(var(--better-shift, 0) * -1.5rem);
 }
 .better_dot:focus-visible {
   outline: 2px solid var(--button-border-active, #000);
@@ -1385,9 +1391,7 @@ pre {
   height: 0.875rem;
   border-radius: 50%;
   background: currentColor;
-  transition: transform 0.2s;
   transform: scale(0);
-  will-change: transform;
 }
 .better_dot.last:before, .better_dot.first:before {
   transform: scale(0.333);
@@ -1396,13 +1400,51 @@ pre {
   transform: scale(0.666);
 }
 .better_dot.current:before {
-  background-color: var(--button-base, #222);
   transform: scale(1);
 }
 @media (hover: hover) {
   .better_dot:hover {
     color: var(--button-base-active, #000);
   }
+}
+
+.better_dots_track {
+  display: flex;
+  position: relative;
+  flex: none;
+  translate: calc(var(--better-shift, 0) * 1.5rem);
+  transition: translate 0.4s;
+}
+.better_dots_track:dir(rtl) {
+  translate: calc(var(--better-shift, 0) * -1.5rem);
+}
+
+.better_dots_marker {
+  position: absolute;
+  z-index: 1;
+  top: 0.3125rem;
+  inset-inline-start: 0.3125rem;
+  width: 0.875rem;
+  height: 0.875rem;
+  border-radius: 50%;
+  background: var(--button-base, #222);
+  translate: calc(var(--better-dot, 0) * 1.5rem);
+  transition: translate 0.4s;
+  pointer-events: none;
+}
+.better_dots_marker:dir(rtl) {
+  translate: calc(var(--better-dot, 0) * -1.5rem);
+}
+
+.better_dots.better_dots_all {
+  width: max-content;
+  max-width: 100%;
+}
+.better_dots.better_dots_all .better_dots_track {
+  translate: none;
+}
+.better_dots.better_dots_all .better_dot:before {
+  transform: scale(0.666);
 }
 
 .better_vertical .better_button {
@@ -1434,8 +1476,16 @@ pre {
   margin: 0;
   transform: translateY(-50%);
 }
-.better_vertical .better_dot {
+.better_vertical .better_dots_track {
+  flex-direction: column;
   translate: 0 calc(var(--better-shift, 0) * 1.5rem);
+}
+.better_vertical .better_dots_marker {
+  translate: 0 calc(var(--better-dot, 0) * 1.5rem);
+}
+.better_vertical .better_dots_all {
+  height: auto;
+  max-height: 100%;
 }
 
 .demo_classes .embla {
@@ -1443,7 +1493,6 @@ pre {
   position: relative;
 }
 .demo_classes .embla.is_dragging {
-  user-select: none;
   cursor: grabbing;
 }
 .demo_classes .embla_viewport {
@@ -1565,12 +1614,8 @@ pre {
   border-radius: 50%;
   background: none;
   color: var(--button-text-disabled, #767676);
-  translate: calc(var(--better-shift, 0) * 1.5rem);
-  transition: translate 0.2s;
+  transition: color 0.2s;
   cursor: pointer;
-}
-.demo_classes .embla_dot:dir(rtl) {
-  translate: calc(var(--better-shift, 0) * -1.5rem);
 }
 .demo_classes .embla_dot:focus-visible {
   outline: 2px solid var(--button-border-active, #000);
@@ -1583,9 +1628,7 @@ pre {
   height: 0.875rem;
   border-radius: 50%;
   background: currentColor;
-  transition: transform 0.2s;
   transform: scale(0);
-  will-change: transform;
 }
 .demo_classes .embla_dot.is_last:before, .demo_classes .embla_dot.is_first:before {
   transform: scale(0.333);
@@ -1594,13 +1637,48 @@ pre {
   transform: scale(0.666);
 }
 .demo_classes .embla_dot.is_current:before {
-  background-color: var(--button-base, #222);
   transform: scale(1);
 }
 @media (hover: hover) {
   .demo_classes .embla_dot:hover {
     color: var(--button-base-active, #000);
   }
+}
+.demo_classes .embla_dots_track {
+  display: flex;
+  position: relative;
+  flex: none;
+  translate: calc(var(--better-shift, 0) * 1.5rem);
+  transition: translate 0.4s;
+}
+.demo_classes .embla_dots_track:dir(rtl) {
+  translate: calc(var(--better-shift, 0) * -1.5rem);
+}
+.demo_classes .embla_dots_marker {
+  position: absolute;
+  z-index: 1;
+  top: 0.3125rem;
+  inset-inline-start: 0.3125rem;
+  width: 0.875rem;
+  height: 0.875rem;
+  border-radius: 50%;
+  background: var(--button-base, #222);
+  translate: calc(var(--better-dot, 0) * 1.5rem);
+  transition: translate 0.4s;
+  pointer-events: none;
+}
+.demo_classes .embla_dots_marker:dir(rtl) {
+  translate: calc(var(--better-dot, 0) * -1.5rem);
+}
+.demo_classes .embla_dots.embla_dots_all {
+  width: max-content;
+  max-width: 100%;
+}
+.demo_classes .embla_dots.embla_dots_all .embla_dots_track {
+  translate: none;
+}
+.demo_classes .embla_dots.embla_dots_all .embla_dot:before {
+  transform: scale(0.666);
 }
 .demo_classes .embla_vertical .embla_button {
   top: auto;
@@ -1631,8 +1709,16 @@ pre {
   margin: 0;
   transform: translateY(-50%);
 }
-.demo_classes .embla_vertical .embla_dot {
+.demo_classes .embla_vertical .embla_dots_track {
+  flex-direction: column;
   translate: 0 calc(var(--better-shift, 0) * 1.5rem);
+}
+.demo_classes .embla_vertical .embla_dots_marker {
+  translate: 0 calc(var(--better-dot, 0) * 1.5rem);
+}
+.demo_classes .embla_vertical .embla_dots_all {
+  height: auto;
+  max-height: 100%;
 }
 
 .items.is_center {

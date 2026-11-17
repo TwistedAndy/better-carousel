@@ -19,7 +19,7 @@
 			</ul>
 		</nav>
 		<div class="meta">
-			<span class="version"><!-- generated:version -->v0.1.0<!-- /generated --></span>
+			<span class="version"><!-- generated:version -->v1.0.0<!-- /generated --></span>
 			<a class="link" href="https://github.com/TwistedAndy/better-carousel" aria-label="GitHub repository"><span>TwistedAndy/better-carousel</span></a>
 		</div>
 	</header>
@@ -37,7 +37,7 @@
 					<p>A small, fast and accessible carousel. The CSS sets the layout, and the motion runs on the compositor, so it stays smooth on slow phones. Loop, drag, autoplay, auto scroll and vertical carousels, with no dependencies.</p>
 				</div>
 				<div class="images">
-					<img src="https://flat.badgen.net/static/gzip/11.2%20KB/green" alt="11.2 KB gzipped" height="20">
+					<img src="https://flat.badgen.net/static/gzip/11.6%20KB/green" alt="11.6 KB gzipped" height="20">
 					<img src="https://flat.badgen.net/static/license/MIT/purple" alt="MIT license" height="20">
 					<img src="https://flat.badgen.net/static/dependencies/0/blue" alt="No dependencies" height="20">
 				</div>
@@ -55,7 +55,7 @@
 			<ul class="items items_4">
 				<li class="item"><h3>Smooth</h3><p class="text">Each motion runs on the compositor, so no script runs on each frame of a motion.</p></li>
 				<li class="item"><h3>CSS layout</h3><p class="text">The sizes, the margins, the axis and the alignment come from your CSS.</p></li>
-				<li class="item"><h3>Small</h3><p class="text"><!-- generated:gzip -->11.2 KB<!-- /generated --> gzip with loop, autoplay, auto scroll, auto height and sync.</p></li>
+				<li class="item"><h3>Small</h3><p class="text"><!-- generated:gzip -->11.6 KB<!-- /generated --> gzip with loop, autoplay, auto scroll, auto height and sync.</p></li>
 				<li class="item"><h3>Accessible</h3><p class="text">WCAG 2.1 AA: names, keyboard, focus, live region and reduced motion.</p></li>
 			</ul>
 		</div>
@@ -1241,6 +1241,7 @@ BetterCarousel(element, {
 <tr><td><code id="option-lazy">lazy</code></td><td><code>boolean</code>, <code>number</code></td><td><code>false</code></td><td><code>true</code>: start when the carousel comes within one screen of the view. A number: the distance in px. (<a href="#lazy">example</a>)</td></tr>
 <tr><td><code id="option-drag">drag</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Drag with the mouse, the pen and the finger.</td></tr>
 <tr><td><code id="option-wheel">wheel</code></td><td><code>boolean</code>, <code>'both'</code></td><td><code>true</code></td><td>The mouse wheel moves a vertical carousel. <code>'both'</code>: also a horizontal carousel. <code>false</code>: the wheel does not move the carousel. (<a href="#vertical">example</a>)</td></tr>
+<tr><td><code id="option-keys">keys</code></td><td><code>boolean</code></td><td><code>true</code></td><td>The arrow keys move the carousel while the keyboard focus is in it: left and right in a horizontal carousel, up and down in a vertical carousel. A key in a form field does not move the carousel.</td></tr>
 <tr><td><code id="option-resize">resize</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Measure again when a size changes. (<a href="#options-usage">example</a>)</td></tr>
 <tr><td><code id="option-slideChanges">slideChanges</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Measure again when the page adds or removes a slide. (<a href="#changes">example</a>)</td></tr>
 <tr><td><code id="option-focus">focus</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Go to a slide when it gets the keyboard focus. (<a href="#controls">example</a>)</td></tr>
@@ -1252,6 +1253,7 @@ BetterCarousel(element, {
 <tr><td><code id="option-wrapper">wrapper</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Add the root and the viewport if the page does not have them. (<a href="#options-usage">example</a>)</td></tr>
 <tr><td><code id="option-arrows">arrows</code></td><td><code>boolean</code>, <code>Element</code>, <code>string</code></td><td><code>true</code></td><td>Add the arrows to the root. <code>false</code>: no arrows. An element or a selector: add the arrows to that element. (<a href="#heading">example</a>)</td></tr>
 <tr><td><code id="option-dots">dots</code></td><td><code>boolean</code>, <code>Element</code>, <code>string</code></td><td><code>true</code></td><td>Add the dots. The values are the same as for <code>arrows</code>. (<a href="#heading">example</a>)</td></tr>
+<tr><td><code id="option-dotsStyle">dotsStyle</code></td><td><code>'zoom'</code>, <code>'all'</code></td><td><code>'zoom'</code></td><td>The style of the dots. <code>'zoom'</code>: a window of 5 dots that slides, with smaller dots at the ends. <code>'all'</code>: all dots with the same size.</td></tr>
 <tr><td><code id="option-labels">labels</code></td><td><code>object</code></td><td>English</td><td>The texts for screen readers: <code>carousel</code>, <code>slide</code> (<code>'%d of %n'</code>), <code>prev</code>, <code>next</code>, <code>dot</code> (<code>'Go to slide %d'</code>), <code>play</code>, <code>pause</code>. <code>%d</code> is the slide number, and <code>%n</code> is the number of slides. (<a href="#accessibility">example</a>)</td></tr>
 <tr><td><code id="option-classes">classes</code></td><td><code>string</code>, <code>object</code></td><td><code>null</code></td><td>A class prefix such as <code>'embla'</code>, or an object with the names to change. The <a href="#classes">Classes</a> table gives all names. (<a href="#embla">example</a>)</td></tr>
 <tr><td><code id="option-state">state</code></td><td><code>string</code></td><td><code>''</code></td><td>The prefix of the state classes, such as <code>'is_'</code>. (<a href="#embla">example</a>)</td></tr>
@@ -1349,7 +1351,9 @@ document.querySelector('.next').addEventListener('click', () =&gt; carousel.goTo
 <tr><td><code>better_fit</code></td><td>On the root, if all slides fit</td></tr>
 <tr><td><code>better_auto_height</code></td><td>On the root, with <code>autoHeight</code></td></tr>
 <tr><td><code>better_button</code>, <code>better_prev</code>, <code>better_next</code>, <code>better_play</code></td><td>The buttons</td></tr>
-<tr><td><code>better_dots</code>, <code>better_dot</code></td><td>The dots</td></tr>
+<tr><td><code>better_dots</code>, <code>better_dots_track</code>, <code>better_dot</code></td><td>The window of the dots, the row that slides in it, and the dots</td></tr>
+<tr><td><code>better_dots_marker</code></td><td>The marker of the selected dot</td></tr>
+<tr><td><code>better_dots_all</code></td><td>On the window of the dots, with <code>dotsStyle: 'all'</code></td></tr>
 <tr><td><code>selected</code></td><td>The selected slide</td></tr>
 <tr><td><code>clone</code></td><td>A clone of a slide</td></tr>
 <tr><td><code>dragging</code></td><td>On the root, during a drag</td></tr>
@@ -1445,13 +1449,13 @@ BetterCarousel(element, { classes: { selected: 'snapped' } });</code></pre></div
 		<div class="content"><p>The library is made for slow phones. A motion runs on the compositor, and a carousel at rest uses no CPU.</p></div>
 	</div>
 	<div class="content">
-	<ul><li>A motion is a Web Animations API animation of <code>translate</code>. No script runs for each frame.</li><li>The auto scroll is one animation that does not stop. During the motion, the browser does no script, style, layout or paint work.</li><li>One <code>ResizeObserver</code> serves all carousels. It reads the layout of all carousels first, and then it writes. For this reason, the browser calculates the layout only one time.</li><li>The dots move with <code>translate</code> and change size with <code>transform</code>. A click on a dot causes no layout work.</li><li>The listeners for the autoplay and the mouse wheel exist only while they can do something.</li><li>The <code>progress</code> and <code>offset</code> options run a script on each frame of a motion. For this reason, they are off by default.</li></ul><!-- generated:sizes -->
+	<ul><li>A motion is a Web Animations API animation of <code>translate</code>. No script runs for each frame.</li><li>The auto scroll is one animation that does not stop. During the motion, the browser does no script, style, layout or paint work.</li><li>One <code>ResizeObserver</code> serves all carousels. It reads the layout of all carousels first, and then it writes. For this reason, the browser calculates the layout only one time.</li><li>Only two elements of the dots animate: the row of the dots and the marker of the selected dot. Both move with <code>translate</code>. A click on a dot causes no layout work.</li><li>The listeners for the autoplay and the mouse wheel exist only while they can do something.</li><li>The <code>progress</code> and <code>offset</code> options run a script on each frame of a motion. For this reason, they are off by default.</li></ul><!-- generated:sizes -->
 <div class="table table_reference"><table><thead><tr><th>File</th><th>Minified</th><th>Gzip</th><th>Brotli</th></tr></thead><tbody>
-<tr><td><code>better-carousel.min.js</code></td><td>28.0 KB</td><td>11.2 KB</td><td>10.3 KB</td></tr>
-<tr><td><code>better-carousel.css</code></td><td>4.0 KB</td><td>1.3 KB</td><td>1.0 KB</td></tr>
-<tr><td>Total</td><td>32.1 KB</td><td>12.5 KB</td><td>11.3 KB</td></tr>
+<tr><td><code>better-carousel.min.js</code></td><td>28.9 KB</td><td>11.6 KB</td><td>10.6 KB</td></tr>
+<tr><td><code>better-carousel.css</code></td><td>4.7 KB</td><td>1.3 KB</td><td>1.1 KB</td></tr>
+<tr><td>Total</td><td>33.6 KB</td><td>12.9 KB</td><td>11.7 KB</td></tr>
 </tbody></table></div>
-<!-- /generated --><p>The same features in Embla 9 (the core, three plugins and a wrapper) are 12.6 KB gzip.</p><div class="table"><table><thead><tr><th>Measure, on a phone with a CPU 4 times slower</th><th>Better Carousel</th></tr></thead><tbody><tr><td>JS size, gzip</td><td><!-- generated:gzip -->11.2 KB<!-- /generated --></td></tr><tr><td>CPU load during 10 s of auto scroll</td><td>0.5%</td></tr><tr><td>CPU load during 10 s of autoplay</td><td>1.1%</td></tr><tr><td>Total Blocking Time added at page load</td><td>0 ms</td></tr><tr><td>Layout shift</td><td>0</td></tr></tbody></table></div>
+<!-- /generated --><p>The same features in Embla 9 (the core, three plugins and a wrapper) are 12.6 KB gzip.</p><div class="table"><table><thead><tr><th>Measure, on a phone with a CPU 4 times slower</th><th>Better Carousel</th></tr></thead><tbody><tr><td>JS size, gzip</td><td><!-- generated:gzip -->11.6 KB<!-- /generated --></td></tr><tr><td>CPU load during 10 s of auto scroll</td><td>0.5%</td></tr><tr><td>CPU load during 10 s of autoplay</td><td>1.1%</td></tr><tr><td>Total Blocking Time added at page load</td><td>0 ms</td></tr><tr><td>Layout shift</td><td>0</td></tr></tbody></table></div>
 	</div>
 </section>
 

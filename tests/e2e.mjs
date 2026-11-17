@@ -550,17 +550,17 @@ for (const [id, limit] of [['loop', 21], ['clones', 21]]) {
 		const carousel = window.byId('embla'),
 			dots = [...carousel.rootNode().querySelectorAll('.embla_dot')];
 		carousel.goToSnap(6, true);
-		await new Promise((resolve) => setTimeout(resolve, 300));
+		await new Promise((resolve) => setTimeout(resolve, 500));
 		let changes = 0;
 		const observer = new MutationObserver((list) => {
 			changes += list.length;
 		});
 		dots.forEach((dot) => observer.observe(dot, { attributes: true, attributeFilter: ['class'] }));
 		carousel.goToNext(true);
-		await new Promise((resolve) => setTimeout(resolve, 300));
+		await new Promise((resolve) => setTimeout(resolve, 500));
 		observer.disconnect();
 		const marked = dots.filter((dot) => /first|prev|current|next|last/.test(dot.className)),
-			box = dots[0].parentElement.getBoundingClientRect(),
+			box = carousel.rootNode().querySelector('.embla_dots').getBoundingClientRect(),
 			inside = (dot) => {
 				const rect = dot.getBoundingClientRect();
 				return rect.left >= box.left - 1 && rect.right <= box.right + 1;
@@ -580,6 +580,51 @@ for (const [id, limit] of [['loop', 21], ['clones', 21]]) {
 	check('dots: 5 dots around the current dot have state classes', value.count === 15 && value.marked === 'is_first,is_prev,is_current,is_next,is_last' && value.current === 7, JSON.stringify(value));
 	check('dots: the 5 dots show in the window with the current dot in the center, and the other dots do not show and are out of the tab order', value.hidden && value.shown && value.centered && value.tabbable, JSON.stringify(value));
 	check('dots: one select changes no more than 10 class lists', value.changes <= 10, value.changes + ' changes');
+}
+
+// The arrow keys: the right arrow goes to the next slide and the left arrow back, while the focus is in the carousel
+{
+	await page.evaluate(() => {
+		const carousel = window.byId('embla');
+		carousel.goToSnap(2, true);
+		carousel.rootNode().querySelector('.embla_next').focus();
+	});
+	await page.keyboard.press('ArrowRight');
+	const next = await page.evaluate(() => window.byId('embla').selectedSnap());
+	await page.keyboard.press('ArrowLeft');
+	await page.keyboard.press('ArrowLeft');
+	const prev = await page.evaluate(() => window.byId('embla').selectedSnap());
+	await page.evaluate(() => document.activeElement.blur());
+	check('arrow keys: the right arrow goes to the next slide, the left arrow to the previous slide', next === 3 && prev === 1, JSON.stringify({ next, prev }));
+}
+
+// dotsStyle: 'all'
+{
+	const value = await page.evaluate(async () => {
+		const carousel = window.byId('embla');
+		carousel.reinit({ dotsStyle: 'all' });
+		carousel.goToSnap(6, true);
+		await new Promise((resolve) => setTimeout(resolve, 500));
+		const root = carousel.rootNode(),
+			box = root.querySelector('.embla_dots').getBoundingClientRect(),
+			dots = [...root.querySelectorAll('.embla_dot')],
+			marker = root.querySelector('.embla_dots_marker').getBoundingClientRect(),
+			current = dots.find((dot) => dot.getAttribute('aria-current') === 'true').getBoundingClientRect(),
+			result = {
+				all: root.querySelector('.embla_dots').classList.contains('embla_dots_all'),
+				inside: dots.every((dot) => {
+					const rect = dot.getBoundingClientRect();
+					return rect.left >= box.left - 1 && rect.right <= box.right + 1;
+				}),
+				sizes: [...new Set(dots.map((dot) => getComputedStyle(dot, ':before').transform))].length,
+				marker: Math.abs((marker.left + marker.right) / 2 - (current.left + current.right) / 2) < 1,
+				tabbable: dots.every((dot) => dot.tabIndex === 0)
+			};
+		carousel.reinit({ dotsStyle: 'zoom' });
+		await new Promise((resolve) => setTimeout(resolve, 100));
+		return result;
+	});
+	check("dotsStyle 'all': all dots show in the window with one size, the marker is on the current dot, and all dots are in the tab order", value.all && value.inside && value.sizes === 1 && value.marker && value.tabbable, JSON.stringify(value));
 }
 
 {

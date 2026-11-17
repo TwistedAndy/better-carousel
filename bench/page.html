@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Carousel benchmark</title>
+	<!-- The test page. run.mjs opens it as page.html?lib=better&count=1. The script adds the CSS and the script of the library. -->
+	<style>
+		body { margin: 0; font: 16px/1.4 system-ui, sans-serif; }
+		#app { max-width: 1200px; margin: 0 auto; padding: 24px 16px; }
+		.bench { margin: 0 0 40px; }
+		.card img { display: block; width: 100%; height: auto; }
+		.card p { margin: 8px 0 0; }
+	</style>
+	<script>
+		// Load the CSS of the library before the first paint, as a site does
+		const lib = new URLSearchParams(location.search).get('lib');
+		document.write('<link rel="stylesheet" href="dist/' + lib + '.css">');
+	</script>
+</head>
+<body>
+	<div id="app"></div>
+	<script>
+		document.write('<script src="dist/' + lib + '.js"><\/script>');
+	</script>
+</body>
+</html>
