@@ -830,10 +830,10 @@ npm run dev     # build again after each change
 npm run build   # build dist/ and demo/demo.css, then update the docs
 npm run docs    # update the generated parts of README.md and index.html
 npm test        # unit tests
-npm run e2e     # browser tests in Chrome
+npm run e2e     # build, then run the browser tests in Chrome
 ```
 
-The browser tests open `http://better.test/` in Chrome. To use a different address or a different Chrome, set `URL` and `CHROME`.
+The browser tests open `http://better.test/` in Chrome. The test groups run at the same time, with one Chrome for each two CPU threads. To use a different address or a different Chrome, set `URL` and `CHROME`. If the motion checks fail on a slow CPU, for example on a laptop that runs on battery, set `E2E_WORKERS` to a smaller number of Chromes.
 
 The docs page is [`index.html`](index.html). Its scripts and styles are in [`demo/`](demo). The reference tables and the file sizes in README.md and index.html, and the `Options` interface in [`src/types/better-carousel.d.ts`](src/types/better-carousel.d.ts), come from [`scripts/reference.js`](scripts/reference.js). Do not edit the parts in the `generated` HTML comments. Edit `scripts/reference.js`, and then run `npm run docs`.
 
