@@ -132,13 +132,17 @@ function controller(context, key, options, hooks) {
 		isPlaying: () => playing,
 		paused: () => !playing || watch.paused(),
 		remove() {
+			// Keep the play state for the setup after a breakpoint change. See reinit() in carousel.js.
+			if (context.playing) {
+				context.playing[key] = playing;
+			}
 			control.stop();
 			button.remove();
 			delete api[key];
 		}
 	};
 
-	[['init', show], ['reinit', show], ['resize', show], ...hooks.events].forEach(([event, handler]) => context.on(event, handler));
+	[['init reinit resize', show], ...hooks.events].forEach(([names, handler]) => context.on(names, handler));
 	update();
 	api[key] = control;
 

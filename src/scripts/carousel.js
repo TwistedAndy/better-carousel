@@ -6,7 +6,7 @@
  */
 
 import { abs, alignOffset, clamp, compute, floor, inView, nearestSnap, physicalSnap, progress, round, snapIndex, snapOfSlide, snapPosition, targetLocation } from './geometry.js';
-import { observeSize, readLayout, readRects, visibleArea, waitNear, windowSize } from './layout.js';
+import { observeSize, readLayout, readRects, waitNear, windowSize } from './layout.js';
 import { normalize, pathFits, placement } from './loop.js';
 import { addClass, build, cleanStyle, copyContent, copySlides, labelSlides, readSlides, restore, setClass, setStyle } from './markup.js';
 import { animator, EASE, snapDuration } from './motion.js';
@@ -25,7 +25,7 @@ export const find = (element) => registry.get(element);
 
 /**
  * Make an event emitter. A handler gets (api, name), as in Embla.
- * The handlers of the features run before the handlers of the page, and clear() removes them.
+ * The handlers of the features run before the handlers of the page, and clear() removes them. listen() takes event names with spaces between them.
  *
  * @param {object} api
  * @returns {{on: Function, off: Function, listen: Function, clear: Function, emit: Function, has: Function}}
@@ -44,7 +44,7 @@ function emitter(api) {
 			user[name]?.delete(handler);
 			return api;
 		},
-		listen: (name, handler) => add(own, name, handler),
+		listen: (names, handler) => names.split(' ').forEach((name) => add(own, name, handler)),
 		clear: () => Object.values(own).forEach((set) => set.clear()),
 		emit(name) {
 			own[name]?.forEach((handler) => handler(api, name));
@@ -121,7 +121,7 @@ export default function carousel(element, userOptions, defaults, features) {
 		selectedSnap: () => logical(selected),
 		previousSnap: () => logical(previous),
 		selectedSlide,
-		snapOfSlide: (index) => geo ? logical(snapOfSlide(geo.snaps, geo.slides, index, geo.view, geo.align, geo.period)) : index,
+		snapOfSlide: (index) => geo ? logical(snapOfSlide(geo, index)) : index,
 		snapProgress: () => geo ? geo.logical.map((index) => progress(geo.snaps[index].location, geo)) : [],
 		progress: () => geo ? progress(current(), geo) : 0,
 		slideNodes: () => slides.slice(),
@@ -145,13 +145,16 @@ export default function carousel(element, userOptions, defaults, features) {
 		each = { node: null, index: 0, offset: 0, distance: 0, size: 0, visible: 0 },
 		/**
 		 * What the features share: the API, the events, and the state and the actions of the carousel.
-		 * setup() adds root, viewport, container, cls and options. reinit() adds playing: the play state of the autoplay and the auto scroll before a breakpoint change.
+		 * setup() adds root, viewport, container, cls and options. reinit() adds playing: an object where the autoplay and the auto scroll
+		 * keep their play state for the next setup after a breakpoint change.
 		 */
 		context = {
 			api,
 			emit: events.emit,
-			// Listen to an event until the teardown
+			// Listen to events, such as 'init reinit', until the teardown
 			on: events.listen,
+			// Get the carousel of an element, for the sync option
+			find,
 
 			// The state
 			geo: () => geo,
@@ -192,8 +195,7 @@ export default function carousel(element, userOptions, defaults, features) {
 	api.on = events.on;
 	api.off = events.off;
 
-	// The options of the first setup. The lazy option: a carousel that is not near the screen waits. A carousel near the screen starts now:
-	// a start after the first paint adds the arrows and the dots in view, and this moves the page (CLS).
+	// The options of the first setup. The lazy option: the carousel waits, and waitNear() starts it before the first paint if it is near the screen.
 	let resolved = resolve(element, defaults, userOptions),
 		waiting = resolved.lazy ? waitNear(element, resolved.lazy, reinit) : null;
 
@@ -280,17 +282,17 @@ export default function carousel(element, userOptions, defaults, features) {
 
 		for (const node of nodes) {
 			setStyle(node, 'translate', '');
-			node.style.removeProperty('--better-offset');
+			setStyle(node, '--better-offset', '');
 			setClass(node, cls.selected, false);
 			setClass(node, cls.inView, false);
 			cleanStyle(node);
 		}
 
 		setStyle(container, 'translate', '');
-		setStyle(container, 'willChange', '');
-		setStyle(viewport, 'touchAction', '');
+		setStyle(container, 'will-change', '');
+		setStyle(viewport, 'touch-action', '');
 		setStyle(viewport, 'height', '');
-		root.style.removeProperty('--better-progress');
+		setStyle(root, '--better-progress', '');
 
 		for (const name of ['horizontal', 'vertical', 'fit', 'dragging']) {
 			setClass(root, cls[name], false);
@@ -324,7 +326,7 @@ export default function carousel(element, userOptions, defaults, features) {
 		}
 		const keep = geo ? selectedSlide() : requested;
 		// After a breakpoint change, the new autoplay and auto scroll keep the play state. New options start them again.
-		context.playing = newOptions ? null : { autoplay: api.autoplay?.isPlaying(), autoScroll: api.autoScroll?.isPlaying() };
+		context.playing = newOptions ? null : {};
 		teardown(true);
 		setup();
 		requested = keep;
@@ -450,15 +452,14 @@ export default function carousel(element, userOptions, defaults, features) {
 	function measure() {
 		const sign = geo?.sign || 1,
 			at = motion.current(),
-			layout = readLayout(container, options),
-			// The translate values that show now: the written values, or the values of a motion
-			rects = readRects(viewport, nodes, layout, at === null ? written : { axis: written.axis, container: sign * at, slides: motion.shifts(sign) || written.slides });
+			layout = readLayout(container, options);
 
 		// With clones: 'fill', the loop fills the window
 		lastWindow = options.loop && options.clones === 'fill' ? windowSize(layout.axis) : 0;
 
-		const area = visibleArea(viewport, layout, rects.view, rects.pad, lastWindow),
-			values = [layout.axis, layout.rtl, typeof layout.align === 'string' && layout.align, rects.view, rects.gap, area.start, area.size, ...rects.slides.flatMap((slide) => [slide.start, slide.end, slide.cross])];
+		// The translate values that show now: the written values, or the values of a motion
+		const rects = readRects(viewport, nodes, layout, at === null ? written : { axis: written.axis, container: sign * at, slides: motion.shifts(sign) || written.slides }, lastWindow),
+			values = [layout.axis, layout.rtl, typeof layout.align === 'string' && layout.align, rects.view, rects.gap, rects.area.start, rects.area.size, ...rects.slides.flatMap((slide) => [slide.start, slide.end, slide.cross])];
 
 		// A change of less than 0.5 px is not a change. During a motion, the rects have small errors, because the browser and bezier() round the easing differently.
 		if (ready && values.length === signature.length && values.every((value, index) => value === signature[index] || abs(value - signature[index]) < 0.5)) {
@@ -469,7 +470,7 @@ export default function carousel(element, userOptions, defaults, features) {
 
 		// After a change of the slides, onMutation() gives the slide to keep
 		const keep = ready && !changed ? selectedSlide() : requested,
-			next = compute(layout, rects, area, slides.length, options);
+			next = compute(layout, rects, slides.length, options);
 
 		if (!next.snaps) {
 			pending = next.copies;
@@ -557,8 +558,8 @@ export default function carousel(element, userOptions, defaults, features) {
 		setClass(root, cls.horizontal, x);
 		setClass(root, cls.vertical, !x);
 		setClass(root, cls.fit, geo.fit);
-		setStyle(viewport, 'touchAction', geo.fit ? '' : x ? 'pan-y pinch-zoom' : 'pan-x pinch-zoom');
-		setStyle(container, 'willChange', geo.fit ? '' : 'translate');
+		setStyle(viewport, 'touch-action', geo.fit ? '' : x ? 'pan-y pinch-zoom' : 'pan-x pinch-zoom');
+		setStyle(container, 'will-change', geo.fit ? '' : 'translate');
 
 		if (!keep) {
 			write(geo.fit ? 0 : location);
@@ -566,11 +567,11 @@ export default function carousel(element, userOptions, defaults, features) {
 
 		// Auto height: the height of the tallest slide in view at the target location
 		if (options.autoHeight) {
-			setStyle(viewport, 'height', x ? Math.max(...inView(geo.slides, location, geo.view, 0, geo.period).map((index) => geo.slides[index].cross)) + 'px' : '');
+			setStyle(viewport, 'height', x ? Math.max(...inView(geo, location, 0).map((index) => geo.slides[index].cross)) + 'px' : '');
 		}
 
 		const chosen = selectedSlide(),
-			list = [...new Set(inView(geo.slides, location, geo.view, options.inViewThreshold, geo.period).map(original))].sort((a, b) => a - b);
+			list = [...new Set(inView(geo, location, options.inViewThreshold).map(original))].sort((a, b) => a - b);
 
 		nodes.forEach((node, index) => setClass(node, cls.selected, original(index) === chosen));
 
@@ -616,9 +617,7 @@ export default function carousel(element, userOptions, defaults, features) {
 		written.container = screen(value);
 		setStyle(container, 'translate', translate(written.container));
 		place(value, value);
-		if (options.progress || options.offset) {
-			track(value, written.slides);
-		}
+		track(value, written.slides);
 	}
 
 	/**

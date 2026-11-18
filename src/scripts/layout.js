@@ -56,11 +56,13 @@ export function readLayout(container, options) {
  * @param {HTMLElement[]} nodes All slides, clones included.
  * @param {object} layout The result of readLayout().
  * @param {{axis: string, container: number, slides: number[]}} written The translate values that the library wrote, in px on the screen.
- * @returns {{view: number, slides: Array<{start: number, end: number, cross: number, hidden: boolean}>, gap: number, scale: number, pad: {start: number, end: number}}}
+ * @param {number} [size] The window size on the main axis, for clones: 'fill'.
+ * @returns {{view: number, slides: Array<{start: number, end: number, cross: number, hidden: boolean}>, gap: number, scale: number, area: {start: number, size: number}}}
  * view is the viewport size without the padding. gap is the loop gap: the space between the last slide and the next copy of the first slide.
- * scale is the screen px of one px of the carousel. pad is the viewport padding at the start and at the end.
+ * scale is the screen px of one px of the carousel. area is the part of the main axis where the loop must show slides: the viewport with its
+ * padding, or with a size, the window, so that the slides fill it when the viewport overflow shows.
  */
-export function readRects(viewport, nodes, layout, written) {
+export function readRects(viewport, nodes, layout, written, size) {
 	const box = viewport.getBoundingClientRect(),
 		x = layout.axis === 'x',
 		sign = layout.sign,
@@ -110,12 +112,23 @@ export function readRects(viewport, nodes, layout, written) {
 		gap += (parseFloat(getComputedStyle(nodes[first])['margin' + side[0]]) || 0) + (parseFloat(getComputedStyle(nodes[last])['margin' + side[1]]) || 0);
 	}
 
+	const inner = view - pad.start - pad.end;
+
+	// The area before and after the inner edge of the viewport padding: the padding, or the window
+	let before = pad.start,
+		after = inner + pad.end;
+
+	if (size) {
+		before += Math.max(0, round(x ? (layout.rtl ? size - box.right : box.left) : box.top));
+		after = Math.max(after, round(size - before));
+	}
+
 	return {
-		view: view - pad.start - pad.end,
+		view: inner,
 		slides,
 		gap,
 		scale,
-		pad
+		area: { start: -before, size: before + after }
 	};
 }
 
@@ -127,28 +140,6 @@ export function readRects(viewport, nodes, layout, written) {
  */
 export function windowSize(axis) {
 	return axis === 'x' ? document.documentElement.clientWidth : innerHeight;
-}
-
-/**
- * Get the part of the main axis where the loop must show slides, relative to the inner edge of the viewport padding.
- * It is the viewport with its padding. With clones: 'fill', it is the window, so that the slides fill it when the viewport overflow shows.
- *
- * @param {HTMLElement} viewport
- * @param {{axis: string, rtl: boolean}} layout
- * @param {number} view The viewport size without the padding.
- * @param {{start: number, end: number}} pad The viewport padding.
- * @param {number} [size] The window size on the main axis, for clones: 'fill'. Without it, the area is the viewport.
- * @returns {{start: number, size: number}}
- */
-export function visibleArea(viewport, layout, view, pad, size) {
-	if (!size) {
-		return { start: -pad.start, size: pad.start + view + pad.end };
-	}
-
-	const box = viewport.getBoundingClientRect(),
-		before = Math.max(0, round(layout.axis === 'x' ? (layout.rtl ? size - box.right : box.left) : box.top)) + pad.start;
-
-	return { start: -before, size: before + Math.max(view + pad.end, round(size - before)) };
 }
 
 // One ResizeObserver for all carousels. Each callback first reads the layout of all carousels, then writes. In this way, the reads of one carousel do not
@@ -170,14 +161,13 @@ let resizer;
  */
 export function observeSize(nodes, owner) {
 	resizer ||= new ResizeObserver((entries) => {
-		const list = new Set(entries.filter((entry) => {
+		const changed = [...new Set(entries.filter((entry) => {
 			const { inlineSize, blockSize } = entry.borderBoxSize[0],
 				size = inlineSize + ',' + blockSize,
 				same = sizes.get(entry.target) === size;
 			sizes.set(entry.target, size);
 			return !same && !owners.get(entry.target)?.skip(entry);
-		}).map((entry) => owners.get(entry.target)));
-		const changed = [...list].filter((item) => item && item.read());
+		}).map((entry) => owners.get(entry.target)))].filter((item) => item?.read());
 		changed.forEach((item) => item.write());
 		// A write can change the size of an element that the observer watches, for example the auto height or the clones. If the observer has
 		// a change to report after its callback, the browser sends the "ResizeObserver loop" error to window.onerror. Stop the watch of these
@@ -204,49 +194,63 @@ export function observeSize(nodes, owner) {
 	}
 }
 
-// The lazy option: one IntersectionObserver for each margin, the callback of each element that waits, and the boxes that readBoxes() read
+// The lazy option: one IntersectionObserver for each margin, the callback of each element that waits, and the elements to check: [node, lazy, margin]
 const watchers = new Map(),
-	waiters = new WeakMap(),
-	boxes = new WeakMap();
+	waiters = new WeakMap();
+
+let queue = [];
 
 /**
- * Read the boxes of elements before a carousel writes to the DOM. Then the reads of all carousels cause one layout, not one for each carousel.
- * waitNear() uses each box one time.
- *
- * @param {Element[]} elements
- */
-export function readBoxes(elements) {
-	elements.forEach((element) => boxes.set(element, element.getBoundingClientRect()));
-}
-
-/**
- * Wait until an element comes near the screen.
+ * Wait until an element comes near the screen. One microtask reads the boxes of all elements that started to wait, after the writes of
+ * the carousels that started without a wait. Then the reads cause one layout, not one for each carousel. The microtask runs before the
+ * first paint, so a carousel near the screen starts before the page shows, and it does not move the page.
  *
  * @param {Element} node
  * @param {true|number} lazy The "lazy" option: true for one screen height, or a distance in px.
  * @param {Function} callback
- * @returns {Function|null} A function that stops the wait, or null if the element is near the screen now.
+ * @returns {Function} A function that stops the wait.
  */
 export function waitNear(node, lazy, callback) {
-	const near = lazy === true ? innerHeight : lazy,
-		rect = boxes.get(node) || node.getBoundingClientRect(),
-		margin = lazy === true ? '100%' : lazy + 'px';
+	const margin = lazy === true ? '100%' : lazy + 'px';
 
-	boxes.delete(node);
-
-	if (rect.height && rect.bottom >= -near && rect.top <= innerHeight + near) {
-		return null;
+	if (!queue.length) {
+		queueMicrotask(check);
 	}
-
-	let observer = watchers.get(margin);
-	if (!observer) {
-		observer = new IntersectionObserver((entries) => entries.forEach((entry) => entry.isIntersecting && waiters.get(entry.target)?.()), { rootMargin: margin });
-		watchers.set(margin, observer);
-	}
+	queue.push([node, lazy, margin]);
 	waiters.set(node, callback);
-	observer.observe(node);
+
 	return () => {
-		observer.unobserve(node);
+		watchers.get(margin)?.unobserve(node);
 		waiters.delete(node);
 	};
+}
+
+// Call the callback of each element near the screen, and watch the other elements. An element whose wait stopped has no callback.
+function check() {
+	const list = queue,
+		rects = list.map(([node]) => node.getBoundingClientRect());
+
+	queue = [];
+
+	list.forEach(([node, lazy, margin], index) => {
+		const near = lazy === true ? innerHeight : lazy,
+			rect = rects[index],
+			callback = waiters.get(node);
+
+		if (!callback) {
+			return;
+		}
+
+		if (rect.height && rect.bottom >= -near && rect.top <= innerHeight + near) {
+			callback();
+			return;
+		}
+
+		let observer = watchers.get(margin);
+		if (!observer) {
+			observer = new IntersectionObserver((entries) => entries.forEach((entry) => entry.isIntersecting && waiters.get(entry.target)?.()), { rootMargin: margin });
+			watchers.set(margin, observer);
+		}
+		observer.observe(node);
+	});
 }

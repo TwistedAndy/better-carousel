@@ -4,8 +4,7 @@
  * Each feature takes the context of a carousel (see carousel.js). It returns nothing if its option is off, or an object with remove().
  */
 
-import { find } from './carousel.js';
-import { bind, create, createButton, optionElement, setAttribute, setClass } from './markup.js';
+import { bind, create, createButton, optionElement, setAttribute, setClass, setStyle } from './markup.js';
 
 /**
  * Make the arrows and the dots of a carousel. They update on the carousel events.
@@ -45,7 +44,7 @@ export function nav(context) {
 
 	function update() {
 		const fit = api.isFit(),
-			count = fit ? 0 : api.snapProgress().length,
+			count = fit ? 0 : context.geo().logical.length,
 			selected = api.selectedSnap();
 
 		buttons.forEach((item, index) => {
@@ -119,19 +118,12 @@ export function nav(context) {
 
 		// Center the group of up to 5 dots in the window of the dots, and move the marker to the selected dot. The CSS moves the track and the marker with "translate".
 		if (windowed) {
-			variable('--better-shift', 2 - (Math.max(0, selected - 2) + Math.min(count - 1, selected + 2)) / 2);
+			setStyle(list, '--better-shift', 2 - (Math.max(0, selected - 2) + Math.min(count - 1, selected + 2)) / 2);
 		}
-		variable('--better-dot', selected);
+		setStyle(list, '--better-dot', selected);
 	}
 
-	// Set a CSS variable on the window of the dots, if its value changes
-	function variable(name, value) {
-		if (list.style.getPropertyValue(name) !== String(value)) {
-			list.style.setProperty(name, value);
-		}
-	}
-
-	['init', 'reinit', 'resize', 'select', 'slideschanged'].forEach((name) => context.on(name, update));
+	context.on('init reinit resize select slideschanged', update);
 
 	return {
 		remove() {
@@ -178,15 +170,14 @@ export function sync(context) {
 		if (other) {
 			return;
 		}
-		other = target.goToSnap ? target : find(typeof target === 'string' ? optionElement(target, context.root) : target);
+		other = target.goToSnap ? target : context.find(typeof target === 'string' ? optionElement(target, context.root) : target);
 		if (other) {
 			other.on('select', show);
 			show(true);
 		}
 	}
 
-	context.on('init', connect);
-	context.on('reinit', connect);
+	context.on('init reinit', connect);
 	const listen = bind(container, [['click', click]]);
 
 	listen(true);

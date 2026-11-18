@@ -34,12 +34,12 @@ function setAttribute(element, name, value) {
  * Set an inline style property.
  *
  * @param {HTMLElement} element
- * @param {string} name
- * @param {string} value An empty string removes the property.
+ * @param {string} name The CSS name, such as 'touch-action' or '--better-dot'.
+ * @param {string|number} value An empty string removes the property.
  */
 function setStyle(element, name, value) {
-	if (element.style[name] !== value) {
-		element.style[name] = value;
+	if (element.style.getPropertyValue(name) !== String(value)) {
+		element.style.setProperty(name, value);
 	}
 }
 
@@ -448,13 +448,17 @@ function controller(context, key, options, hooks) {
 		isPlaying: () => playing,
 		paused: () => !playing || watch.paused(),
 		remove() {
+			// Keep the play state for the setup after a breakpoint change. See reinit() in carousel.js.
+			if (context.playing) {
+				context.playing[key] = playing;
+			}
 			control.stop();
 			button.remove();
 			delete api[key];
 		}
 	};
 
-	[['init', show], ['reinit', show], ['resize', show], ...hooks.events].forEach(([event, handler]) => context.on(event, handler));
+	[['init reinit resize', show], ...hooks.events].forEach(([names, handler]) => context.on(names, handler));
 	update();
 	api[key] = control;
 
@@ -965,15 +969,11 @@ function activeSlide(slides, location, view, align, period, from = 0, to = slide
 /**
  * Find the snap of a slide: the snap whose active slide it is, or the snap nearest to the raw location of the slide.
  *
- * @param {Array<{location: number, slide: number}>} list The snaps.
- * @param {Array<{start: number, end: number}>} slides
+ * @param {{snaps: Array<{location: number, slide: number}>, slides: Array<{start: number, end: number}>, view: number, align: string|Function, period?: number}} geo
  * @param {number} index The slide index.
- * @param {number} view
- * @param {string|Function} align
- * @param {number} [period]
  * @returns {number} The snap index.
  */
-function snapOfSlide(list, slides, index, view, align, period) {
+function snapOfSlide({ snaps: list, slides, view, align, period }, index) {
 	const found = list.findIndex((snap) => snap.slide === index),
 		slide = slides[index];
 
@@ -1039,14 +1039,12 @@ function progress(location, { min, max, period }) {
 /**
  * Find the slides that show at a location.
  *
- * @param {Array<{start: number, end: number}>} slides
+ * @param {{slides: Array<{start: number, end: number}>, view: number, period?: number}} geo
  * @param {number} location
- * @param {number} view
  * @param {number} threshold The part of a slide that must show, from 0 to 1. With 0, any part is enough.
- * @param {number} [period]
  * @returns {number[]} The slide indexes.
  */
-function inView(slides, location, view, threshold, period) {
+function inView({ slides, view, period }, location, threshold) {
 	const result = [];
 
 	slides.forEach((slide, index) => {
@@ -1093,26 +1091,26 @@ function snapPosition(list, location, period) {
  * With clones, a logical snap is a snap whose active slide is an original slide.
  *
  * @param {object} layout The result of readLayout().
- * @param {{view: number, slides: Array<{start: number, end: number}>, gap: number}} rects The result of readRects(). The slides after the first count slides are clones.
- * @param {{start: number, size: number}} area The result of visibleArea().
+ * @param {{view: number, slides: Array<{start: number, end: number}>, gap: number, area: {start: number, size: number}}} rects The result of readRects().
+ * The slides after the first count slides are clones.
  * @param {number} count The number of original slides.
  * @param {object} options The options of the carousel.
  * @returns {object} The geometry. If the carousel needs a different number of clones, only { copies }: the number of copies of all slides.
  * map gives the logical snap of each snap.
  */
-function compute(layout, rects, area, count, options) {
+function compute(layout, rects, count, options) {
 	const content = bounds(rects.slides.slice(0, count)),
 		fit = content.size <= rects.view + 1 && !(options.autoScroll && options.loop),
 		loop = options.loop && !fit && count,
 		// The loop period: the distance from the first slide start to the same point in the next copy of the slides
 		period = loop ? bounds(rects.slides).size + rects.gap : 0,
-		copies = loop && options.clones ? cloneCount(content.size + rects.gap, area.size, content.max) : 0;
+		copies = loop && options.clones ? cloneCount(content.size + rects.gap, rects.area.size, content.max) : 0;
 
 	if (copies * count !== rects.slides.length - count) {
 		return { copies };
 	}
 
-	const geo = { ...layout, ...rects, area, fit, count, period, min: 0, max: 0 };
+	const geo = { ...layout, ...rects, fit, count, period, min: 0, max: 0 };
 
 	if (fit) {
 		geo.snaps = [{ location: 0, slide: Math.max(0, activeSlide(rects.slides, 0, rects.view, layout.align)) }];
@@ -1199,11 +1197,13 @@ function readLayout(container, options) {
  * @param {HTMLElement[]} nodes All slides, clones included.
  * @param {object} layout The result of readLayout().
  * @param {{axis: string, container: number, slides: number[]}} written The translate values that the library wrote, in px on the screen.
- * @returns {{view: number, slides: Array<{start: number, end: number, cross: number, hidden: boolean}>, gap: number, scale: number, pad: {start: number, end: number}}}
+ * @param {number} [size] The window size on the main axis, for clones: 'fill'.
+ * @returns {{view: number, slides: Array<{start: number, end: number, cross: number, hidden: boolean}>, gap: number, scale: number, area: {start: number, size: number}}}
  * view is the viewport size without the padding. gap is the loop gap: the space between the last slide and the next copy of the first slide.
- * scale is the screen px of one px of the carousel. pad is the viewport padding at the start and at the end.
+ * scale is the screen px of one px of the carousel. area is the part of the main axis where the loop must show slides: the viewport with its
+ * padding, or with a size, the window, so that the slides fill it when the viewport overflow shows.
  */
-function readRects(viewport, nodes, layout, written) {
+function readRects(viewport, nodes, layout, written, size) {
 	const box = viewport.getBoundingClientRect(),
 		x = layout.axis === 'x',
 		sign = layout.sign,
@@ -1253,12 +1253,23 @@ function readRects(viewport, nodes, layout, written) {
 		gap += (parseFloat(getComputedStyle(nodes[first])['margin' + side[0]]) || 0) + (parseFloat(getComputedStyle(nodes[last])['margin' + side[1]]) || 0);
 	}
 
+	const inner = view - pad.start - pad.end;
+
+	// The area before and after the inner edge of the viewport padding: the padding, or the window
+	let before = pad.start,
+		after = inner + pad.end;
+
+	if (size) {
+		before += Math.max(0, round(x ? (layout.rtl ? size - box.right : box.left) : box.top));
+		after = Math.max(after, round(size - before));
+	}
+
 	return {
-		view: view - pad.start - pad.end,
+		view: inner,
 		slides,
 		gap,
 		scale,
-		pad
+		area: { start: -before, size: before + after }
 	};
 }
 
@@ -1270,28 +1281,6 @@ function readRects(viewport, nodes, layout, written) {
  */
 function windowSize(axis) {
 	return axis === 'x' ? document.documentElement.clientWidth : innerHeight;
-}
-
-/**
- * Get the part of the main axis where the loop must show slides, relative to the inner edge of the viewport padding.
- * It is the viewport with its padding. With clones: 'fill', it is the window, so that the slides fill it when the viewport overflow shows.
- *
- * @param {HTMLElement} viewport
- * @param {{axis: string, rtl: boolean}} layout
- * @param {number} view The viewport size without the padding.
- * @param {{start: number, end: number}} pad The viewport padding.
- * @param {number} [size] The window size on the main axis, for clones: 'fill'. Without it, the area is the viewport.
- * @returns {{start: number, size: number}}
- */
-function visibleArea(viewport, layout, view, pad, size) {
-	if (!size) {
-		return { start: -pad.start, size: pad.start + view + pad.end };
-	}
-
-	const box = viewport.getBoundingClientRect(),
-		before = Math.max(0, round(layout.axis === 'x' ? (layout.rtl ? size - box.right : box.left) : box.top)) + pad.start;
-
-	return { start: -before, size: before + Math.max(view + pad.end, round(size - before)) };
 }
 
 // One ResizeObserver for all carousels. Each callback first reads the layout of all carousels, then writes. In this way, the reads of one carousel do not
@@ -1313,14 +1302,13 @@ let resizer;
  */
 function observeSize(nodes, owner) {
 	resizer ||= new ResizeObserver((entries) => {
-		const list = new Set(entries.filter((entry) => {
+		const changed = [...new Set(entries.filter((entry) => {
 			const { inlineSize, blockSize } = entry.borderBoxSize[0],
 				size = inlineSize + ',' + blockSize,
 				same = sizes.get(entry.target) === size;
 			sizes.set(entry.target, size);
 			return !same && !owners.get(entry.target)?.skip(entry);
-		}).map((entry) => owners.get(entry.target)));
-		const changed = [...list].filter((item) => item && item.read());
+		}).map((entry) => owners.get(entry.target)))].filter((item) => item?.read());
 		changed.forEach((item) => item.write());
 		// A write can change the size of an element that the observer watches, for example the auto height or the clones. If the observer has
 		// a change to report after its callback, the browser sends the "ResizeObserver loop" error to window.onerror. Stop the watch of these
@@ -1347,51 +1335,65 @@ function observeSize(nodes, owner) {
 	}
 }
 
-// The lazy option: one IntersectionObserver for each margin, the callback of each element that waits, and the boxes that readBoxes() read
+// The lazy option: one IntersectionObserver for each margin, the callback of each element that waits, and the elements to check: [node, lazy, margin]
 const watchers = new Map(),
-	waiters = new WeakMap(),
-	boxes = new WeakMap();
+	waiters = new WeakMap();
+
+let queue = [];
 
 /**
- * Read the boxes of elements before a carousel writes to the DOM. Then the reads of all carousels cause one layout, not one for each carousel.
- * waitNear() uses each box one time.
- *
- * @param {Element[]} elements
- */
-function readBoxes(elements) {
-	elements.forEach((element) => boxes.set(element, element.getBoundingClientRect()));
-}
-
-/**
- * Wait until an element comes near the screen.
+ * Wait until an element comes near the screen. One microtask reads the boxes of all elements that started to wait, after the writes of
+ * the carousels that started without a wait. Then the reads cause one layout, not one for each carousel. The microtask runs before the
+ * first paint, so a carousel near the screen starts before the page shows, and it does not move the page.
  *
  * @param {Element} node
  * @param {true|number} lazy The "lazy" option: true for one screen height, or a distance in px.
  * @param {Function} callback
- * @returns {Function|null} A function that stops the wait, or null if the element is near the screen now.
+ * @returns {Function} A function that stops the wait.
  */
 function waitNear(node, lazy, callback) {
-	const near = lazy === true ? innerHeight : lazy,
-		rect = boxes.get(node) || node.getBoundingClientRect(),
-		margin = lazy === true ? '100%' : lazy + 'px';
+	const margin = lazy === true ? '100%' : lazy + 'px';
 
-	boxes.delete(node);
-
-	if (rect.height && rect.bottom >= -near && rect.top <= innerHeight + near) {
-		return null;
+	if (!queue.length) {
+		queueMicrotask(check);
 	}
-
-	let observer = watchers.get(margin);
-	if (!observer) {
-		observer = new IntersectionObserver((entries) => entries.forEach((entry) => entry.isIntersecting && waiters.get(entry.target)?.()), { rootMargin: margin });
-		watchers.set(margin, observer);
-	}
+	queue.push([node, lazy, margin]);
 	waiters.set(node, callback);
-	observer.observe(node);
+
 	return () => {
-		observer.unobserve(node);
+		watchers.get(margin)?.unobserve(node);
 		waiters.delete(node);
 	};
+}
+
+// Call the callback of each element near the screen, and watch the other elements. An element whose wait stopped has no callback.
+function check() {
+	const list = queue,
+		rects = list.map(([node]) => node.getBoundingClientRect());
+
+	queue = [];
+
+	list.forEach(([node, lazy, margin], index) => {
+		const near = lazy === true ? innerHeight : lazy,
+			rect = rects[index],
+			callback = waiters.get(node);
+
+		if (!callback) {
+			return;
+		}
+
+		if (rect.height && rect.bottom >= -near && rect.top <= innerHeight + near) {
+			callback();
+			return;
+		}
+
+		let observer = watchers.get(margin);
+		if (!observer) {
+			observer = new IntersectionObserver((entries) => entries.forEach((entry) => entry.isIntersecting && waiters.get(entry.target)?.()), { rootMargin: margin });
+			watchers.set(margin, observer);
+		}
+		observer.observe(node);
+	});
 }
 
 /*
@@ -1801,7 +1803,7 @@ const find = (element) => registry.get(element);
 
 /**
  * Make an event emitter. A handler gets (api, name), as in Embla.
- * The handlers of the features run before the handlers of the page, and clear() removes them.
+ * The handlers of the features run before the handlers of the page, and clear() removes them. listen() takes event names with spaces between them.
  *
  * @param {object} api
  * @returns {{on: Function, off: Function, listen: Function, clear: Function, emit: Function, has: Function}}
@@ -1820,7 +1822,7 @@ function emitter(api) {
 			user[name]?.delete(handler);
 			return api;
 		},
-		listen: (name, handler) => add(own, name, handler),
+		listen: (names, handler) => names.split(' ').forEach((name) => add(own, name, handler)),
 		clear: () => Object.values(own).forEach((set) => set.clear()),
 		emit(name) {
 			own[name]?.forEach((handler) => handler(api, name));
@@ -1897,7 +1899,7 @@ function carousel(element, userOptions, defaults, features) {
 		selectedSnap: () => logical(selected),
 		previousSnap: () => logical(previous),
 		selectedSlide,
-		snapOfSlide: (index) => geo ? logical(snapOfSlide(geo.snaps, geo.slides, index, geo.view, geo.align, geo.period)) : index,
+		snapOfSlide: (index) => geo ? logical(snapOfSlide(geo, index)) : index,
 		snapProgress: () => geo ? geo.logical.map((index) => progress(geo.snaps[index].location, geo)) : [],
 		progress: () => geo ? progress(current(), geo) : 0,
 		slideNodes: () => slides.slice(),
@@ -1921,13 +1923,16 @@ function carousel(element, userOptions, defaults, features) {
 		each = { node: null, index: 0, offset: 0, distance: 0, size: 0, visible: 0 },
 		/**
 		 * What the features share: the API, the events, and the state and the actions of the carousel.
-		 * setup() adds root, viewport, container, cls and options. reinit() adds playing: the play state of the autoplay and the auto scroll before a breakpoint change.
+		 * setup() adds root, viewport, container, cls and options. reinit() adds playing: an object where the autoplay and the auto scroll
+		 * keep their play state for the next setup after a breakpoint change.
 		 */
 		context = {
 			api,
 			emit: events.emit,
-			// Listen to an event until the teardown
+			// Listen to events, such as 'init reinit', until the teardown
 			on: events.listen,
+			// Get the carousel of an element, for the sync option
+			find,
 
 			// The state
 			geo: () => geo,
@@ -1968,8 +1973,7 @@ function carousel(element, userOptions, defaults, features) {
 	api.on = events.on;
 	api.off = events.off;
 
-	// The options of the first setup. The lazy option: a carousel that is not near the screen waits. A carousel near the screen starts now:
-	// a start after the first paint adds the arrows and the dots in view, and this moves the page (CLS).
+	// The options of the first setup. The lazy option: the carousel waits, and waitNear() starts it before the first paint if it is near the screen.
 	let resolved = resolve(element, defaults, userOptions),
 		waiting = resolved.lazy ? waitNear(element, resolved.lazy, reinit) : null;
 
@@ -2056,17 +2060,17 @@ function carousel(element, userOptions, defaults, features) {
 
 		for (const node of nodes) {
 			setStyle(node, 'translate', '');
-			node.style.removeProperty('--better-offset');
+			setStyle(node, '--better-offset', '');
 			setClass(node, cls.selected, false);
 			setClass(node, cls.inView, false);
 			cleanStyle(node);
 		}
 
 		setStyle(container, 'translate', '');
-		setStyle(container, 'willChange', '');
-		setStyle(viewport, 'touchAction', '');
+		setStyle(container, 'will-change', '');
+		setStyle(viewport, 'touch-action', '');
 		setStyle(viewport, 'height', '');
-		root.style.removeProperty('--better-progress');
+		setStyle(root, '--better-progress', '');
 
 		for (const name of ['horizontal', 'vertical', 'fit', 'dragging']) {
 			setClass(root, cls[name], false);
@@ -2100,7 +2104,7 @@ function carousel(element, userOptions, defaults, features) {
 		}
 		const keep = geo ? selectedSlide() : requested;
 		// After a breakpoint change, the new autoplay and auto scroll keep the play state. New options start them again.
-		context.playing = newOptions ? null : { autoplay: api.autoplay?.isPlaying(), autoScroll: api.autoScroll?.isPlaying() };
+		context.playing = newOptions ? null : {};
 		teardown(true);
 		setup();
 		requested = keep;
@@ -2226,15 +2230,14 @@ function carousel(element, userOptions, defaults, features) {
 	function measure() {
 		const sign = geo?.sign || 1,
 			at = motion.current(),
-			layout = readLayout(container, options),
-			// The translate values that show now: the written values, or the values of a motion
-			rects = readRects(viewport, nodes, layout, at === null ? written : { axis: written.axis, container: sign * at, slides: motion.shifts(sign) || written.slides });
+			layout = readLayout(container, options);
 
 		// With clones: 'fill', the loop fills the window
 		lastWindow = options.loop && options.clones === 'fill' ? windowSize(layout.axis) : 0;
 
-		const area = visibleArea(viewport, layout, rects.view, rects.pad, lastWindow),
-			values = [layout.axis, layout.rtl, typeof layout.align === 'string' && layout.align, rects.view, rects.gap, area.start, area.size, ...rects.slides.flatMap((slide) => [slide.start, slide.end, slide.cross])];
+		// The translate values that show now: the written values, or the values of a motion
+		const rects = readRects(viewport, nodes, layout, at === null ? written : { axis: written.axis, container: sign * at, slides: motion.shifts(sign) || written.slides }, lastWindow),
+			values = [layout.axis, layout.rtl, typeof layout.align === 'string' && layout.align, rects.view, rects.gap, rects.area.start, rects.area.size, ...rects.slides.flatMap((slide) => [slide.start, slide.end, slide.cross])];
 
 		// A change of less than 0.5 px is not a change. During a motion, the rects have small errors, because the browser and bezier() round the easing differently.
 		if (ready && values.length === signature.length && values.every((value, index) => value === signature[index] || abs(value - signature[index]) < 0.5)) {
@@ -2245,7 +2248,7 @@ function carousel(element, userOptions, defaults, features) {
 
 		// After a change of the slides, onMutation() gives the slide to keep
 		const keep = ready && !changed ? selectedSlide() : requested,
-			next = compute(layout, rects, area, slides.length, options);
+			next = compute(layout, rects, slides.length, options);
 
 		if (!next.snaps) {
 			pending = next.copies;
@@ -2333,8 +2336,8 @@ function carousel(element, userOptions, defaults, features) {
 		setClass(root, cls.horizontal, x);
 		setClass(root, cls.vertical, !x);
 		setClass(root, cls.fit, geo.fit);
-		setStyle(viewport, 'touchAction', geo.fit ? '' : x ? 'pan-y pinch-zoom' : 'pan-x pinch-zoom');
-		setStyle(container, 'willChange', geo.fit ? '' : 'translate');
+		setStyle(viewport, 'touch-action', geo.fit ? '' : x ? 'pan-y pinch-zoom' : 'pan-x pinch-zoom');
+		setStyle(container, 'will-change', geo.fit ? '' : 'translate');
 
 		if (!keep) {
 			write(geo.fit ? 0 : location);
@@ -2342,11 +2345,11 @@ function carousel(element, userOptions, defaults, features) {
 
 		// Auto height: the height of the tallest slide in view at the target location
 		if (options.autoHeight) {
-			setStyle(viewport, 'height', x ? Math.max(...inView(geo.slides, location, geo.view, 0, geo.period).map((index) => geo.slides[index].cross)) + 'px' : '');
+			setStyle(viewport, 'height', x ? Math.max(...inView(geo, location, 0).map((index) => geo.slides[index].cross)) + 'px' : '');
 		}
 
 		const chosen = selectedSlide(),
-			list = [...new Set(inView(geo.slides, location, geo.view, options.inViewThreshold, geo.period).map(original))].sort((a, b) => a - b);
+			list = [...new Set(inView(geo, location, options.inViewThreshold).map(original))].sort((a, b) => a - b);
 
 		nodes.forEach((node, index) => setClass(node, cls.selected, original(index) === chosen));
 
@@ -2392,9 +2395,7 @@ function carousel(element, userOptions, defaults, features) {
 		written.container = screen(value);
 		setStyle(container, 'translate', translate(written.container));
 		place(value, value);
-		if (options.progress || options.offset) {
-			track(value, written.slides);
-		}
+		track(value, written.slides);
 	}
 
 	/**
@@ -2674,7 +2675,7 @@ function carousel(element, userOptions, defaults, features) {
  */
 
 
-// The targets that keep their own pointer behavior
+// The targets that keep their own pointer and key behavior
 const fields = 'input,textarea,select,[contenteditable]';
 
 // The pointerdown events that a carousel took for a drag
@@ -2891,7 +2892,8 @@ function drag(context) {
 		const geo = context.geo(),
 			location = context.location(),
 			speed = up ? velocity(samples) : 0,
-			target = releaseTarget({ location, from: base, velocity: speed, current: snap, snaps: geo.snaps, min: geo.min, max: geo.max, period: geo.period, skipSnaps: options.skipSnaps, dragFree: options.dragFree, dragFriction: options.dragFriction }),
+			// The snaps and the limits come from the geometry, and skipSnaps, dragFree and dragFriction from the options
+			target = releaseTarget({ ...geo, ...options, location, from: base, velocity: speed, current: snap }),
 			curve = options.dragFree === true ? GLIDE : EASE;
 
 		block = true;
@@ -3050,10 +3052,10 @@ function wheel(context) {
 	// Add it only where the wheel moves the carousel.
 	const listen = bind(viewport, [['wheel', onWheel, { passive: false }]]);
 
-	['init', 'reinit', 'resize'].forEach((name) => context.on(name, () => {
+	context.on('init reinit resize', () => {
 		const geo = context.geo();
 		listen(!geo.fit && (geo.axis === 'y' || options.wheel === 'both'));
-	}));
+	});
 
 	return {
 		remove() {
@@ -3084,7 +3086,7 @@ function keys(context) {
 			direction = geo && !geo.fit && (geo.axis === 'y' ? { ArrowUp: -1, ArrowDown: 1 } : { ArrowLeft: -geo.sign, ArrowRight: geo.sign })[key],
 			name = direction > 0 ? 'Next' : 'Prev';
 		// At the first and the last slide, the key scrolls the page
-		if (direction && !(event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) && api['canGoTo' + name]()) {
+		if (direction && !(event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || target.closest(fields)) && api['canGoTo' + name]()) {
 			event.preventDefault();
 			api['goTo' + name]();
 		}
@@ -3122,7 +3124,7 @@ function focus(context) {
 		if (!geo || index < 0 || event.timeStamp - pressed < 600) {
 			return;
 		}
-		if (options.focus && !inView(geo.slides, context.location(), geo.view, 1, geo.period).map((item) => item % geo.count).includes(index)) {
+		if (options.focus && !inView(geo, context.location(), 1).map((item) => item % geo.count).includes(index)) {
 			api.goToSlide(index);
 		}
 		context.emit('slidefocus');
@@ -3180,7 +3182,7 @@ function nav(context) {
 
 	function update() {
 		const fit = api.isFit(),
-			count = fit ? 0 : api.snapProgress().length,
+			count = fit ? 0 : context.geo().logical.length,
 			selected = api.selectedSnap();
 
 		buttons.forEach((item, index) => {
@@ -3254,19 +3256,12 @@ function nav(context) {
 
 		// Center the group of up to 5 dots in the window of the dots, and move the marker to the selected dot. The CSS moves the track and the marker with "translate".
 		if (windowed) {
-			variable('--better-shift', 2 - (Math.max(0, selected - 2) + Math.min(count - 1, selected + 2)) / 2);
+			setStyle(list, '--better-shift', 2 - (Math.max(0, selected - 2) + Math.min(count - 1, selected + 2)) / 2);
 		}
-		variable('--better-dot', selected);
+		setStyle(list, '--better-dot', selected);
 	}
 
-	// Set a CSS variable on the window of the dots, if its value changes
-	function variable(name, value) {
-		if (list.style.getPropertyValue(name) !== String(value)) {
-			list.style.setProperty(name, value);
-		}
-	}
-
-	['init', 'reinit', 'resize', 'select', 'slideschanged'].forEach((name) => context.on(name, update));
+	context.on('init reinit resize select slideschanged', update);
 
 	return {
 		remove() {
@@ -3313,15 +3308,14 @@ function sync(context) {
 		if (other) {
 			return;
 		}
-		other = target.goToSnap ? target : find(typeof target === 'string' ? optionElement(target, context.root) : target);
+		other = target.goToSnap ? target : context.find(typeof target === 'string' ? optionElement(target, context.root) : target);
 		if (other) {
 			other.on('select', show);
 			show(true);
 		}
 	}
 
-	context.on('init', connect);
-	context.on('reinit', connect);
+	context.on('init reinit', connect);
 	const listen = bind(container, [['click', click]]);
 
 	listen(true);
@@ -3371,11 +3365,6 @@ BetterCarousel.get = find;
  * @param {object} [options]
  * @returns {object[]}
  */
-BetterCarousel.initAll = (selector, options) => {
-	const elements = [...document.querySelectorAll(selector)];
-	// Read the boxes of the lazy carousels before the first setup() writes. Then the reads cause one layout, not one for each carousel.
-	readBoxes(elements.filter((element) => !find(element) && resolve(element, BetterCarousel.defaults, options).lazy));
-	return elements.map((element) => BetterCarousel(element, options));
-};
+BetterCarousel.initAll = (selector, options) => [...document.querySelectorAll(selector)].map((element) => BetterCarousel(element, options));
 
 export { BetterCarousel as default };

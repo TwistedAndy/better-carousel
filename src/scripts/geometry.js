@@ -249,15 +249,11 @@ export function activeSlide(slides, location, view, align, period, from = 0, to 
 /**
  * Find the snap of a slide: the snap whose active slide it is, or the snap nearest to the raw location of the slide.
  *
- * @param {Array<{location: number, slide: number}>} list The snaps.
- * @param {Array<{start: number, end: number}>} slides
+ * @param {{snaps: Array<{location: number, slide: number}>, slides: Array<{start: number, end: number}>, view: number, align: string|Function, period?: number}} geo
  * @param {number} index The slide index.
- * @param {number} view
- * @param {string|Function} align
- * @param {number} [period]
  * @returns {number} The snap index.
  */
-export function snapOfSlide(list, slides, index, view, align, period) {
+export function snapOfSlide({ snaps: list, slides, view, align, period }, index) {
 	const found = list.findIndex((snap) => snap.slide === index),
 		slide = slides[index];
 
@@ -323,14 +319,12 @@ export function progress(location, { min, max, period }) {
 /**
  * Find the slides that show at a location.
  *
- * @param {Array<{start: number, end: number}>} slides
+ * @param {{slides: Array<{start: number, end: number}>, view: number, period?: number}} geo
  * @param {number} location
- * @param {number} view
  * @param {number} threshold The part of a slide that must show, from 0 to 1. With 0, any part is enough.
- * @param {number} [period]
  * @returns {number[]} The slide indexes.
  */
-export function inView(slides, location, view, threshold, period) {
+export function inView({ slides, view, period }, location, threshold) {
 	const result = [];
 
 	slides.forEach((slide, index) => {
@@ -377,26 +371,26 @@ export function snapPosition(list, location, period) {
  * With clones, a logical snap is a snap whose active slide is an original slide.
  *
  * @param {object} layout The result of readLayout().
- * @param {{view: number, slides: Array<{start: number, end: number}>, gap: number}} rects The result of readRects(). The slides after the first count slides are clones.
- * @param {{start: number, size: number}} area The result of visibleArea().
+ * @param {{view: number, slides: Array<{start: number, end: number}>, gap: number, area: {start: number, size: number}}} rects The result of readRects().
+ * The slides after the first count slides are clones.
  * @param {number} count The number of original slides.
  * @param {object} options The options of the carousel.
  * @returns {object} The geometry. If the carousel needs a different number of clones, only { copies }: the number of copies of all slides.
  * map gives the logical snap of each snap.
  */
-export function compute(layout, rects, area, count, options) {
+export function compute(layout, rects, count, options) {
 	const content = bounds(rects.slides.slice(0, count)),
 		fit = content.size <= rects.view + 1 && !(options.autoScroll && options.loop),
 		loop = options.loop && !fit && count,
 		// The loop period: the distance from the first slide start to the same point in the next copy of the slides
 		period = loop ? bounds(rects.slides).size + rects.gap : 0,
-		copies = loop && options.clones ? cloneCount(content.size + rects.gap, area.size, content.max) : 0;
+		copies = loop && options.clones ? cloneCount(content.size + rects.gap, rects.area.size, content.max) : 0;
 
 	if (copies * count !== rects.slides.length - count) {
 		return { copies };
 	}
 
-	const geo = { ...layout, ...rects, area, fit, count, period, min: 0, max: 0 };
+	const geo = { ...layout, ...rects, fit, count, period, min: 0, max: 0 };
 
 	if (fit) {
 		geo.snaps = [{ location: 0, slide: Math.max(0, activeSlide(rects.slides, 0, rects.view, layout.align)) }];

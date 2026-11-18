@@ -8,7 +8,7 @@ import { abs, clamp, inView, nearestSnap, snapIndex, targetLocation } from './ge
 import { bind } from './markup.js';
 import { EASE, GLIDE } from './motion.js';
 
-// The targets that keep their own pointer behavior
+// The targets that keep their own pointer and key behavior
 const fields = 'input,textarea,select,[contenteditable]';
 
 // The pointerdown events that a carousel took for a drag
@@ -225,7 +225,8 @@ export function drag(context) {
 		const geo = context.geo(),
 			location = context.location(),
 			speed = up ? velocity(samples) : 0,
-			target = releaseTarget({ location, from: base, velocity: speed, current: snap, snaps: geo.snaps, min: geo.min, max: geo.max, period: geo.period, skipSnaps: options.skipSnaps, dragFree: options.dragFree, dragFriction: options.dragFriction }),
+			// The snaps and the limits come from the geometry, and skipSnaps, dragFree and dragFriction from the options
+			target = releaseTarget({ ...geo, ...options, location, from: base, velocity: speed, current: snap }),
 			curve = options.dragFree === true ? GLIDE : EASE;
 
 		block = true;
@@ -384,10 +385,10 @@ export function wheel(context) {
 	// Add it only where the wheel moves the carousel.
 	const listen = bind(viewport, [['wheel', onWheel, { passive: false }]]);
 
-	['init', 'reinit', 'resize'].forEach((name) => context.on(name, () => {
+	context.on('init reinit resize', () => {
 		const geo = context.geo();
 		listen(!geo.fit && (geo.axis === 'y' || options.wheel === 'both'));
-	}));
+	});
 
 	return {
 		remove() {
@@ -418,7 +419,7 @@ export function keys(context) {
 			direction = geo && !geo.fit && (geo.axis === 'y' ? { ArrowUp: -1, ArrowDown: 1 } : { ArrowLeft: -geo.sign, ArrowRight: geo.sign })[key],
 			name = direction > 0 ? 'Next' : 'Prev';
 		// At the first and the last slide, the key scrolls the page
-		if (direction && !(event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) && api['canGoTo' + name]()) {
+		if (direction && !(event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || target.closest(fields)) && api['canGoTo' + name]()) {
 			event.preventDefault();
 			api['goTo' + name]();
 		}
@@ -456,7 +457,7 @@ export function focus(context) {
 		if (!geo || index < 0 || event.timeStamp - pressed < 600) {
 			return;
 		}
-		if (options.focus && !inView(geo.slides, context.location(), geo.view, 1, geo.period).map((item) => item % geo.count).includes(index)) {
+		if (options.focus && !inView(geo, context.location(), 1).map((item) => item % geo.count).includes(index)) {
 			api.goToSlide(index);
 		}
 		context.emit('slidefocus');

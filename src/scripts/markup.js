@@ -34,12 +34,12 @@ export function setAttribute(element, name, value) {
  * Set an inline style property.
  *
  * @param {HTMLElement} element
- * @param {string} name
- * @param {string} value An empty string removes the property.
+ * @param {string} name The CSS name, such as 'touch-action' or '--better-dot'.
+ * @param {string|number} value An empty string removes the property.
  */
 export function setStyle(element, name, value) {
-	if (element.style[name] !== value) {
-		element.style[name] = value;
+	if (element.style.getPropertyValue(name) !== String(value)) {
+		element.style.setProperty(name, value);
 	}
 }
 
