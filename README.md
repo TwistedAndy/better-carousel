@@ -4,7 +4,7 @@
 
 <p>A small, fast and accessible JavaScript carousel.<br />The CSS sets the layout, and the motion runs on the compositor, also on slow phones.</p>
 
-[![Gzip size](https://flat.badgen.net/static/gzip/12.3%20KB/green)](dist/better-carousel.min.js)
+[![Gzip size](https://flat.badgen.net/static/gzip/12.6%20KB/green)](dist/better-carousel.min.js)
 [![MIT license](https://flat.badgen.net/static/license/MIT/purple)](LICENSE)
 [![No dependencies](https://flat.badgen.net/static/dependencies/0/blue)](package.json)
 
@@ -16,7 +16,7 @@
 
 - **Layout from CSS** - Your CSS sets the sizes of the slides, the space between them, the axis and the alignment. One carousel can show 1 slide on a phone and 4 slides on a desktop.
 - **Smooth** - Each motion is a Web Animations API animation of `translate`. No script runs on each frame, also during the auto scroll.
-- **Small** - <!-- generated:gzip -->12.3 KB<!-- /generated --> gzip with loop, autoplay, auto scroll, auto height, sync and the mouse wheel.
+- **Small** - <!-- generated:gzip -->12.6 KB<!-- /generated --> gzip with loop, autoplay, auto scroll, auto height, sync and the mouse wheel.
 - **Loop** - The loop moves the original slides. It adds clones only if the slides are too few.
 - **Vertical and grid** - A column layout makes a vertical carousel. A CSS grid with more rows also works.
 - **Accessible** - WCAG 2.1 AA: names for the carousel, the slides and the buttons, the keyboard focus, a live region and reduced motion.
@@ -29,13 +29,13 @@ Load the minified script and the stylesheet from jsDelivr. The script adds the g
 ```html
 <link
   rel="stylesheet"
-  href="https://cdn.jsdelivr.net/gh/TwistedAndy/better-carousel@v1.1.1/dist/better-carousel.css"
-  integrity="sha384-3ROtqpAC1ZPhSpDul73SGiTOv1L5kTr/08sUr6FPY6S79RIDi7mpI22ttbuxI/w8"
+  href="https://cdn.jsdelivr.net/gh/TwistedAndy/better-carousel@v1.1.2/dist/better-carousel.css"
+  integrity="sha384-WH4VE2eTsNlsGXmOFkXZ+1tAsP2NEOB318/Byze8PAwaRtrgx+ZBmXaRIMLL9Cdq"
   crossorigin="anonymous"
 />
 <script
-  src="https://cdn.jsdelivr.net/gh/TwistedAndy/better-carousel@v1.1.1/dist/better-carousel.min.js"
-  integrity="sha384-iAm/5iXDxHA5oHmRJqH1xjWnZzqQsmfklYM5v0iVGvJx/3cWrzFZ67xjIHyTVIz1"
+  src="https://cdn.jsdelivr.net/gh/TwistedAndy/better-carousel@v1.1.2/dist/better-carousel.min.js"
+  integrity="sha384-h0ZLTfuVtmQW35SwAzeU1mNp4DQqHyJDBrmuKXU7953wMh0AKZj1vCFv3XcJg+Dw"
   crossorigin="anonymous"
 ></script>
 ```
@@ -152,9 +152,11 @@ The library does not set the size of the slides or the space between them. It re
 | `direction: rtl` | A right-to-left carousel |
 | The padding of the viewport | The snaps align to the inner edge of the padding. The padding shows parts of the slides next to the selected slide. |
 
-The carousel measures again when the CSS changes, when the page adds or removes a slide, and when an image loads. A slide with `display: none` gets no snap. The `template`, `script` and `style` elements in the container are not slides. A CSS `scale` or `rotate` on a parent, such as the open animation of a modal window, does not change the snaps. To add or remove a slide, change the elements in the container.
+The carousel measures again when the CSS changes, when the page adds or removes a slide, and when an image loads. A slide with `display: none` gets no snap. The `template`, `script` and `style` elements in the container are not slides. A CSS `scale` or `zoom` on a parent, such as the open animation of a modal window, does not change the snaps. To add or remove a slide, change the elements in the container.
 
 A carousel can start in a hidden element, such as a tab, an accordion or a modal window. It has no size, so it shows no arrows and no dots. When the element shows, the carousel measures and starts to move.
+
+A horizontal carousel gets its width from its parent, not from its slides, so it does not overflow a flex item or a grid column. For this reason, a parent that gets its width from its content, such as an `inline-block` element or a flex item with no `flex` value, must have a width.
 
 ## Frameworks
 
@@ -354,8 +356,8 @@ BetterCarousel(element, {
 | `duration` | `number` | `400` | The duration of a motion by one snap, in ms. A longer motion takes more time, to a maximum of 2 times this value. ([example](https://twistedandy.github.io/better-carousel/#options-usage)) |
 | `startSnap` | `number` | `0` | The index of the snap at the start. ([example](https://twistedandy.github.io/better-carousel/#options-usage)) |
 | `lazy` | `boolean`, `number` | `false` | `true`: start when the carousel comes within one screen of the view. A number: the distance in px. ([example](https://twistedandy.github.io/better-carousel/#lazy)) |
-| `drag` | `boolean` | `true` | Drag with the mouse, the pen and the finger. |
-| `wheel` | `boolean`, `'both'` | `true` | The mouse wheel moves a vertical carousel. `'both'`: also a horizontal carousel. `false`: the wheel does not move the carousel. ([example](https://twistedandy.github.io/better-carousel/#vertical)) |
+| `drag` | `boolean` | `true` | Drag with the mouse, the pen and the finger. A press on a form field does not start a drag. To keep the drag off another element, such as a map in a slide, stop the propagation of its `pointerdown` event. |
+| `wheel` | `boolean`, `'axis'`, `'both'` | `true` | The mouse wheel moves a vertical carousel. `'axis'`: also a horizontal carousel, but only with a horizontal wheel motion, such as a trackpad swipe. A vertical wheel scrolls the page. `'both'`: also a horizontal carousel, with all wheel motions. `false`: the wheel does not move the carousel. ([example](https://twistedandy.github.io/better-carousel/#vertical)) |
 | `keys` | `boolean` | `true` | The arrow keys move the carousel while the keyboard focus is in it: left and right in a horizontal carousel, up and down in a vertical carousel. A key in a form field does not move the carousel. |
 | `resize` | `boolean` | `true` | Measure again when a size changes. ([example](https://twistedandy.github.io/better-carousel/#options-usage)) |
 | `slideChanges` | `boolean` | `true` | Measure again when the page adds or removes a slide. ([example](https://twistedandy.github.io/better-carousel/#changes)) |
@@ -369,7 +371,7 @@ BetterCarousel(element, {
 | `arrows` | `boolean`, `Element`, `string` | `true` | Add the arrows to the root. `false`: no arrows. An element or a selector: add the arrows to that element. ([example](https://twistedandy.github.io/better-carousel/#heading)) |
 | `dots` | `boolean`, `Element`, `string` | `true` | Add the dots. The values are the same as for `arrows`. ([example](https://twistedandy.github.io/better-carousel/#heading)) |
 | `dotsStyle` | `'zoom'`, `'all'` | `'zoom'` | The style of the dots. `'zoom'`: a window of 5 dots that slides, with smaller dots at the ends. `'all'`: all dots with the same size. |
-| `labels` | `object` | English | The texts for screen readers: `carousel`, `slide` (`'%d of %n'`), `prev`, `next`, `dot` (`'Go to slide %d'`), `play`, `pause`. `%d` is the slide number, and `%n` is the number of slides. ([example](#accessibility)) |
+| `labels` | `object` | English | The texts for screen readers: `carousel`, `slide` (`'%d of %n'`), `prev`, `next`, `dot` (`'Go to slide %d'`), `play`, `pause`. `%d` is the slide number, and `%n` is the number of slides. An empty text adds no name. ([example](#accessibility)) |
 | `classes` | `string`, `object` | `null` | A class prefix such as `'embla'`, or an object with the names to change. The [Classes](#classes) table gives all names. ([example](https://twistedandy.github.io/better-carousel/#embla)) |
 | `state` | `string` | `''` | The prefix of the state classes, such as `'is_'`. ([example](https://twistedandy.github.io/better-carousel/#embla)) |
 | `sync` | carousel, `Element`, `string` | `null` | Another carousel, its container or a selector. This carousel follows the selected slide of the other carousel. A click on a slide selects it in the other carousel. ([example](https://twistedandy.github.io/better-carousel/#product)) |
@@ -691,7 +693,7 @@ The carousel follows the carousel pattern of the WAI-ARIA Authoring Practices an
 - The arrows and the dots are buttons with names. A screen reader reads each new slide (`aria-live`), but not during the autoplay.
 - Tab moves the focus through the links and the fields in the slides. The carousel moves to show the focused element.
 - While the focus is in the carousel, the arrow keys go to the previous and the next slide. To turn them off, set `keys: false`.
-- Clones are `inert` and hidden from screen readers.
+- Clones are `inert` and hidden from screen readers. A click on a link or a button in a clone goes to the same element in its slide. The form fields in clones have no name, so the form sends only the fields of the slides.
 - The autoplay and the auto scroll have a play and pause button (WCAG 2.2.2). The keyboard focus pauses them. If the user prefers reduced motion, they do not start.
 - A drag across the axis scrolls the page. A link opens on a click, but not after a drag.
 
@@ -718,9 +720,9 @@ The library is made for slow phones. A motion runs on the compositor, and a caro
 <!-- generated:sizes -->
 | File | Minified | Gzip | Brotli |
 | --- | --- | --- | --- |
-| `better-carousel.min.js` | 29.9 KB | 12.3 KB | 11.2 KB |
-| `better-carousel.css` | 4.7 KB | 1.3 KB | 1.1 KB |
-| Total | 34.6 KB | 13.7 KB | 12.4 KB |
+| `better-carousel.min.js` | 30.6 KB | 12.6 KB | 11.5 KB |
+| `better-carousel.css` | 4.8 KB | 1.4 KB | 1.2 KB |
+| Total | 35.3 KB | 13.9 KB | 12.7 KB |
 <!-- /generated -->
 
 The [Comparison](#comparison) section gives the sizes and the runtime costs of other carousel libraries.

@@ -380,7 +380,8 @@ export function snapPosition(list, location, period) {
  */
 export function compute(layout, rects, count, options) {
 	const content = bounds(rects.slides.slice(0, count)),
-		fit = content.size <= rects.view + 1 && !(options.autoScroll && options.loop),
+		// The auto scroll with the loop never fits, unless no slide shows, for example in a hidden tab
+		fit = content.size <= rects.view + 1 && !(options.autoScroll && options.loop && content.max),
 		loop = options.loop && !fit && count,
 		// The loop period: the distance from the first slide start to the same point in the next copy of the slides
 		period = loop ? bounds(rects.slides).size + rects.gap : 0,

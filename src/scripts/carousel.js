@@ -15,6 +15,9 @@ import { breakpoints, classNames, merge, resolve } from './options.js';
 // The instance of each root, viewport and container
 const registry = new WeakMap();
 
+// true if the browser supports the pan-up and pan-down values of touch-action
+let directional;
+
 /**
  * Get the carousel of a root, a viewport or a container.
  *
@@ -158,7 +161,6 @@ export default function carousel(element, userOptions, defaults, features) {
 
 			// The state
 			geo: () => geo,
-			nodes: () => nodes,
 			selected: () => selected,
 			dragging: () => dragging,
 			// The location at rest or at the end of the motion. During a free motion, the location now.
@@ -242,6 +244,8 @@ export default function carousel(element, userOptions, defaults, features) {
 		}
 
 		viewport.addEventListener('scroll', onScroll);
+		viewport.addEventListener('click', onClick);
+		viewport.addEventListener('input', onInput);
 		if (options.loop && options.clones === 'fill') {
 			addEventListener('resize', onWindow);
 		}
@@ -278,6 +282,8 @@ export default function carousel(element, userOptions, defaults, features) {
 		dragging = free = false;
 		setClones(0);
 		viewport.removeEventListener('scroll', onScroll);
+		viewport.removeEventListener('click', onClick);
+		viewport.removeEventListener('input', onInput);
 		removeEventListener('resize', onWindow);
 
 		for (const node of nodes) {
@@ -357,18 +363,25 @@ export default function carousel(element, userOptions, defaults, features) {
 	}
 
 	/**
-	 * Copy a changed slide into its clones. The carousel writes the classes of the slides, so a change of a slide's own attributes does not count.
+	 * Copy a changed slide into its clones, for example after the page changed a text or an image source. The carousel writes the classes
+	 * of the slides, so a change of a slide's own attributes does not count. A style change does not count: a "progress" or an "offset"
+	 * callback can write the styles of the elements in the slides on each frame.
 	 *
-	 * @param {MutationRecord[]} records
+	 * @param {MutationRecord[]} [records] With no records, copy all slides.
 	 */
 	function onCopy(records) {
 		slides.forEach((node, index) => {
-			if (records.some(({ type, target }) => node.contains(target) && (type !== 'attributes' || target !== node))) {
+			if (!records || records.some(({ type, target }) => node.contains(target) && (type !== 'attributes' || target !== node))) {
 				for (let item = index; item < clones.length; item += slides.length) {
 					copyContent(clones[item], node);
 				}
 			}
 		});
+	}
+
+	// A form field changes its value or its check with no mutation. A checked radio also changes the radios of its group in other slides, so copy all slides.
+	function onInput() {
+		onCopy();
 	}
 
 	/**
@@ -558,7 +571,12 @@ export default function carousel(element, userOptions, defaults, features) {
 		setClass(root, cls.horizontal, x);
 		setClass(root, cls.vertical, !x);
 		setClass(root, cls.fit, geo.fit);
-		setStyle(viewport, 'touch-action', geo.fit ? '' : x ? 'pan-y pinch-zoom' : 'pan-x pinch-zoom');
+		// A touch can scroll the page across the axis. At the first or the last snap of a vertical carousel, it can also scroll the page up
+		// or down. Safari has no pan-up and pan-down, so there the carousel keeps the touch.
+		const first = !can(-1),
+			last = !can(1),
+			edge = !x && (first || last) && (directional ??= CSS.supports('touch-action', 'pan-up')) ? (first && last ? 'pan-y ' : first ? 'pan-up ' : 'pan-down ') : '';
+		setStyle(viewport, 'touch-action', geo.fit ? '' : x ? 'pan-y pinch-zoom' : 'pan-x ' + edge + 'pinch-zoom');
 		setStyle(container, 'will-change', geo.fit ? '' : 'translate');
 
 		if (!keep) {
@@ -887,5 +905,26 @@ export default function carousel(element, userOptions, defaults, features) {
 	 */
 	function onScroll() {
 		viewport.scrollLeft = viewport.scrollTop = 0;
+	}
+
+	/**
+	 * Pass a click on a clone to the same element in its slide. A clone is inert, so the click goes to the viewport or the container.
+	 * A click after a drag is cancelled, and it does not pass.
+	 *
+	 * @param {MouseEvent} event
+	 */
+	function onClick(event) {
+		if (event.defaultPrevented || !clones.length || (event.target !== viewport && event.target !== container)) {
+			return;
+		}
+
+		// Find the element under the pointer in the clones, and the element at the same place in the slide
+		clones.forEach((node) => node.inert = false);
+		const node = document.elementFromPoint(event.clientX, event.clientY),
+			index = clones.findIndex((clone) => clone.contains(node)),
+			all = (item) => item ? [item, ...item.querySelectorAll('*')] : [];
+		clones.forEach((item) => item.inert = true);
+
+		all(slides[index % slides.length])[all(clones[index]).indexOf(node)]?.dispatchEvent(new MouseEvent('click', event));
 	}
 }

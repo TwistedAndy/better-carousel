@@ -48,8 +48,8 @@ export function readLayout(container, options) {
 
 /**
  * Read the slide boxes on the main axis, relative to the inner edge of the viewport padding at location 0. The snaps align to this edge.
- * The values are in the px of the carousel: in a parent with a CSS scale, such as a modal window that opens with a scale animation, the
- * values do not change with a scale or a rotation of a parent.
+ * The values are in the px of the carousel: in a parent with a CSS scale or zoom, such as a modal window that opens with a scale animation,
+ * the values do not change. A rotation of a parent is not supported.
  * A slide with no box, such as a slide with display: none, is hidden. It gets no snap, and it stays at the end of the slide before it.
  *
  * @param {HTMLElement} viewport
@@ -70,11 +70,9 @@ export function readRects(viewport, nodes, layout, written, size) {
 		shift = known ? written.container : 0,
 		width = viewport.offsetWidth,
 		height = viewport.offsetHeight,
-		// offsetWidth is a whole number: a difference of less than 1 px is not a transform
-		transformed = width && height && (abs(box.width - width) >= 1 || abs(box.height - height) >= 1),
-		// A scale s and a rotation by an angle a give a box of s(w cos a + h sin a) by s(w sin a + h cos a). The main axis gets s cos a.
-		scale = !transformed ? 1 : abs(width - height) > 1 ? (width * box.width - height * box.height) / (width * width - height * height) : box.width / width,
-		view = !transformed ? (x ? box.width : box.height) : x ? width : height,
+		// offsetWidth is a whole number: a difference of less than 1 px is not a scale
+		scale = width && height && (abs(box.width - width) >= 1 || abs(box.height - height) >= 1) ? (x ? box.width / width : box.height / height) : 1,
+		view = (x ? box.width : box.height) / scale,
 		style = getComputedStyle(viewport),
 		side = x ? (layout.rtl ? ['Right', 'Left'] : ['Left', 'Right']) : ['Top', 'Bottom'],
 		pad = { start: parseFloat(style['padding' + side[0]]) || 0, end: parseFloat(style['padding' + side[1]]) || 0 };

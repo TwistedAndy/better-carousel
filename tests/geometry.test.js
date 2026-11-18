@@ -188,3 +188,11 @@ test('compute: a loop that needs clones asks for them, then maps each clone snap
 	// A logical snap that is not in the map gives the nearest valid index
 	assert.equal(physicalSnap(geo, 20, 0), 7);
 });
+
+test('compute: an auto scroll loop with no slide that shows fits, so it gets one snap', () => {
+	const hidden = rects(4).slides.map(() => ({ start: 0, end: 0, hidden: true })),
+		geo = compute(layout, { ...rects(4), slides: hidden }, 4, { ...options, loop: true, autoScroll: true });
+
+	assert.equal(geo.fit, true);
+	assert.equal(geo.snaps.length, 1);
+});

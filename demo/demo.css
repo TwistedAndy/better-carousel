@@ -1256,6 +1256,10 @@ pre {
   z-index: 1;
 }
 
+.better_horizontal .better_viewport {
+  contain: inline-size;
+}
+
 .better_horizontal .better_container {
   overflow: visible;
   --gap-grid-y: 0px;
@@ -1501,6 +1505,9 @@ pre {
   width: 100%;
   margin: 0;
   z-index: 1;
+}
+.demo_classes .embla_horizontal .embla_viewport {
+  contain: inline-size;
 }
 .demo_classes .embla_horizontal .embla_container {
   overflow: visible;

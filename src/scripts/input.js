@@ -285,7 +285,8 @@ function scrolls(node, viewport, axis, delta) {
 }
 
 /**
- * Make the wheel input of a viewport: in a vertical carousel, and with wheel: 'both' also in a horizontal carousel. The carousel follows
+ * Make the wheel input of a viewport: in a vertical carousel, and with wheel: 'both' also in a horizontal carousel. With wheel: 'axis',
+ * a horizontal carousel follows only a horizontal wheel motion, such as a trackpad swipe, and a vertical wheel scrolls the page. The carousel follows
  * the wheel distance with a short motion on the compositor. When the wheel stops, the carousel goes to a snap. At the first and the last
  * location, the page scrolls.
  *
@@ -318,7 +319,7 @@ export function wheel(context) {
 			side = geo.axis === 'x' && abs(event.deltaX) > abs(event.deltaY),
 			delta = side ? event.deltaX * geo.sign : event.deltaY;
 
-		if (event.ctrlKey || !delta || context.dragging()) {
+		if (event.ctrlKey || !delta || context.dragging() || (options.wheel === 'axis' && geo.axis === 'x' && !side)) {
 			return;
 		}
 
@@ -387,7 +388,7 @@ export function wheel(context) {
 
 	context.on('init reinit resize', () => {
 		const geo = context.geo();
-		listen(!geo.fit && (geo.axis === 'y' || options.wheel === 'both'));
+		listen(!geo.fit && (geo.axis === 'y' || options.wheel !== true));
 	});
 
 	return {

@@ -163,10 +163,10 @@ export interface Options {
 	startSnap?: number;
 	/** `true`: start when the carousel comes within one screen of the view. A number: the distance in px. @default false @see {@link https://twistedandy.github.io/better-carousel/#lazy | example} */
 	lazy?: boolean | number;
-	/** Drag with the mouse, the pen and the finger. @default true */
+	/** Drag with the mouse, the pen and the finger. A press on a form field does not start a drag. To keep the drag off another element, such as a map in a slide, stop the propagation of its `pointerdown` event. @default true */
 	drag?: boolean;
-	/** The mouse wheel moves a vertical carousel. `'both'`: also a horizontal carousel. `false`: the wheel does not move the carousel. @default true @see {@link https://twistedandy.github.io/better-carousel/#vertical | example} */
-	wheel?: boolean | 'both';
+	/** The mouse wheel moves a vertical carousel. `'axis'`: also a horizontal carousel, but only with a horizontal wheel motion, such as a trackpad swipe. A vertical wheel scrolls the page. `'both'`: also a horizontal carousel, with all wheel motions. `false`: the wheel does not move the carousel. @default true @see {@link https://twistedandy.github.io/better-carousel/#vertical | example} */
+	wheel?: boolean | 'axis' | 'both';
 	/** The arrow keys move the carousel while the keyboard focus is in it: left and right in a horizontal carousel, up and down in a vertical carousel. A key in a form field does not move the carousel. @default true */
 	keys?: boolean;
 	/** Measure again when a size changes. @default true @see {@link https://twistedandy.github.io/better-carousel/#options-usage | example} */
@@ -193,7 +193,7 @@ export interface Options {
 	dots?: boolean | Element | string;
 	/** The style of the dots. `'zoom'`: a window of 5 dots that slides, with smaller dots at the ends. `'all'`: all dots with the same size. @default 'zoom' */
 	dotsStyle?: 'zoom' | 'all';
-	/** The texts for screen readers: `carousel`, `slide` (`'%d of %n'`), `prev`, `next`, `dot` (`'Go to slide %d'`), `play`, `pause`. `%d` is the slide number, and `%n` is the number of slides. @see {@link https://twistedandy.github.io/better-carousel/#accessibility | example} */
+	/** The texts for screen readers: `carousel`, `slide` (`'%d of %n'`), `prev`, `next`, `dot` (`'Go to slide %d'`), `play`, `pause`. `%d` is the slide number, and `%n` is the number of slides. An empty text adds no name. @see {@link https://twistedandy.github.io/better-carousel/#accessibility | example} */
 	labels?: Labels;
 	/** A class prefix such as `'embla'`, or an object with the names to change. The Classes table gives all names. @default null @see {@link https://twistedandy.github.io/better-carousel/#embla | example} */
 	classes?: string | ClassNames | null;

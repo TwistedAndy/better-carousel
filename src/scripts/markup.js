@@ -128,16 +128,14 @@ const marked = new WeakMap(),
  *
  * @param {Element} node
  * @param {string} name
- * @param {string} value
+ * @param {string} value An empty value removes the attribute, for example an empty label.
  */
 export function own(node, name, value) {
 	const list = marked.get(node) || new Set();
 	if (list.has(name) || !node.hasAttribute(name)) {
 		list.add(name);
 		marked.set(node, list);
-		if (node.getAttribute(name) !== value) {
-			node.setAttribute(name, value);
-		}
+		setAttribute(node, name, value);
 	}
 }
 
@@ -252,7 +250,8 @@ export function readSlides(container, selector) {
 }
 
 /**
- * Make the clones: full copies of the slides, which the screen reader and the keyboard do not see.
+ * Make the clones: full copies of the slides, which the screen reader and the keyboard do not see. A clone is inert, so the pointer
+ * does not see it either: the carousel passes a click on a clone to its slide.
  *
  * @param {HTMLElement[]} slides
  * @param {number} count The number of copies of all slides.
@@ -278,12 +277,16 @@ export function copySlides(slides, count, className) {
 	return list;
 }
 
-// Copy a node with its content. An id must be unique in the page, so the copy has no ids.
+// Copy a node with its content. An id must be unique in the page, so the copy has no ids. A form field in the copy has no name and is not
+// required: it does not join the radio group of its slide, the form does not send it, and the form check does not stop at it.
 function copy(node) {
-	const result = node.cloneNode(true);
-	for (const item of [result, ...result.querySelectorAll('[id]')]) {
-		item.removeAttribute('id');
+	const result = node.cloneNode(true),
+		selects = node.querySelectorAll('select');
+	for (const item of [result, ...result.querySelectorAll('[id],[name],[required]')]) {
+		['id', 'name', 'required'].forEach((name) => item.removeAttribute(name));
 	}
+	// The copy keeps the values and the checks of the fields, but not the selected option
+	result.querySelectorAll('select').forEach((item, index) => item.selectedIndex = selects[index].selectedIndex);
 	return result;
 }
 

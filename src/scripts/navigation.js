@@ -157,11 +157,11 @@ export function sync(context) {
 		api.goToSlide(index, instant === true);
 	}
 
+	// A click on a clone comes to its slide. See onClick() in carousel.js.
 	function click(event) {
-		// The slide or the clone that gets the click, and then its original slide
-		const index = context.nodes().findIndex((node) => node.contains(event.target));
+		const index = api.slideNodes().findIndex((node) => node.contains(event.target));
 		if (other && index > -1) {
-			other.goToSlide(index % api.slideNodes().length);
+			other.goToSlide(index);
 		}
 	}
 
