@@ -4,7 +4,8 @@
  * Each feature takes the context of a carousel (see carousel.js). It returns nothing if its option is off, or an object with remove().
  */
 
-import { clamp, inView, nearestSnap, snapIndex, targetLocation } from './geometry.js';
+import { abs, clamp, inView, nearestSnap, snapIndex, targetLocation } from './geometry.js';
+import { bind } from './markup.js';
 import { EASE, GLIDE } from './motion.js';
 
 // The targets that keep their own pointer behavior
@@ -29,10 +30,10 @@ const MOMENTUM = 325;
  * @returns {number}
  */
 export function releaseDuration(path, velocity, curve, fallback) {
-	if (Math.sign(path) !== Math.sign(velocity) || Math.abs(velocity) < 0.05) {
+	if (Math.sign(path) !== Math.sign(velocity) || abs(velocity) < 0.05) {
 		return fallback;
 	}
-	return clamp(Math.abs(path) * curve[1] / curve[0] / Math.abs(velocity), 200, 1200);
+	return clamp(abs(path) * curve[1] / curve[0] / abs(velocity), 200, 1200);
 }
 
 /**
@@ -97,9 +98,9 @@ export function releaseTarget({ location, from, velocity, current, snaps, min, m
 
 	let direction = 0;
 
-	if (Math.abs(velocity) > 0.3) {
+	if (abs(velocity) > 0.3) {
 		direction = velocity < 0 ? 1 : -1;
-	} else if (Math.abs(moved) > 20) {
+	} else if (abs(moved) > 20) {
 		direction = moved < 0 ? 1 : -1;
 	}
 
@@ -134,7 +135,7 @@ export function drag(context) {
 		// The selected snap at the drag start
 		snap = 0;
 
-	const listen = (method) => ['pointermove', 'pointerup', 'pointercancel'].forEach((name) => window[method](name, handle));
+	const listen = bind(window, [['pointermove', handle], ['pointerup', handle], ['pointercancel', handle]]);
 
 	function down(event) {
 		block = false;
@@ -158,7 +159,7 @@ export function drag(context) {
 		axis = { x: geo.axis === 'x', sign: geo.sign, scale: geo.scale };
 		start = [event.clientX, event.clientY];
 		samples = [];
-		listen('addEventListener');
+		listen(true);
 	}
 
 	function handle(event) {
@@ -181,10 +182,10 @@ export function drag(context) {
 
 		if (!context.dragging()) {
 			// A touch move across the axis scrolls the page
-			if (event.pointerType !== 'mouse' && Math.abs(cross) > Math.abs(main)) {
+			if (event.pointerType !== 'mouse' && abs(cross) > abs(main)) {
 				return end();
 			}
-			if (Math.abs(main) < options.dragThreshold) {
+			if (abs(main) < options.dragThreshold) {
 				return;
 			}
 			// Stop the motion, and start the drag at the location where the carousel is now
@@ -214,7 +215,7 @@ export function drag(context) {
 	 * @param {boolean} [up] true for a pointerup. A pointercancel releases with no velocity.
 	 */
 	function end(up) {
-		listen('removeEventListener');
+		listen();
 		pointer = null;
 
 		if (!context.dragging()) {
@@ -245,18 +246,14 @@ export function drag(context) {
 	// Stop a text selection during a drag. A "user-select" rule on the dragging class does the same, but its change paints all layers of the carousel.
 	const select = (event) => context.dragging() && event.preventDefault();
 
-	viewport.addEventListener('pointerdown', down);
-	viewport.addEventListener('click', click, true);
-	viewport.addEventListener('dragstart', prevent);
-	viewport.addEventListener('selectstart', select);
+	const own = bind(viewport, [['pointerdown', down], ['click', click, true], ['dragstart', prevent], ['selectstart', select]]);
+
+	own(true);
 
 	return {
 		remove() {
-			listen('removeEventListener');
-			viewport.removeEventListener('pointerdown', down);
-			viewport.removeEventListener('click', click, true);
-			viewport.removeEventListener('dragstart', prevent);
-			viewport.removeEventListener('selectstart', select);
+			listen();
+			own();
 		}
 	};
 }
@@ -276,7 +273,7 @@ function scrolls(node, viewport, axis, delta) {
 	for (; node && node !== viewport; node = node.parentElement) {
 		// Read the style only for an element with more content than space
 		if (node[size] > node[client] && /auto|scroll/.test(getComputedStyle(node)[overflow])) {
-			const at = Math.abs(node[position]);
+			const at = abs(node[position]);
 			if (delta > 0 ? at + node[client] < node[size] - 1 : at > 0) {
 				return true;
 			}
@@ -317,7 +314,7 @@ export function wheel(context) {
 
 	function onWheel(event) {
 		const geo = context.geo(),
-			side = geo.axis === 'x' && Math.abs(event.deltaX) > Math.abs(event.deltaY),
+			side = geo.axis === 'x' && abs(event.deltaX) > abs(event.deltaY),
 			delta = side ? event.deltaX * geo.sign : event.deltaY;
 
 		if (event.ctrlKey || !delta || context.dragging()) {
@@ -326,22 +323,19 @@ export function wheel(context) {
 
 		const now = event.timeStamp,
 			gesture = now - time < 200,
-			size = Math.abs(delta),
+			size = abs(delta),
 			// A delta that does not grow is the inertia of the gesture, not a new push
 			inertia = gesture && size <= last;
 
+		time = now;
 		last = size;
-		if (!gesture) {
-			held = false;
-		}
+		held &&= gesture;
 
 		// An element in a slide that can scroll in the wheel direction scrolls, also for the rest of its gesture
-		if ((gesture && inner) || scrolls(event.target, viewport, side ? 'x' : 'y', side ? event.deltaX : delta)) {
-			inner = true;
-			time = now;
+		inner = (gesture && inner) || scrolls(event.target, viewport, side ? 'x' : 'y', side ? event.deltaX : delta);
+		if (inner) {
 			return;
 		}
-		inner = false;
 
 		const base = context.location(),
 			path = delta * (event.deltaMode === 1 ? 40 : event.deltaMode ? geo.view : 1);
@@ -351,10 +345,8 @@ export function wheel(context) {
 			target = clamp(target, geo.min, geo.max);
 		}
 
-		time = now;
-
 		// At the end, the page scrolls. The inertia of a gesture that moved the carousel does not scroll the page.
-		if (Math.abs(target - base) < 0.5) {
+		if (abs(target - base) < 0.5) {
 			if (held && inertia) {
 				event.preventDefault();
 			}
@@ -383,23 +375,23 @@ export function wheel(context) {
 		const geo = context.geo(),
 			at = context.current(),
 			index = nearestSnap(geo.snaps, at, geo.period),
-			away = Math.abs(targetLocation(geo.snaps[index].location, at, geo.period) - at) > 10;
+			away = abs(targetLocation(geo.snaps[index].location, at, geo.period) - at) > 10;
 
 		context.step(index, index === snap && away ? direction : 0);
 	}
 
 	// A wheel listener that is not passive makes the browser wait for the main thread before it scrolls the page.
 	// Add it only where the wheel moves the carousel.
-	function listen() {
-		const geo = context.geo();
-		viewport[!geo.fit && (geo.axis === 'y' || options.wheel === 'both') ? 'addEventListener' : 'removeEventListener']('wheel', onWheel, { passive: false });
-	}
+	const listen = bind(viewport, [['wheel', onWheel, { passive: false }]]);
 
-	['init', 'reinit', 'resize'].forEach((name) => context.on(name, listen));
+	['init', 'reinit', 'resize'].forEach((name) => context.on(name, () => {
+		const geo = context.geo();
+		listen(!geo.fit && (geo.axis === 'y' || options.wheel === 'both'));
+	}));
 
 	return {
 		remove() {
-			viewport.removeEventListener('wheel', onWheel);
+			listen();
 			clearTimeout(timer);
 		}
 	};
@@ -432,13 +424,11 @@ export function keys(context) {
 		}
 	}
 
-	root.addEventListener('keydown', onKey);
+	const listen = bind(root, [['keydown', onKey]]);
 
-	return {
-		remove() {
-			root.removeEventListener('keydown', onKey);
-		}
-	};
+	listen(true);
+
+	return { remove: listen };
 }
 
 /**
@@ -472,13 +462,9 @@ export function focus(context) {
 		context.emit('slidefocus');
 	}
 
-	container.addEventListener('pointerdown', press);
-	container.addEventListener('focusin', onFocus);
+	const listen = bind(container, [['pointerdown', press], ['focusin', onFocus]]);
 
-	return {
-		remove() {
-			container.removeEventListener('pointerdown', press);
-			container.removeEventListener('focusin', onFocus);
-		}
-	};
+	listen(true);
+
+	return { remove: listen };
 }

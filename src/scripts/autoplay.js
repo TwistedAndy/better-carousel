@@ -4,7 +4,7 @@
  * Each feature takes the context of a carousel (see carousel.js). It returns nothing if its option is off, or an object with remove().
  */
 
-import { create, own, setAttribute, setClass } from './markup.js';
+import { bind, createButton, own, setAttribute, setClass } from './markup.js';
 
 // The defaults of the "autoplay" option
 const autoplayDefaults = { delay: 4000, stopOnInteraction: true, pauseOnHover: false, pauseOnFocus: true, stopOnLastSnap: false, playOnInit: true, instant: false, timer: null };
@@ -78,16 +78,12 @@ function pauser(root, options, change) {
 function controller(context, key, options, hooks) {
 	const { api, root, container, cls, emit } = context,
 		labels = context.options.labels,
-		button = create('button', cls.button + ' ' + cls.playButton);
+		button = createButton(cls.button + ' ' + cls.playButton, container, '', () => playing ? control.stop() : control.play());
 
 	let playing = false,
 		watch = null,
 		// true until the first init
 		first = true;
-
-	button.type = 'button';
-	button.setAttribute('aria-controls', container.id);
-	button.addEventListener('click', () => playing ? control.stop() : control.play());
 
 	function update() {
 		setAttribute(button, 'aria-label', playing ? labels.pause : labels.play);
@@ -241,8 +237,14 @@ export function autoScroll(context) {
 		pressed = false;
 
 	const control = controller(context, 'autoScroll', options, {
-		play: wait,
+		play() {
+			presses(true);
+			wait();
+		},
 		stop() {
+			presses();
+			listen();
+			pressed = false;
 			wait(-1);
 			context.halt();
 		},
@@ -288,35 +290,27 @@ export function autoScroll(context) {
 		}
 	}
 
-	// A press stops the slides under the pointer. A release without a drag starts them again after the delay. A drag is an interaction.
-	const listen = (method) => ['pointerup', 'pointercancel'].forEach((name) => window[method](name, release));
+	// While the auto scroll plays, a press stops the slides under the pointer. A release without a drag starts them again after the delay.
+	// A drag is an interaction.
+	const listen = bind(window, [['pointerup', release], ['pointercancel', release]]),
+		presses = bind(context.viewport, [['pointerdown', press]]);
 
 	function press(event) {
-		if (!event.button && control.isPlaying() && !pressed) {
+		if (!event.button && !pressed) {
 			pressed = true;
 			wait(-1);
 			context.halt();
-			listen('addEventListener');
+			listen(true);
 		}
 	}
 
 	function release() {
 		pressed = false;
-		listen('removeEventListener');
-		if (control.isPlaying() && !context.dragging()) {
+		listen();
+		if (!context.dragging()) {
 			wait();
 		}
 	}
-
-	const { viewport } = context,
-		remove = control.remove;
-
-	viewport.addEventListener('pointerdown', press);
-	control.remove = () => {
-		viewport.removeEventListener('pointerdown', press);
-		listen('removeEventListener');
-		remove();
-	};
 
 	return control;
 }

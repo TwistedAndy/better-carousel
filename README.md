@@ -4,7 +4,7 @@
 
 <p>A small, fast and accessible JavaScript carousel.<br />The CSS sets the layout, and the motion runs on the compositor, also on slow phones.</p>
 
-[![Gzip size](https://flat.badgen.net/static/gzip/12.6%20KB/green)](dist/better-carousel.min.js)
+[![Gzip size](https://flat.badgen.net/static/gzip/12.4%20KB/green)](dist/better-carousel.min.js)
 [![MIT license](https://flat.badgen.net/static/license/MIT/purple)](LICENSE)
 [![No dependencies](https://flat.badgen.net/static/dependencies/0/blue)](package.json)
 
@@ -16,7 +16,7 @@
 
 - **Layout from CSS** - Your CSS sets the sizes of the slides, the space between them, the axis and the alignment. One carousel can show 1 slide on a phone and 4 slides on a desktop.
 - **Smooth** - Each motion is a Web Animations API animation of `translate`. No script runs on each frame, also during the auto scroll.
-- **Small** - <!-- generated:gzip -->12.6 KB<!-- /generated --> gzip with loop, autoplay, auto scroll, auto height, sync and the mouse wheel.
+- **Small** - <!-- generated:gzip -->12.4 KB<!-- /generated --> gzip with loop, autoplay, auto scroll, auto height, sync and the mouse wheel.
 - **Loop** - The loop moves the original slides. It adds clones only if the slides are too few.
 - **Vertical and grid** - A column layout makes a vertical carousel. A CSS grid with more rows also works.
 - **Accessible** - WCAG 2.1 AA: names for the carousel, the slides and the buttons, the keyboard focus, a live region and reduced motion.
@@ -29,13 +29,13 @@ Load the minified script and the stylesheet from jsDelivr. The script adds the g
 ```html
 <link
   rel="stylesheet"
-  href="https://cdn.jsdelivr.net/gh/TwistedAndy/better-carousel@v1.1.0/dist/better-carousel.css"
+  href="https://cdn.jsdelivr.net/gh/TwistedAndy/better-carousel@v1.1.1/dist/better-carousel.css"
   integrity="sha384-3ROtqpAC1ZPhSpDul73SGiTOv1L5kTr/08sUr6FPY6S79RIDi7mpI22ttbuxI/w8"
   crossorigin="anonymous"
 />
 <script
-  src="https://cdn.jsdelivr.net/gh/TwistedAndy/better-carousel@v1.1.0/dist/better-carousel.min.js"
-  integrity="sha384-UjCkof+Hhn4+1TwAy29U/sKHOeabjJs4q+6SKn0GrTEDkuWVfGy0vkZncDkmjlzZ"
+  src="https://cdn.jsdelivr.net/gh/TwistedAndy/better-carousel@v1.1.1/dist/better-carousel.min.js"
+  integrity="sha384-iAm/5iXDxHA5oHmRJqH1xjWnZzqQsmfklYM5v0iVGvJx/3cWrzFZ67xjIHyTVIz1"
   crossorigin="anonymous"
 ></script>
 ```
@@ -718,9 +718,9 @@ The library is made for slow phones. A motion runs on the compositor, and a caro
 <!-- generated:sizes -->
 | File | Minified | Gzip | Brotli |
 | --- | --- | --- | --- |
-| `better-carousel.min.js` | 31.6 KB | 12.6 KB | 11.5 KB |
+| `better-carousel.min.js` | 30.3 KB | 12.4 KB | 11.4 KB |
 | `better-carousel.css` | 4.7 KB | 1.3 KB | 1.1 KB |
-| Total | 36.3 KB | 13.9 KB | 12.6 KB |
+| Total | 35.0 KB | 13.8 KB | 12.5 KB |
 <!-- /generated -->
 
 The [Comparison](#comparison) section gives the sizes and the runtime costs of other carousel libraries.

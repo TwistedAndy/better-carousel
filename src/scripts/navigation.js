@@ -5,7 +5,7 @@
  */
 
 import { find } from './carousel.js';
-import { create, optionElement, setAttribute, setClass } from './markup.js';
+import { bind, create, createButton, optionElement, setAttribute, setClass } from './markup.js';
 
 /**
  * Make the arrows and the dots of a carousel. They update on the carousel events.
@@ -40,14 +40,7 @@ export function nav(context) {
 	}
 
 	if (arrows) {
-		[['prev', 'goToPrev'], ['next', 'goToNext']].forEach(([key, method]) => {
-			const button = create('button', cls.button + ' ' + cls[key + 'Button']);
-			button.type = 'button';
-			button.setAttribute('aria-label', labels[key]);
-			button.setAttribute('aria-controls', context.container.id);
-			button.addEventListener('click', () => api[method]());
-			buttons.push(button);
-		});
+		buttons.push(createButton(cls.button + ' ' + cls.prevButton, context.container, labels.prev, () => api.goToPrev()), createButton(cls.button + ' ' + cls.nextButton, context.container, labels.next, () => api.goToNext()));
 	}
 
 	function update() {
@@ -55,17 +48,17 @@ export function nav(context) {
 			count = fit ? 0 : api.snapProgress().length,
 			selected = api.selectedSnap();
 
-		buttons.forEach((button, index) => {
+		buttons.forEach((item, index) => {
 			if (fit) {
-				button.remove();
+				item.remove();
 			} else {
-				if (!button.isConnected) {
+				if (!item.isConnected) {
 					// Before the dots, for the tab order
-					list?.parentNode === arrows ? list.before(button) : arrows.append(button);
+					list?.parentNode === arrows ? list.before(item) : arrows.append(item);
 				}
 				const disabled = !(index ? api.canGoToNext() : api.canGoToPrev());
-				if (button.disabled !== disabled) {
-					button.disabled = disabled;
+				if (item.disabled !== disabled) {
+					item.disabled = disabled;
 				}
 			}
 		});
@@ -85,16 +78,12 @@ export function nav(context) {
 		}
 
 		while (dots.length < count) {
-			const dot = create('button', cls.dot),
-				index = dots.length;
-			dot.type = 'button';
-			dot.setAttribute('aria-label', labels.dot.replace('%d', index + 1));
-			dot.setAttribute('aria-controls', context.container.id);
+			const index = dots.length,
+				dot = createButton(cls.dot, context.container, labels.dot.replace('%d', index + 1), () => api.goToSnap(index));
 			// The window of the dots hides the dots out of the zoom: keep them out of the tab order
 			if (windowed) {
 				dot.tabIndex = -1;
 			}
-			dot.addEventListener('click', () => api.goToSnap(index));
 			dots.push(dot);
 			track.append(dot);
 		}
@@ -146,7 +135,7 @@ export function nav(context) {
 
 	return {
 		remove() {
-			buttons.forEach((button) => button.remove());
+			buttons.forEach((item) => item.remove());
 			list?.remove();
 		}
 	};
@@ -198,12 +187,14 @@ export function sync(context) {
 
 	context.on('init', connect);
 	context.on('reinit', connect);
-	container.addEventListener('click', click);
+	const listen = bind(container, [['click', click]]);
+
+	listen(true);
 
 	return {
 		remove() {
 			other?.off('select', show);
-			container.removeEventListener('click', click);
+			listen();
 		}
 	};
 }

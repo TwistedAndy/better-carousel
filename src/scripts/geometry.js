@@ -8,6 +8,9 @@
 
 import { cloneCount } from './loop.js';
 
+// Short names of the Math functions, which the minified file can make shorter
+export const { abs, floor, round } = Math;
+
 /**
  * Keep a value between two limits.
  *
@@ -127,6 +130,29 @@ export function groups(list, view, count) {
 }
 
 /**
+ * Find the item with the lowest score.
+ *
+ * @param {Array} list
+ * @param {(item: *, index: number) => number} score Infinity excludes an item.
+ * @param {number} [margin] A score must be lower than the best score by more than this value. Then the lower index wins a tie.
+ * @returns {number} The index, or -1 if all items are excluded.
+ */
+function lowest(list, score, margin = 0) {
+	let best = -1,
+		gap = Infinity;
+
+	list.forEach((item, index) => {
+		const value = score(item, index);
+		if (value < gap - margin) {
+			gap = value;
+			best = index;
+		}
+	});
+
+	return best;
+}
+
+/**
  * Get the distance between two locations. In loop mode, use the shortest distance modulo the period.
  *
  * @param {number} a
@@ -136,7 +162,7 @@ export function groups(list, view, count) {
  */
 export function distance(a, b, period) {
 	const value = a - b;
-	return period ? value - Math.round(value / period) * period : value;
+	return period ? value - round(value / period) * period : value;
 }
 
 /**
@@ -170,8 +196,8 @@ export function snaps({ slides, view, align, slidesPerSnap, containScroll, perio
 	}
 
 	if (period || containScroll !== 'keepSnaps') {
-		list = list.filter((location, index) => !index || Math.abs(distance(location, list[index - 1], period)) > 1);
-		if (period && list.length > 1 && Math.abs(distance(list[0], list[list.length - 1], period)) <= 1) {
+		list = list.filter((location, index) => !index || abs(distance(location, list[index - 1], period)) > 1);
+		if (period && list.length > 1 && abs(distance(list[0], list[list.length - 1], period)) <= 1) {
 			list.pop();
 		}
 	}
@@ -217,18 +243,7 @@ export function snaps({ slides, view, align, slidesPerSnap, containScroll, perio
  * @returns {number} The slide index, or -1 if the range is empty.
  */
 export function activeSlide(slides, location, view, align, period, from = 0, to = slides.length) {
-	let best = -1,
-		gap = Infinity;
-
-	slides.forEach((slide, index) => {
-		const value = Math.abs(distance(slide.start + location, alignOffset(align, view, slide.end - slide.start, index), period));
-		if (index >= from && index < to && !slide.hidden && value < gap - 0.5) {
-			gap = value;
-			best = index;
-		}
-	});
-
-	return best;
+	return lowest(slides, (slide, index) => index >= from && index < to && !slide.hidden ? abs(distance(slide.start + location, alignOffset(align, view, slide.end - slide.start, index), period)) : Infinity, 0.5);
 }
 
 /**
@@ -262,18 +277,7 @@ export function snapOfSlide(list, slides, index, view, align, period) {
  * @returns {number} The snap index.
  */
 export function nearestSnap(list, location, period) {
-	let best = 0,
-		gap = Infinity;
-
-	list.forEach((snap, index) => {
-		const value = Math.abs(distance(snap.location, location, period));
-		if (value < gap) {
-			gap = value;
-			best = index;
-		}
-	});
-
-	return best;
+	return Math.max(0, lowest(list, (snap) => abs(distance(snap.location, location, period))));
 }
 
 /**
@@ -295,7 +299,7 @@ export function targetLocation(target, location, period, direction = 0) {
 	}
 
 	if (direction < 0) {
-		return target + (Math.floor((location + 0.5 - target) / period) + 1) * period;
+		return target + (floor((location + 0.5 - target) / period) + 1) * period;
 	}
 
 	return location + distance(target, location, period);
@@ -311,7 +315,7 @@ export function targetLocation(target, location, period, direction = 0) {
 export function progress(location, { min, max, period }) {
 	if (period) {
 		const value = (max - location) / period;
-		return value - Math.floor(value);
+		return value - floor(value);
 	}
 	return max > min ? clamp((max - location) / (max - min), 0, 1) : 0;
 }
@@ -417,16 +421,7 @@ export function compute(layout, rects, area, count, options) {
  * @returns {number} The snap index.
  */
 export function physicalSnap(geo, index, location) {
-	let best = -1,
-		gap = Infinity;
-
-	geo.snaps.forEach((snap, item) => {
-		const value = Math.abs(distance(snap.location, location, geo.period));
-		if (geo.map[item] === index && value < gap) {
-			gap = value;
-			best = item;
-		}
-	});
+	const best = lowest(geo.snaps, (snap, item) => geo.map[item] === index ? abs(distance(snap.location, location, geo.period)) : Infinity);
 
 	return best < 0 ? clamp(index, 0, geo.snaps.length - 1) : best;
 }

@@ -4,6 +4,8 @@
  * The reads run in the ResizeObserver callback, when the layout is clean.
  */
 
+import { abs, round } from './geometry.js';
+
 /**
  * Read the axis, the alignment, the direction and the gap from the computed style of the container.
  *
@@ -67,13 +69,13 @@ export function readRects(viewport, nodes, layout, written) {
 		width = viewport.offsetWidth,
 		height = viewport.offsetHeight,
 		// offsetWidth is a whole number: a difference of less than 1 px is not a transform
-		transformed = width && height && (Math.abs(box.width - width) >= 1 || Math.abs(box.height - height) >= 1),
+		transformed = width && height && (abs(box.width - width) >= 1 || abs(box.height - height) >= 1),
 		// A scale s and a rotation by an angle a give a box of s(w cos a + h sin a) by s(w sin a + h cos a). The main axis gets s cos a.
-		scale = !transformed ? 1 : Math.abs(width - height) > 1 ? (width * box.width - height * box.height) / (width * width - height * height) : box.width / width,
+		scale = !transformed ? 1 : abs(width - height) > 1 ? (width * box.width - height * box.height) / (width * width - height * height) : box.width / width,
 		view = !transformed ? (x ? box.width : box.height) : x ? width : height,
 		style = getComputedStyle(viewport),
-		[before, after] = x ? (layout.rtl ? ['Right', 'Left'] : ['Left', 'Right']) : ['Top', 'Bottom'],
-		pad = { start: parseFloat(style['padding' + before]) || 0, end: parseFloat(style['padding' + after]) || 0 };
+		side = x ? (layout.rtl ? ['Right', 'Left'] : ['Left', 'Right']) : ['Top', 'Bottom'],
+		pad = { start: parseFloat(style['padding' + side[0]]) || 0, end: parseFloat(style['padding' + side[1]]) || 0 };
 
 	const slides = nodes.map((node, index) => {
 		const rect = node.getBoundingClientRect(),
@@ -84,35 +86,27 @@ export function readRects(viewport, nodes, layout, written) {
 		return { start, end: start + size, cross: (x ? rect.height : rect.width) / scale, hidden: !rect.width && !rect.height };
 	});
 
-	let edge = slides.find((slide) => !slide.hidden)?.start || 0;
-
-	for (const slide of slides) {
-		if (slide.hidden) {
-			slide.start = slide.end = edge;
-		} else {
-			edge = slide.end;
-		}
-	}
-
-	let first = Math.max(0, slides.findIndex((slide) => !slide.hidden)),
-		last = first;
+	// A hidden slide goes to the end of the visible slide before it. The first and the last visible slides give the margins of the loop gap.
+	let edge = slides.find((slide) => !slide.hidden)?.start || 0,
+		first = -1,
+		last = -1,
+		gap = layout.gap;
 
 	slides.forEach((slide, index) => {
 		if (slide.hidden) {
+			slide.start = slide.end = edge;
 			return;
 		}
-		if (slide.start < slides[first].start) {
+		edge = slide.end;
+		if (first < 0 || slide.start < slides[first].start) {
 			first = index;
 		}
-		if (slide.end > slides[last].end) {
+		if (last < 0 || slide.end > slides[last].end) {
 			last = index;
 		}
 	});
 
-	let gap = layout.gap;
-
-	if (slides.length) {
-		const side = x ? (layout.rtl ? ['Right', 'Left'] : ['Left', 'Right']) : ['Top', 'Bottom'];
+	if (first > -1) {
 		gap += (parseFloat(getComputedStyle(nodes[first])['margin' + side[0]]) || 0) + (parseFloat(getComputedStyle(nodes[last])['margin' + side[1]]) || 0);
 	}
 
@@ -152,9 +146,9 @@ export function visibleArea(viewport, layout, view, pad, size) {
 	}
 
 	const box = viewport.getBoundingClientRect(),
-		before = Math.max(0, Math.round(layout.axis === 'x' ? (layout.rtl ? size - box.right : box.left) : box.top)) + pad.start;
+		before = Math.max(0, round(layout.axis === 'x' ? (layout.rtl ? size - box.right : box.left) : box.top)) + pad.start;
 
-	return { start: -before, size: before + Math.max(view + pad.end, Math.round(size - before)) };
+	return { start: -before, size: before + Math.max(view + pad.end, round(size - before)) };
 }
 
 // One ResizeObserver for all carousels. Each callback first reads the layout of all carousels, then writes. In this way, the reads of one carousel do not

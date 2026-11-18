@@ -55,6 +55,17 @@ export function cleanStyle(element) {
 }
 
 /**
+ * Make a function that adds or removes event listeners on a target.
+ *
+ * @param {EventTarget} target
+ * @param {Array<Array>} list [name, handler, options] for each listener.
+ * @returns {(on?: boolean) => void} With true, it adds the listeners. Without a value, it removes them.
+ */
+export function bind(target, list) {
+	return (on) => list.forEach(([name, handler, options]) => target[on ? 'addEventListener' : 'removeEventListener'](name, handler, options));
+}
+
+/**
  * Make an element.
  *
  * @param {string} tag
@@ -66,6 +77,24 @@ export function create(tag, className) {
 	if (className) {
 		element.className = className;
 	}
+	return element;
+}
+
+/**
+ * Make a control button of a carousel.
+ *
+ * @param {string} className
+ * @param {HTMLElement} container The container of the slides, which the button controls.
+ * @param {string} label The aria-label. An empty label adds no attribute.
+ * @param {() => void} click
+ * @returns {HTMLButtonElement}
+ */
+export function createButton(className, container, label, click) {
+	const element = create('button', className);
+	element.type = 'button';
+	setAttribute(element, 'aria-label', label);
+	element.setAttribute('aria-controls', container.id);
+	element.addEventListener('click', click);
 	return element;
 }
 
@@ -233,10 +262,9 @@ export function readSlides(container, selector) {
 export function copySlides(slides, count, className) {
 	const list = [];
 
-	for (let copy = 0; copy < count; copy++) {
+	for (let pass = 0; pass < count; pass++) {
 		for (const node of slides) {
-			const clone = node.cloneNode(true);
-			removeIds(clone);
+			const clone = copy(node);
 			clone.setAttribute('aria-hidden', 'true');
 			clone.inert = true;
 			clone.style.translate = '';
@@ -250,11 +278,13 @@ export function copySlides(slides, count, className) {
 	return list;
 }
 
-// An id must be unique in the page, so a copy has no ids
-function removeIds(node) {
-	for (const item of [node, ...node.querySelectorAll('[id]')]) {
+// Copy a node with its content. An id must be unique in the page, so the copy has no ids.
+function copy(node) {
+	const result = node.cloneNode(true);
+	for (const item of [result, ...result.querySelectorAll('[id]')]) {
 		item.removeAttribute('id');
 	}
+	return result;
 }
 
 /**
@@ -264,9 +294,7 @@ function removeIds(node) {
  * @param {HTMLElement} node The slide.
  */
 export function copyContent(clone, node) {
-	const copy = node.cloneNode(true);
-	removeIds(copy);
-	clone.replaceChildren(...copy.childNodes);
+	clone.replaceChildren(...copy(node).childNodes);
 }
 
 /**

@@ -2,6 +2,7 @@
  * Motion: the easing, the duration of a goToSnap() motion, and the motion engine.
  */
 
+import { abs } from './geometry.js';
 import { steps } from './loop.js';
 
 // The easing of a goToSnap() motion
@@ -30,10 +31,10 @@ export function bezier([x1, y1, x2, y2]) {
 		for (let i = 0; i < 6; i++) {
 			const error = axis(x1, x2, t) - x,
 				slope = 3 * (1 + 3 * x1 - 3 * x2) * t * t + 2 * (3 * x2 - 6 * x1) * t + 3 * x1;
-			if (Math.abs(error) < 1e-5) {
+			if (abs(error) < 1e-5) {
 				return axis(y1, y2, t);
 			}
-			if (Math.abs(slope) < 1e-6) {
+			if (abs(slope) < 1e-6) {
 				break;
 			}
 			t -= error / slope;

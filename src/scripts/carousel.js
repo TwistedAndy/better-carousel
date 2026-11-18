@@ -5,7 +5,7 @@
  * It returns nothing if its option is off, or an object with remove(). remove() removes all that the feature added.
  */
 
-import { alignOffset, clamp, compute, inView, nearestSnap, physicalSnap, progress, snapIndex, snapOfSlide, snapPosition, targetLocation } from './geometry.js';
+import { abs, alignOffset, clamp, compute, floor, inView, nearestSnap, physicalSnap, progress, round, snapIndex, snapOfSlide, snapPosition, targetLocation } from './geometry.js';
 import { observeSize, readLayout, readRects, visibleArea, waitNear, windowSize } from './layout.js';
 import { normalize, pathFits, placement } from './loop.js';
 import { addClass, build, cleanStyle, copyContent, copySlides, labelSlides, readSlides, restore, setClass, setStyle } from './markup.js';
@@ -113,12 +113,11 @@ export default function carousel(element, userOptions, defaults, features) {
 
 	const api = {
 		goToSnap: (index, instant) => go(physical(index), instant),
-		// Before the first measure pass, keep the step in the selected snap
-		goToNext: (instant) => geo ? api.canGoToNext() && step(selected, 1, instant) : go(selected + 1, instant),
-		goToPrev: (instant) => geo ? api.canGoToPrev() && step(selected, -1, instant) : go(selected - 1, instant),
+		goToNext: (instant) => advance(1, instant),
+		goToPrev: (instant) => advance(-1, instant),
 		goToSlide: (index, instant) => go(physical(api.snapOfSlide(index)), instant, index),
-		canGoToNext: () => !!geo && !geo.fit && (!!geo.period || selected < geo.snaps.length - 1),
-		canGoToPrev: () => !!geo && !geo.fit && (!!geo.period || selected > 0),
+		canGoToNext: () => can(1),
+		canGoToPrev: () => can(-1),
 		selectedSnap: () => logical(selected),
 		previousSnap: () => logical(previous),
 		selectedSlide,
@@ -361,11 +360,11 @@ export default function carousel(element, userOptions, defaults, features) {
 	 * @param {MutationRecord[]} records
 	 */
 	function onCopy(records) {
-		const changed = new Set(records.filter((record) => record.type !== 'attributes' || !slides.includes(record.target)).map(({ target }) => slides.find((node) => node.contains(target))));
-
-		changed.forEach((node) => {
-			for (let index = slides.indexOf(node); node && index < clones.length; index += slides.length) {
-				copyContent(clones[index], node);
+		slides.forEach((node, index) => {
+			if (records.some(({ type, target }) => node.contains(target) && (type !== 'attributes' || target !== node))) {
+				for (let item = index; item < clones.length; item += slides.length) {
+					copyContent(clones[item], node);
+				}
 			}
 		});
 	}
@@ -462,7 +461,7 @@ export default function carousel(element, userOptions, defaults, features) {
 			values = [layout.axis, layout.rtl, typeof layout.align === 'string' && layout.align, rects.view, rects.gap, area.start, area.size, ...rects.slides.flatMap((slide) => [slide.start, slide.end, slide.cross])];
 
 		// A change of less than 0.5 px is not a change. During a motion, the rects have small errors, because the browser and bezier() round the easing differently.
-		if (ready && values.length === signature.length && values.every((value, index) => value === signature[index] || Math.abs(value - signature[index]) < 0.5)) {
+		if (ready && values.length === signature.length && values.every((value, index) => value === signature[index] || abs(value - signature[index]) < 0.5)) {
 			return false;
 		}
 
@@ -483,8 +482,7 @@ export default function carousel(element, userOptions, defaults, features) {
 
 		// Before the first measure pass, selected is the logical snap of the startSnap option, of goToSnap() or of goToNext().
 		// In loop mode, a step before the first snap goes to the last snap.
-		const count = geo.logical.length;
-		selected = keep >= 0 ? physical(api.snapOfSlide(keep)) : Math.min(total - 1, ready ? selected : physical(geo.period ? (selected % count + count) % count : Math.max(selected, 0)));
+		selected = keep >= 0 ? physical(api.snapOfSlide(keep)) : Math.min(total - 1, ready ? selected : physical(snapIndex(selected, geo.logical.length, geo.period)));
 		previous = Math.min(previous, total - 1);
 		requested = keep;
 		if (!dragging) {
@@ -591,7 +589,7 @@ export default function carousel(element, userOptions, defaults, features) {
 	 */
 	function screen(value) {
 		const scale = devicePixelRatio || 1;
-		return Math.round(value * scale) / scale * geo.sign;
+		return round(value * scale) / scale * geo.sign;
 	}
 
 	/**
@@ -635,7 +633,7 @@ export default function carousel(element, userOptions, defaults, features) {
 			root.style.setProperty('--better-progress', progress(at, geo));
 		} else if (options.progress) {
 			const value = snapPosition(geo.snaps, at, geo.period),
-				snap = Math.floor(value);
+				snap = floor(value);
 			whole.progress = progress(at, geo);
 			whole.snap = logical(snap) + value - snap;
 			options.progress(whole, api);
@@ -689,6 +687,30 @@ export default function carousel(element, userOptions, defaults, features) {
 	}
 
 	/**
+	 * Find if the carousel can go one snap in a direction.
+	 *
+	 * @param {number} direction 1 or -1.
+	 * @returns {boolean}
+	 */
+	function can(direction) {
+		return !!geo && !geo.fit && (!!geo.period || (direction > 0 ? selected < geo.snaps.length - 1 : selected > 0));
+	}
+
+	/**
+	 * Go one snap in a direction, if the carousel can. Before the first measure pass, keep the step in the selected snap.
+	 *
+	 * @param {number} direction 1 or -1.
+	 * @param {boolean} [instant]
+	 */
+	function advance(direction, instant) {
+		if (!geo) {
+			go(selected + direction, instant);
+		} else if (can(direction)) {
+			step(selected, direction, instant);
+		}
+	}
+
+	/**
 	 * Go to the snap after a snap in a direction. In loop mode, the first snap follows the last snap.
 	 *
 	 * @param {number} index The snap.
@@ -719,7 +741,7 @@ export default function carousel(element, userOptions, defaults, features) {
 		}
 
 		const target = targetLocation(geo.snaps[index].location, current(), geo.period, direction),
-			span = Math.abs(index - selected),
+			span = abs(index - selected),
 			count = geo.period ? Math.min(span, geo.snaps.length - span) : span;
 
 		move(index, target, instant ? 0 : snapDuration(options.duration, count), EASE);
@@ -736,7 +758,7 @@ export default function carousel(element, userOptions, defaults, features) {
 	function move(index, target, duration, curve) {
 		const from = halt(),
 			picked = select(index),
-			jump = !duration || geo.fit || Math.abs(target - from) < 0.5;
+			jump = !duration || geo.fit || abs(target - from) < 0.5;
 
 		location = target;
 
@@ -776,10 +798,10 @@ export default function carousel(element, userOptions, defaults, features) {
 			// Start in the first period, so that the location does not grow after each pause
 			location = normalize(from, geo.period);
 			motion.loop(location, direction, geo.period / speed, geo, nodes);
-		} else if (Math.abs(to - from) > 1) {
+		} else if (abs(to - from) > 1) {
 			free = true;
 			location = to;
-			motion.run(from, to, Math.abs(to - from) / speed, [0, 0, 1, 1], events.has('scroll'));
+			motion.run(from, to, abs(to - from) / speed, [0, 0, 1, 1], events.has('scroll'));
 		}
 	}
 

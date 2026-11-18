@@ -55,6 +55,17 @@ function cleanStyle(element) {
 }
 
 /**
+ * Make a function that adds or removes event listeners on a target.
+ *
+ * @param {EventTarget} target
+ * @param {Array<Array>} list [name, handler, options] for each listener.
+ * @returns {(on?: boolean) => void} With true, it adds the listeners. Without a value, it removes them.
+ */
+function bind(target, list) {
+	return (on) => list.forEach(([name, handler, options]) => target[on ? 'addEventListener' : 'removeEventListener'](name, handler, options));
+}
+
+/**
  * Make an element.
  *
  * @param {string} tag
@@ -66,6 +77,24 @@ function create(tag, className) {
 	if (className) {
 		element.className = className;
 	}
+	return element;
+}
+
+/**
+ * Make a control button of a carousel.
+ *
+ * @param {string} className
+ * @param {HTMLElement} container The container of the slides, which the button controls.
+ * @param {string} label The aria-label. An empty label adds no attribute.
+ * @param {() => void} click
+ * @returns {HTMLButtonElement}
+ */
+function createButton(className, container, label, click) {
+	const element = create('button', className);
+	element.type = 'button';
+	setAttribute(element, 'aria-label', label);
+	element.setAttribute('aria-controls', container.id);
+	element.addEventListener('click', click);
 	return element;
 }
 
@@ -233,10 +262,9 @@ function readSlides(container, selector) {
 function copySlides(slides, count, className) {
 	const list = [];
 
-	for (let copy = 0; copy < count; copy++) {
+	for (let pass = 0; pass < count; pass++) {
 		for (const node of slides) {
-			const clone = node.cloneNode(true);
-			removeIds(clone);
+			const clone = copy(node);
 			clone.setAttribute('aria-hidden', 'true');
 			clone.inert = true;
 			clone.style.translate = '';
@@ -250,11 +278,13 @@ function copySlides(slides, count, className) {
 	return list;
 }
 
-// An id must be unique in the page, so a copy has no ids
-function removeIds(node) {
-	for (const item of [node, ...node.querySelectorAll('[id]')]) {
+// Copy a node with its content. An id must be unique in the page, so the copy has no ids.
+function copy(node) {
+	const result = node.cloneNode(true);
+	for (const item of [result, ...result.querySelectorAll('[id]')]) {
 		item.removeAttribute('id');
 	}
+	return result;
 }
 
 /**
@@ -264,9 +294,7 @@ function removeIds(node) {
  * @param {HTMLElement} node The slide.
  */
 function copyContent(clone, node) {
-	const copy = node.cloneNode(true);
-	removeIds(copy);
-	clone.replaceChildren(...copy.childNodes);
+	clone.replaceChildren(...copy(node).childNodes);
 }
 
 /**
@@ -366,16 +394,12 @@ function pauser(root, options, change) {
 function controller(context, key, options, hooks) {
 	const { api, root, container, cls, emit } = context,
 		labels = context.options.labels,
-		button = create('button', cls.button + ' ' + cls.playButton);
+		button = createButton(cls.button + ' ' + cls.playButton, container, '', () => playing ? control.stop() : control.play());
 
 	let playing = false,
 		watch = null,
 		// true until the first init
 		first = true;
-
-	button.type = 'button';
-	button.setAttribute('aria-controls', container.id);
-	button.addEventListener('click', () => playing ? control.stop() : control.play());
 
 	function update() {
 		setAttribute(button, 'aria-label', playing ? labels.pause : labels.play);
@@ -529,8 +553,14 @@ function autoScroll(context) {
 		pressed = false;
 
 	const control = controller(context, 'autoScroll', options, {
-		play: wait,
+		play() {
+			presses(true);
+			wait();
+		},
 		stop() {
+			presses();
+			listen();
+			pressed = false;
 			wait(-1);
 			context.halt();
 		},
@@ -576,35 +606,27 @@ function autoScroll(context) {
 		}
 	}
 
-	// A press stops the slides under the pointer. A release without a drag starts them again after the delay. A drag is an interaction.
-	const listen = (method) => ['pointerup', 'pointercancel'].forEach((name) => window[method](name, release));
+	// While the auto scroll plays, a press stops the slides under the pointer. A release without a drag starts them again after the delay.
+	// A drag is an interaction.
+	const listen = bind(window, [['pointerup', release], ['pointercancel', release]]),
+		presses = bind(context.viewport, [['pointerdown', press]]);
 
 	function press(event) {
-		if (!event.button && control.isPlaying() && !pressed) {
+		if (!event.button && !pressed) {
 			pressed = true;
 			wait(-1);
 			context.halt();
-			listen('addEventListener');
+			listen(true);
 		}
 	}
 
 	function release() {
 		pressed = false;
-		listen('removeEventListener');
-		if (control.isPlaying() && !context.dragging()) {
+		listen();
+		if (!context.dragging()) {
 			wait();
 		}
 	}
-
-	const { viewport } = context,
-		remove = control.remove;
-
-	viewport.addEventListener('pointerdown', press);
-	control.remove = () => {
-		viewport.removeEventListener('pointerdown', press);
-		listen('removeEventListener');
-		remove();
-	};
 
 	return control;
 }
@@ -701,6 +723,9 @@ function normalize(location, length) {
  * In loop mode, the period is the length of one copy of the slides. Without loop, it is 0.
  */
 
+
+// Short names of the Math functions, which the minified file can make shorter
+const { abs, floor, round } = Math;
 
 /**
  * Keep a value between two limits.
@@ -821,6 +846,29 @@ function groups(list, view, count) {
 }
 
 /**
+ * Find the item with the lowest score.
+ *
+ * @param {Array} list
+ * @param {(item: *, index: number) => number} score Infinity excludes an item.
+ * @param {number} [margin] A score must be lower than the best score by more than this value. Then the lower index wins a tie.
+ * @returns {number} The index, or -1 if all items are excluded.
+ */
+function lowest(list, score, margin = 0) {
+	let best = -1,
+		gap = Infinity;
+
+	list.forEach((item, index) => {
+		const value = score(item, index);
+		if (value < gap - margin) {
+			gap = value;
+			best = index;
+		}
+	});
+
+	return best;
+}
+
+/**
  * Get the distance between two locations. In loop mode, use the shortest distance modulo the period.
  *
  * @param {number} a
@@ -830,7 +878,7 @@ function groups(list, view, count) {
  */
 function distance(a, b, period) {
 	const value = a - b;
-	return period ? value - Math.round(value / period) * period : value;
+	return period ? value - round(value / period) * period : value;
 }
 
 /**
@@ -864,8 +912,8 @@ function snaps({ slides, view, align, slidesPerSnap, containScroll, period = 0 }
 	}
 
 	if (period || containScroll !== 'keepSnaps') {
-		list = list.filter((location, index) => !index || Math.abs(distance(location, list[index - 1], period)) > 1);
-		if (period && list.length > 1 && Math.abs(distance(list[0], list[list.length - 1], period)) <= 1) {
+		list = list.filter((location, index) => !index || abs(distance(location, list[index - 1], period)) > 1);
+		if (period && list.length > 1 && abs(distance(list[0], list[list.length - 1], period)) <= 1) {
 			list.pop();
 		}
 	}
@@ -911,18 +959,7 @@ function snaps({ slides, view, align, slidesPerSnap, containScroll, period = 0 }
  * @returns {number} The slide index, or -1 if the range is empty.
  */
 function activeSlide(slides, location, view, align, period, from = 0, to = slides.length) {
-	let best = -1,
-		gap = Infinity;
-
-	slides.forEach((slide, index) => {
-		const value = Math.abs(distance(slide.start + location, alignOffset(align, view, slide.end - slide.start, index), period));
-		if (index >= from && index < to && !slide.hidden && value < gap - 0.5) {
-			gap = value;
-			best = index;
-		}
-	});
-
-	return best;
+	return lowest(slides, (slide, index) => index >= from && index < to && !slide.hidden ? abs(distance(slide.start + location, alignOffset(align, view, slide.end - slide.start, index), period)) : Infinity, 0.5);
 }
 
 /**
@@ -956,18 +993,7 @@ function snapOfSlide(list, slides, index, view, align, period) {
  * @returns {number} The snap index.
  */
 function nearestSnap(list, location, period) {
-	let best = 0,
-		gap = Infinity;
-
-	list.forEach((snap, index) => {
-		const value = Math.abs(distance(snap.location, location, period));
-		if (value < gap) {
-			gap = value;
-			best = index;
-		}
-	});
-
-	return best;
+	return Math.max(0, lowest(list, (snap) => abs(distance(snap.location, location, period))));
 }
 
 /**
@@ -989,7 +1015,7 @@ function targetLocation(target, location, period, direction = 0) {
 	}
 
 	if (direction < 0) {
-		return target + (Math.floor((location + 0.5 - target) / period) + 1) * period;
+		return target + (floor((location + 0.5 - target) / period) + 1) * period;
 	}
 
 	return location + distance(target, location, period);
@@ -1005,7 +1031,7 @@ function targetLocation(target, location, period, direction = 0) {
 function progress(location, { min, max, period }) {
 	if (period) {
 		const value = (max - location) / period;
-		return value - Math.floor(value);
+		return value - floor(value);
 	}
 	return max > min ? clamp((max - location) / (max - min), 0, 1) : 0;
 }
@@ -1111,16 +1137,7 @@ function compute(layout, rects, area, count, options) {
  * @returns {number} The snap index.
  */
 function physicalSnap(geo, index, location) {
-	let best = -1,
-		gap = Infinity;
-
-	geo.snaps.forEach((snap, item) => {
-		const value = Math.abs(distance(snap.location, location, geo.period));
-		if (geo.map[item] === index && value < gap) {
-			gap = value;
-			best = item;
-		}
-	});
+	const best = lowest(geo.snaps, (snap, item) => geo.map[item] === index ? abs(distance(snap.location, location, geo.period)) : Infinity);
 
 	return best < 0 ? clamp(index, 0, geo.snaps.length - 1) : best;
 }
@@ -1130,6 +1147,7 @@ function physicalSnap(geo, index, location) {
  *
  * The reads run in the ResizeObserver callback, when the layout is clean.
  */
+
 
 /**
  * Read the axis, the alignment, the direction and the gap from the computed style of the container.
@@ -1194,13 +1212,13 @@ function readRects(viewport, nodes, layout, written) {
 		width = viewport.offsetWidth,
 		height = viewport.offsetHeight,
 		// offsetWidth is a whole number: a difference of less than 1 px is not a transform
-		transformed = width && height && (Math.abs(box.width - width) >= 1 || Math.abs(box.height - height) >= 1),
+		transformed = width && height && (abs(box.width - width) >= 1 || abs(box.height - height) >= 1),
 		// A scale s and a rotation by an angle a give a box of s(w cos a + h sin a) by s(w sin a + h cos a). The main axis gets s cos a.
-		scale = !transformed ? 1 : Math.abs(width - height) > 1 ? (width * box.width - height * box.height) / (width * width - height * height) : box.width / width,
+		scale = !transformed ? 1 : abs(width - height) > 1 ? (width * box.width - height * box.height) / (width * width - height * height) : box.width / width,
 		view = !transformed ? (x ? box.width : box.height) : x ? width : height,
 		style = getComputedStyle(viewport),
-		[before, after] = x ? (layout.rtl ? ['Right', 'Left'] : ['Left', 'Right']) : ['Top', 'Bottom'],
-		pad = { start: parseFloat(style['padding' + before]) || 0, end: parseFloat(style['padding' + after]) || 0 };
+		side = x ? (layout.rtl ? ['Right', 'Left'] : ['Left', 'Right']) : ['Top', 'Bottom'],
+		pad = { start: parseFloat(style['padding' + side[0]]) || 0, end: parseFloat(style['padding' + side[1]]) || 0 };
 
 	const slides = nodes.map((node, index) => {
 		const rect = node.getBoundingClientRect(),
@@ -1211,35 +1229,27 @@ function readRects(viewport, nodes, layout, written) {
 		return { start, end: start + size, cross: (x ? rect.height : rect.width) / scale, hidden: !rect.width && !rect.height };
 	});
 
-	let edge = slides.find((slide) => !slide.hidden)?.start || 0;
-
-	for (const slide of slides) {
-		if (slide.hidden) {
-			slide.start = slide.end = edge;
-		} else {
-			edge = slide.end;
-		}
-	}
-
-	let first = Math.max(0, slides.findIndex((slide) => !slide.hidden)),
-		last = first;
+	// A hidden slide goes to the end of the visible slide before it. The first and the last visible slides give the margins of the loop gap.
+	let edge = slides.find((slide) => !slide.hidden)?.start || 0,
+		first = -1,
+		last = -1,
+		gap = layout.gap;
 
 	slides.forEach((slide, index) => {
 		if (slide.hidden) {
+			slide.start = slide.end = edge;
 			return;
 		}
-		if (slide.start < slides[first].start) {
+		edge = slide.end;
+		if (first < 0 || slide.start < slides[first].start) {
 			first = index;
 		}
-		if (slide.end > slides[last].end) {
+		if (last < 0 || slide.end > slides[last].end) {
 			last = index;
 		}
 	});
 
-	let gap = layout.gap;
-
-	if (slides.length) {
-		const side = x ? (layout.rtl ? ['Right', 'Left'] : ['Left', 'Right']) : ['Top', 'Bottom'];
+	if (first > -1) {
 		gap += (parseFloat(getComputedStyle(nodes[first])['margin' + side[0]]) || 0) + (parseFloat(getComputedStyle(nodes[last])['margin' + side[1]]) || 0);
 	}
 
@@ -1279,9 +1289,9 @@ function visibleArea(viewport, layout, view, pad, size) {
 	}
 
 	const box = viewport.getBoundingClientRect(),
-		before = Math.max(0, Math.round(layout.axis === 'x' ? (layout.rtl ? size - box.right : box.left) : box.top)) + pad.start;
+		before = Math.max(0, round(layout.axis === 'x' ? (layout.rtl ? size - box.right : box.left) : box.top)) + pad.start;
 
-	return { start: -before, size: before + Math.max(view + pad.end, Math.round(size - before)) };
+	return { start: -before, size: before + Math.max(view + pad.end, round(size - before)) };
 }
 
 // One ResizeObserver for all carousels. Each callback first reads the layout of all carousels, then writes. In this way, the reads of one carousel do not
@@ -1415,10 +1425,10 @@ function bezier([x1, y1, x2, y2]) {
 		for (let i = 0; i < 6; i++) {
 			const error = axis(x1, x2, t) - x,
 				slope = 3 * (1 + 3 * x1 - 3 * x2) * t * t + 2 * (3 * x2 - 6 * x1) * t + 3 * x1;
-			if (Math.abs(error) < 1e-5) {
+			if (abs(error) < 1e-5) {
 				return axis(y1, y2, t);
 			}
-			if (Math.abs(slope) < 1e-6) {
+			if (abs(slope) < 1e-6) {
 				break;
 			}
 			t -= error / slope;
@@ -1879,12 +1889,11 @@ function carousel(element, userOptions, defaults, features) {
 
 	const api = {
 		goToSnap: (index, instant) => go(physical(index), instant),
-		// Before the first measure pass, keep the step in the selected snap
-		goToNext: (instant) => geo ? api.canGoToNext() && step(selected, 1, instant) : go(selected + 1, instant),
-		goToPrev: (instant) => geo ? api.canGoToPrev() && step(selected, -1, instant) : go(selected - 1, instant),
+		goToNext: (instant) => advance(1, instant),
+		goToPrev: (instant) => advance(-1, instant),
 		goToSlide: (index, instant) => go(physical(api.snapOfSlide(index)), instant, index),
-		canGoToNext: () => !!geo && !geo.fit && (!!geo.period || selected < geo.snaps.length - 1),
-		canGoToPrev: () => !!geo && !geo.fit && (!!geo.period || selected > 0),
+		canGoToNext: () => can(1),
+		canGoToPrev: () => can(-1),
 		selectedSnap: () => logical(selected),
 		previousSnap: () => logical(previous),
 		selectedSlide,
@@ -2127,11 +2136,11 @@ function carousel(element, userOptions, defaults, features) {
 	 * @param {MutationRecord[]} records
 	 */
 	function onCopy(records) {
-		const changed = new Set(records.filter((record) => record.type !== 'attributes' || !slides.includes(record.target)).map(({ target }) => slides.find((node) => node.contains(target))));
-
-		changed.forEach((node) => {
-			for (let index = slides.indexOf(node); node && index < clones.length; index += slides.length) {
-				copyContent(clones[index], node);
+		slides.forEach((node, index) => {
+			if (records.some(({ type, target }) => node.contains(target) && (type !== 'attributes' || target !== node))) {
+				for (let item = index; item < clones.length; item += slides.length) {
+					copyContent(clones[item], node);
+				}
 			}
 		});
 	}
@@ -2228,7 +2237,7 @@ function carousel(element, userOptions, defaults, features) {
 			values = [layout.axis, layout.rtl, typeof layout.align === 'string' && layout.align, rects.view, rects.gap, area.start, area.size, ...rects.slides.flatMap((slide) => [slide.start, slide.end, slide.cross])];
 
 		// A change of less than 0.5 px is not a change. During a motion, the rects have small errors, because the browser and bezier() round the easing differently.
-		if (ready && values.length === signature.length && values.every((value, index) => value === signature[index] || Math.abs(value - signature[index]) < 0.5)) {
+		if (ready && values.length === signature.length && values.every((value, index) => value === signature[index] || abs(value - signature[index]) < 0.5)) {
 			return false;
 		}
 
@@ -2249,8 +2258,7 @@ function carousel(element, userOptions, defaults, features) {
 
 		// Before the first measure pass, selected is the logical snap of the startSnap option, of goToSnap() or of goToNext().
 		// In loop mode, a step before the first snap goes to the last snap.
-		const count = geo.logical.length;
-		selected = keep >= 0 ? physical(api.snapOfSlide(keep)) : Math.min(total - 1, ready ? selected : physical(geo.period ? (selected % count + count) % count : Math.max(selected, 0)));
+		selected = keep >= 0 ? physical(api.snapOfSlide(keep)) : Math.min(total - 1, ready ? selected : physical(snapIndex(selected, geo.logical.length, geo.period)));
 		previous = Math.min(previous, total - 1);
 		requested = keep;
 		if (!dragging) {
@@ -2357,7 +2365,7 @@ function carousel(element, userOptions, defaults, features) {
 	 */
 	function screen(value) {
 		const scale = devicePixelRatio || 1;
-		return Math.round(value * scale) / scale * geo.sign;
+		return round(value * scale) / scale * geo.sign;
 	}
 
 	/**
@@ -2401,7 +2409,7 @@ function carousel(element, userOptions, defaults, features) {
 			root.style.setProperty('--better-progress', progress(at, geo));
 		} else if (options.progress) {
 			const value = snapPosition(geo.snaps, at, geo.period),
-				snap = Math.floor(value);
+				snap = floor(value);
 			whole.progress = progress(at, geo);
 			whole.snap = logical(snap) + value - snap;
 			options.progress(whole, api);
@@ -2455,6 +2463,30 @@ function carousel(element, userOptions, defaults, features) {
 	}
 
 	/**
+	 * Find if the carousel can go one snap in a direction.
+	 *
+	 * @param {number} direction 1 or -1.
+	 * @returns {boolean}
+	 */
+	function can(direction) {
+		return !!geo && !geo.fit && (!!geo.period || (direction > 0 ? selected < geo.snaps.length - 1 : selected > 0));
+	}
+
+	/**
+	 * Go one snap in a direction, if the carousel can. Before the first measure pass, keep the step in the selected snap.
+	 *
+	 * @param {number} direction 1 or -1.
+	 * @param {boolean} [instant]
+	 */
+	function advance(direction, instant) {
+		if (!geo) {
+			go(selected + direction, instant);
+		} else if (can(direction)) {
+			step(selected, direction, instant);
+		}
+	}
+
+	/**
 	 * Go to the snap after a snap in a direction. In loop mode, the first snap follows the last snap.
 	 *
 	 * @param {number} index The snap.
@@ -2485,7 +2517,7 @@ function carousel(element, userOptions, defaults, features) {
 		}
 
 		const target = targetLocation(geo.snaps[index].location, current(), geo.period, direction),
-			span = Math.abs(index - selected),
+			span = abs(index - selected),
 			count = geo.period ? Math.min(span, geo.snaps.length - span) : span;
 
 		move(index, target, instant ? 0 : snapDuration(options.duration, count), EASE);
@@ -2502,7 +2534,7 @@ function carousel(element, userOptions, defaults, features) {
 	function move(index, target, duration, curve) {
 		const from = halt(),
 			picked = select(index),
-			jump = !duration || geo.fit || Math.abs(target - from) < 0.5;
+			jump = !duration || geo.fit || abs(target - from) < 0.5;
 
 		location = target;
 
@@ -2542,10 +2574,10 @@ function carousel(element, userOptions, defaults, features) {
 			// Start in the first period, so that the location does not grow after each pause
 			location = normalize(from, geo.period);
 			motion.loop(location, direction, geo.period / speed, geo, nodes);
-		} else if (Math.abs(to - from) > 1) {
+		} else if (abs(to - from) > 1) {
 			free = true;
 			location = to;
-			motion.run(from, to, Math.abs(to - from) / speed, [0, 0, 1, 1], events.has('scroll'));
+			motion.run(from, to, abs(to - from) / speed, [0, 0, 1, 1], events.has('scroll'));
 		}
 	}
 
@@ -2664,10 +2696,10 @@ const MOMENTUM = 325;
  * @returns {number}
  */
 function releaseDuration(path, velocity, curve, fallback) {
-	if (Math.sign(path) !== Math.sign(velocity) || Math.abs(velocity) < 0.05) {
+	if (Math.sign(path) !== Math.sign(velocity) || abs(velocity) < 0.05) {
 		return fallback;
 	}
-	return clamp(Math.abs(path) * curve[1] / curve[0] / Math.abs(velocity), 200, 1200);
+	return clamp(abs(path) * curve[1] / curve[0] / abs(velocity), 200, 1200);
 }
 
 /**
@@ -2732,9 +2764,9 @@ function releaseTarget({ location, from, velocity, current, snaps, min, max, per
 
 	let direction = 0;
 
-	if (Math.abs(velocity) > 0.3) {
+	if (abs(velocity) > 0.3) {
 		direction = velocity < 0 ? 1 : -1;
-	} else if (Math.abs(moved) > 20) {
+	} else if (abs(moved) > 20) {
 		direction = moved < 0 ? 1 : -1;
 	}
 
@@ -2769,7 +2801,7 @@ function drag(context) {
 		// The selected snap at the drag start
 		snap = 0;
 
-	const listen = (method) => ['pointermove', 'pointerup', 'pointercancel'].forEach((name) => window[method](name, handle));
+	const listen = bind(window, [['pointermove', handle], ['pointerup', handle], ['pointercancel', handle]]);
 
 	function down(event) {
 		block = false;
@@ -2793,7 +2825,7 @@ function drag(context) {
 		axis = { x: geo.axis === 'x', sign: geo.sign, scale: geo.scale };
 		start = [event.clientX, event.clientY];
 		samples = [];
-		listen('addEventListener');
+		listen(true);
 	}
 
 	function handle(event) {
@@ -2816,10 +2848,10 @@ function drag(context) {
 
 		if (!context.dragging()) {
 			// A touch move across the axis scrolls the page
-			if (event.pointerType !== 'mouse' && Math.abs(cross) > Math.abs(main)) {
+			if (event.pointerType !== 'mouse' && abs(cross) > abs(main)) {
 				return end();
 			}
-			if (Math.abs(main) < options.dragThreshold) {
+			if (abs(main) < options.dragThreshold) {
 				return;
 			}
 			// Stop the motion, and start the drag at the location where the carousel is now
@@ -2849,7 +2881,7 @@ function drag(context) {
 	 * @param {boolean} [up] true for a pointerup. A pointercancel releases with no velocity.
 	 */
 	function end(up) {
-		listen('removeEventListener');
+		listen();
 		pointer = null;
 
 		if (!context.dragging()) {
@@ -2880,18 +2912,14 @@ function drag(context) {
 	// Stop a text selection during a drag. A "user-select" rule on the dragging class does the same, but its change paints all layers of the carousel.
 	const select = (event) => context.dragging() && event.preventDefault();
 
-	viewport.addEventListener('pointerdown', down);
-	viewport.addEventListener('click', click, true);
-	viewport.addEventListener('dragstart', prevent);
-	viewport.addEventListener('selectstart', select);
+	const own = bind(viewport, [['pointerdown', down], ['click', click, true], ['dragstart', prevent], ['selectstart', select]]);
+
+	own(true);
 
 	return {
 		remove() {
-			listen('removeEventListener');
-			viewport.removeEventListener('pointerdown', down);
-			viewport.removeEventListener('click', click, true);
-			viewport.removeEventListener('dragstart', prevent);
-			viewport.removeEventListener('selectstart', select);
+			listen();
+			own();
 		}
 	};
 }
@@ -2911,7 +2939,7 @@ function scrolls(node, viewport, axis, delta) {
 	for (; node && node !== viewport; node = node.parentElement) {
 		// Read the style only for an element with more content than space
 		if (node[size] > node[client] && /auto|scroll/.test(getComputedStyle(node)[overflow])) {
-			const at = Math.abs(node[position]);
+			const at = abs(node[position]);
 			if (delta > 0 ? at + node[client] < node[size] - 1 : at > 0) {
 				return true;
 			}
@@ -2952,7 +2980,7 @@ function wheel(context) {
 
 	function onWheel(event) {
 		const geo = context.geo(),
-			side = geo.axis === 'x' && Math.abs(event.deltaX) > Math.abs(event.deltaY),
+			side = geo.axis === 'x' && abs(event.deltaX) > abs(event.deltaY),
 			delta = side ? event.deltaX * geo.sign : event.deltaY;
 
 		if (event.ctrlKey || !delta || context.dragging()) {
@@ -2961,22 +2989,19 @@ function wheel(context) {
 
 		const now = event.timeStamp,
 			gesture = now - time < 200,
-			size = Math.abs(delta),
+			size = abs(delta),
 			// A delta that does not grow is the inertia of the gesture, not a new push
 			inertia = gesture && size <= last;
 
+		time = now;
 		last = size;
-		if (!gesture) {
-			held = false;
-		}
+		held &&= gesture;
 
 		// An element in a slide that can scroll in the wheel direction scrolls, also for the rest of its gesture
-		if ((gesture && inner) || scrolls(event.target, viewport, side ? 'x' : 'y', side ? event.deltaX : delta)) {
-			inner = true;
-			time = now;
+		inner = (gesture && inner) || scrolls(event.target, viewport, side ? 'x' : 'y', side ? event.deltaX : delta);
+		if (inner) {
 			return;
 		}
-		inner = false;
 
 		const base = context.location(),
 			path = delta * (event.deltaMode === 1 ? 40 : event.deltaMode ? geo.view : 1);
@@ -2986,10 +3011,8 @@ function wheel(context) {
 			target = clamp(target, geo.min, geo.max);
 		}
 
-		time = now;
-
 		// At the end, the page scrolls. The inertia of a gesture that moved the carousel does not scroll the page.
-		if (Math.abs(target - base) < 0.5) {
+		if (abs(target - base) < 0.5) {
 			if (held && inertia) {
 				event.preventDefault();
 			}
@@ -3018,23 +3041,23 @@ function wheel(context) {
 		const geo = context.geo(),
 			at = context.current(),
 			index = nearestSnap(geo.snaps, at, geo.period),
-			away = Math.abs(targetLocation(geo.snaps[index].location, at, geo.period) - at) > 10;
+			away = abs(targetLocation(geo.snaps[index].location, at, geo.period) - at) > 10;
 
 		context.step(index, index === snap && away ? direction : 0);
 	}
 
 	// A wheel listener that is not passive makes the browser wait for the main thread before it scrolls the page.
 	// Add it only where the wheel moves the carousel.
-	function listen() {
-		const geo = context.geo();
-		viewport[!geo.fit && (geo.axis === 'y' || options.wheel === 'both') ? 'addEventListener' : 'removeEventListener']('wheel', onWheel, { passive: false });
-	}
+	const listen = bind(viewport, [['wheel', onWheel, { passive: false }]]);
 
-	['init', 'reinit', 'resize'].forEach((name) => context.on(name, listen));
+	['init', 'reinit', 'resize'].forEach((name) => context.on(name, () => {
+		const geo = context.geo();
+		listen(!geo.fit && (geo.axis === 'y' || options.wheel === 'both'));
+	}));
 
 	return {
 		remove() {
-			viewport.removeEventListener('wheel', onWheel);
+			listen();
 			clearTimeout(timer);
 		}
 	};
@@ -3067,13 +3090,11 @@ function keys(context) {
 		}
 	}
 
-	root.addEventListener('keydown', onKey);
+	const listen = bind(root, [['keydown', onKey]]);
 
-	return {
-		remove() {
-			root.removeEventListener('keydown', onKey);
-		}
-	};
+	listen(true);
+
+	return { remove: listen };
 }
 
 /**
@@ -3107,15 +3128,11 @@ function focus(context) {
 		context.emit('slidefocus');
 	}
 
-	container.addEventListener('pointerdown', press);
-	container.addEventListener('focusin', onFocus);
+	const listen = bind(container, [['pointerdown', press], ['focusin', onFocus]]);
 
-	return {
-		remove() {
-			container.removeEventListener('pointerdown', press);
-			container.removeEventListener('focusin', onFocus);
-		}
-	};
+	listen(true);
+
+	return { remove: listen };
 }
 
 /*
@@ -3158,14 +3175,7 @@ function nav(context) {
 	}
 
 	if (arrows) {
-		[['prev', 'goToPrev'], ['next', 'goToNext']].forEach(([key, method]) => {
-			const button = create('button', cls.button + ' ' + cls[key + 'Button']);
-			button.type = 'button';
-			button.setAttribute('aria-label', labels[key]);
-			button.setAttribute('aria-controls', context.container.id);
-			button.addEventListener('click', () => api[method]());
-			buttons.push(button);
-		});
+		buttons.push(createButton(cls.button + ' ' + cls.prevButton, context.container, labels.prev, () => api.goToPrev()), createButton(cls.button + ' ' + cls.nextButton, context.container, labels.next, () => api.goToNext()));
 	}
 
 	function update() {
@@ -3173,17 +3183,17 @@ function nav(context) {
 			count = fit ? 0 : api.snapProgress().length,
 			selected = api.selectedSnap();
 
-		buttons.forEach((button, index) => {
+		buttons.forEach((item, index) => {
 			if (fit) {
-				button.remove();
+				item.remove();
 			} else {
-				if (!button.isConnected) {
+				if (!item.isConnected) {
 					// Before the dots, for the tab order
-					list?.parentNode === arrows ? list.before(button) : arrows.append(button);
+					list?.parentNode === arrows ? list.before(item) : arrows.append(item);
 				}
 				const disabled = !(index ? api.canGoToNext() : api.canGoToPrev());
-				if (button.disabled !== disabled) {
-					button.disabled = disabled;
+				if (item.disabled !== disabled) {
+					item.disabled = disabled;
 				}
 			}
 		});
@@ -3203,16 +3213,12 @@ function nav(context) {
 		}
 
 		while (dots.length < count) {
-			const dot = create('button', cls.dot),
-				index = dots.length;
-			dot.type = 'button';
-			dot.setAttribute('aria-label', labels.dot.replace('%d', index + 1));
-			dot.setAttribute('aria-controls', context.container.id);
+			const index = dots.length,
+				dot = createButton(cls.dot, context.container, labels.dot.replace('%d', index + 1), () => api.goToSnap(index));
 			// The window of the dots hides the dots out of the zoom: keep them out of the tab order
 			if (windowed) {
 				dot.tabIndex = -1;
 			}
-			dot.addEventListener('click', () => api.goToSnap(index));
 			dots.push(dot);
 			track.append(dot);
 		}
@@ -3264,7 +3270,7 @@ function nav(context) {
 
 	return {
 		remove() {
-			buttons.forEach((button) => button.remove());
+			buttons.forEach((item) => item.remove());
 			list?.remove();
 		}
 	};
@@ -3316,12 +3322,14 @@ function sync(context) {
 
 	context.on('init', connect);
 	context.on('reinit', connect);
-	container.addEventListener('click', click);
+	const listen = bind(container, [['click', click]]);
+
+	listen(true);
 
 	return {
 		remove() {
 			other?.off('select', show);
-			container.removeEventListener('click', click);
+			listen();
 		}
 	};
 }
