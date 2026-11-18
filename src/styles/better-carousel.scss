@@ -63,8 +63,9 @@ $better-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'
 
 .#{$better}_auto_height {
 
+	// The same duration and curve as a motion to the next snap. The script sets --better-duration from the duration option.
 	.#{$better}_viewport {
-		transition: height 0.3s;
+		transition: height var(--better-duration, 0.4s) cubic-bezier(0.25, 1, 0.5, 1);
 	}
 
 	.#{$better}_container {

@@ -216,7 +216,7 @@ export function drag(context) {
 			edge = clamp(value, geo.min, geo.max);
 
 		// Out of the limits, the carousel moves at a quarter of the pointer speed
-		context.hold(geo.period ? value : edge + (value - edge) / 4, true);
+		context.hold(geo.period ? value : edge + (value - edge) / 4);
 		samples.push([main, event.timeStamp]);
 
 		if (samples.length > 10) {
@@ -307,9 +307,9 @@ function scrolls(node, viewport, axis, delta) {
 }
 
 /**
- * Make the wheel input of a viewport: in a vertical carousel, and with wheel: 'both' also in a horizontal carousel. With wheel: 'axis',
- * a horizontal carousel follows only a horizontal wheel motion, such as a trackpad swipe, and a vertical wheel scrolls the page. The carousel follows
- * the wheel distance with a short motion on the compositor. When the wheel stops, the carousel goes to a snap. At the first and the last
+ * Make the wheel input of a viewport. The carousel follows the wheel motion along its axis. A horizontal carousel follows a horizontal wheel motion,
+ * such as a trackpad swipe, and a vertical wheel scrolls the page. With wheel: 'both', a horizontal carousel follows all wheel motions. The carousel
+ * follows the wheel distance with a short motion on the compositor. When the wheel stops, the carousel goes to a snap. At the first and the last
  * location, the page scrolls.
  *
  * @param {object} context What the features share. See carousel.js.
@@ -342,7 +342,7 @@ export function wheel(context) {
 			delta = side ? event.deltaX * geo.sign : event.deltaY;
 
 		// A nested carousel or the page took the event before: it cancelled the default action
-		if (event.defaultPrevented || event.ctrlKey || !delta || context.dragging() || (options.wheel === 'axis' && geo.axis === 'x' && !side)) {
+		if (event.defaultPrevented || event.ctrlKey || !delta || context.dragging() || (geo.axis === 'x' && !side && options.wheel !== 'both')) {
 			return;
 		}
 
@@ -411,7 +411,7 @@ export function wheel(context) {
 
 	context.on('init reinit resize', () => {
 		const geo = context.geo();
-		listen(!geo.fit && (geo.axis === 'y' || options.wheel !== true));
+		listen(!geo.fit);
 	});
 
 	return {

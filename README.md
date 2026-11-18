@@ -4,7 +4,7 @@
 
 <p>A small, fast and accessible JavaScript carousel.<br />The CSS sets the layout, and the motion runs on the compositor, also on slow phones.</p>
 
-[![Gzip size](https://flat.badgen.net/static/gzip/12.8%20KB/green)](dist/better-carousel.min.js)
+[![Gzip size](https://flat.badgen.net/static/gzip/12.9%20KB/green)](dist/better-carousel.min.js)
 [![MIT license](https://flat.badgen.net/static/license/MIT/purple)](LICENSE)
 [![No dependencies](https://flat.badgen.net/static/dependencies/0/blue)](package.json)
 
@@ -16,7 +16,7 @@
 
 - **Layout from CSS** - Your CSS sets the sizes of the slides, the space between them, the axis and the alignment. One carousel can show 1 slide on a phone and 4 slides on a desktop.
 - **Smooth** - Each motion is a Web Animations API animation of `translate`. No script runs on each frame, also during the auto scroll.
-- **Small** - <!-- generated:gzip -->12.8 KB<!-- /generated --> gzip with loop, autoplay, auto scroll, auto height, sync and the mouse wheel.
+- **Small** - <!-- generated:gzip -->12.9 KB<!-- /generated --> gzip with loop, autoplay, auto scroll, auto height, sync and the mouse wheel.
 - **Loop** - The loop moves the original slides. It adds clones only if the slides are too few.
 - **Vertical and grid** - A column layout makes a vertical carousel. A CSS grid with more rows also works.
 - **Accessible** - WCAG 2.1 AA: names for the carousel, the slides and the buttons, the keyboard focus, a live region and reduced motion.
@@ -357,7 +357,7 @@ BetterCarousel(element, {
 | `startSnap` | `number` | `0` | The index of the snap at the start. ([example](https://twistedandy.github.io/better-carousel/#options-usage)) |
 | `lazy` | `boolean`, `number` | `false` | `true`: start when the carousel comes within one screen of the view. A number: the distance in px. ([example](https://twistedandy.github.io/better-carousel/#lazy)) |
 | `drag` | `boolean` | `true` | Drag with the mouse, the pen and the finger. A press during a motion stops the motion. A press on a form field does not start a drag. To keep the drag off another element, such as a map in a slide, stop the propagation of its `pointerdown` event. An element in a slide that can scroll does not keep a touch move along the axis. To let it scroll along the axis, such as a wide table, give it `touch-action: auto`. |
-| `wheel` | `boolean`, `'axis'`, `'both'` | `true` | The mouse wheel moves a vertical carousel. `'axis'`: also a horizontal carousel, but only with a horizontal wheel motion, such as a trackpad swipe. A vertical wheel scrolls the page. `'both'`: also a horizontal carousel, with all wheel motions. `false`: the wheel does not move the carousel. In nested carousels, the inner carousel gets the wheel first. ([example](https://twistedandy.github.io/better-carousel/#vertical)) |
+| `wheel` | `boolean`, `'both'` | `true` | The wheel moves the carousel along its axis. A vertical wheel motion moves a vertical carousel. A horizontal wheel motion, such as a trackpad swipe, moves a horizontal carousel, and a vertical wheel motion scrolls the page. `'both'`: all wheel motions move a horizontal carousel. `false`: the wheel does not move the carousel. In nested carousels, the inner carousel gets the wheel first. ([example](https://twistedandy.github.io/better-carousel/#vertical)) |
 | `keys` | `boolean` | `true` | The arrow keys move the carousel while the keyboard focus is in it: left and right in a horizontal carousel, up and down in a vertical carousel. A key in a form field does not move the carousel. In nested carousels, the inner carousel gets the key first. |
 | `resize` | `boolean` | `true` | Measure again when a size changes. ([example](https://twistedandy.github.io/better-carousel/#options-usage)) |
 | `slideChanges` | `boolean` | `true` | Measure again when the page adds or removes a slide. ([example](https://twistedandy.github.io/better-carousel/#changes)) |
@@ -377,7 +377,7 @@ BetterCarousel(element, {
 | `sync` | carousel, `Element`, `string` | `null` | Another carousel, its container or a selector. This carousel follows the selected slide of the other carousel. A click on a slide selects it in the other carousel. ([example](https://twistedandy.github.io/better-carousel/#product)) |
 | `autoplay` | `boolean`, `number`, `object` | `false` | Go to the next slide after a delay. `true`, a delay in ms, or an object. ([example](#autoplay)) |
 | `autoScroll` | `boolean`, `number`, `object` | `false` | Move the slides at a constant speed. `true`, a speed in px/s, or an object. ([example](https://twistedandy.github.io/better-carousel/#logos)) |
-| `autoHeight` | `boolean` | `false` | The viewport gets the height of the tallest slide in view. ([example](https://twistedandy.github.io/better-carousel/#height)) |
+| `autoHeight` | `boolean` | `false` | The viewport gets the height of the tallest slide in view. During a motion or a drag, the slides in view at the selected snap set the height. The height transition has the duration and the curve of a motion: the carousel sets the `duration` option as `--better-duration` on the root. ([example](https://twistedandy.github.io/better-carousel/#height)) |
 | `progress` | `boolean`, `function` | `false` | Follow the progress, from 0 to 1. `true` sets `--better-progress` on the root. A function gets `{ progress, snap }` on each frame of a motion. See [Progress and offset](#progress-and-offset). |
 | `offset` | `boolean`, `function` | `false` | Follow the distance of each slide from its snap position, in slides. `true` sets `--better-offset` on each slide. A function gets `{ node, index, offset, distance, size, visible }` for each slide on each frame of a motion. |
 <!-- /generated -->
@@ -720,9 +720,9 @@ The library is made for slow phones. A motion runs on the compositor, and a caro
 <!-- generated:sizes -->
 | File | Minified | Gzip | Brotli |
 | --- | --- | --- | --- |
-| `better-carousel.min.js` | 31.2 KB | 12.8 KB | 11.7 KB |
-| `better-carousel.css` | 4.8 KB | 1.4 KB | 1.2 KB |
-| Total | 36.1 KB | 14.2 KB | 12.9 KB |
+| `better-carousel.min.js` | 31.4 KB | 12.9 KB | 11.8 KB |
+| `better-carousel.css` | 4.9 KB | 1.4 KB | 1.2 KB |
+| Total | 36.2 KB | 14.3 KB | 13.0 KB |
 <!-- /generated -->
 
 The [Comparison](#comparison) section gives the sizes and the runtime costs of other carousel libraries.

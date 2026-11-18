@@ -165,8 +165,8 @@ export interface Options {
 	lazy?: boolean | number;
 	/** Drag with the mouse, the pen and the finger. A press during a motion stops the motion. A press on a form field does not start a drag. To keep the drag off another element, such as a map in a slide, stop the propagation of its `pointerdown` event. An element in a slide that can scroll does not keep a touch move along the axis. To let it scroll along the axis, such as a wide table, give it `touch-action: auto`. @default true */
 	drag?: boolean;
-	/** The mouse wheel moves a vertical carousel. `'axis'`: also a horizontal carousel, but only with a horizontal wheel motion, such as a trackpad swipe. A vertical wheel scrolls the page. `'both'`: also a horizontal carousel, with all wheel motions. `false`: the wheel does not move the carousel. In nested carousels, the inner carousel gets the wheel first. @default true @see {@link https://twistedandy.github.io/better-carousel/#vertical | example} */
-	wheel?: boolean | 'axis' | 'both';
+	/** The wheel moves the carousel along its axis. A vertical wheel motion moves a vertical carousel. A horizontal wheel motion, such as a trackpad swipe, moves a horizontal carousel, and a vertical wheel motion scrolls the page. `'both'`: all wheel motions move a horizontal carousel. `false`: the wheel does not move the carousel. In nested carousels, the inner carousel gets the wheel first. @default true @see {@link https://twistedandy.github.io/better-carousel/#vertical | example} */
+	wheel?: boolean | 'both';
 	/** The arrow keys move the carousel while the keyboard focus is in it: left and right in a horizontal carousel, up and down in a vertical carousel. A key in a form field does not move the carousel. In nested carousels, the inner carousel gets the key first. @default true */
 	keys?: boolean;
 	/** Measure again when a size changes. @default true @see {@link https://twistedandy.github.io/better-carousel/#options-usage | example} */
@@ -205,7 +205,7 @@ export interface Options {
 	autoplay?: boolean | number | AutoplayOptions;
 	/** Move the slides at a constant speed. `true`, a speed in px/s, or an object. @default false @see {@link https://twistedandy.github.io/better-carousel/#logos | example} */
 	autoScroll?: boolean | number | AutoScrollOptions;
-	/** The viewport gets the height of the tallest slide in view. @default false @see {@link https://twistedandy.github.io/better-carousel/#height | example} */
+	/** The viewport gets the height of the tallest slide in view. During a motion or a drag, the slides in view at the selected snap set the height. The height transition has the duration and the curve of a motion: the carousel sets the `duration` option as `--better-duration` on the root. @default false @see {@link https://twistedandy.github.io/better-carousel/#height | example} */
 	autoHeight?: boolean;
 	/** Follow the progress, from 0 to 1. `true` sets `--better-progress` on the root. A function gets `{ progress, snap }` on each frame of a motion. See Progress and offset. @default false */
 	progress?: boolean | ((state: ProgressState, carousel: Carousel) => void);

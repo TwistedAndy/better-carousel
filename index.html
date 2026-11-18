@@ -37,7 +37,7 @@
 					<p>A small, fast and accessible carousel. The CSS sets the layout, and the motion runs on the compositor, so it stays smooth on slow phones. Loop, drag, autoplay, auto scroll and vertical carousels, with no dependencies.</p>
 				</div>
 				<div class="images">
-					<img src="https://flat.badgen.net/static/gzip/12.8%20KB/green" alt="12.8 KB gzipped" height="20">
+					<img src="https://flat.badgen.net/static/gzip/12.9%20KB/green" alt="12.9 KB gzipped" height="20">
 					<img src="https://flat.badgen.net/static/license/MIT/purple" alt="MIT license" height="20">
 					<img src="https://flat.badgen.net/static/dependencies/0/blue" alt="No dependencies" height="20">
 				</div>
@@ -55,7 +55,7 @@
 			<ul class="items items_4">
 				<li class="item"><h3>Smooth</h3><p class="text">Each motion runs on the compositor, so no script runs on each frame of a motion.</p></li>
 				<li class="item"><h3>CSS layout</h3><p class="text">The sizes, the margins, the axis and the alignment come from your CSS.</p></li>
-				<li class="item"><h3>Small</h3><p class="text"><!-- generated:gzip -->12.8 KB<!-- /generated --> gzip with loop, autoplay, auto scroll, auto height and sync.</p></li>
+				<li class="item"><h3>Small</h3><p class="text"><!-- generated:gzip -->12.9 KB<!-- /generated --> gzip with loop, autoplay, auto scroll, auto height and sync.</p></li>
 				<li class="item"><h3>Accessible</h3><p class="text">WCAG 2.1 AA: names, keyboard, focus, live region and reduced motion.</p></li>
 			</ul>
 		</div>
@@ -498,7 +498,7 @@ export default function Carousel(props) {
   width: 100%;
   height: calc(100% / 3 - var(--gap-grid-y));
   margin-bottom: var(--gap-grid-y);
-}</code></pre></div><p>The mouse wheel and the trackpad move the carousel by their distance. When the wheel stops, the carousel goes to a snap. At the first and the last slide, the wheel scrolls the page. An element in a slide that can scroll, such as a long text, scrolls first.</p><div class="code"><div class="heading"><span class="label">JavaScript</span><button class="button" type="button" data-copy aria-label="Copy JavaScript code">Copy</button></div><pre><code class="language-javascript">// true: the wheel moves vertical carousels. 'both': also horizontal carousels. false: off.
+}</code></pre></div><p>The mouse wheel and the trackpad move the carousel by their distance. When the wheel stops, the carousel goes to a snap. At the first and the last slide, the wheel scrolls the page. An element in a slide that can scroll, such as a long text, scrolls first.</p><div class="code"><div class="heading"><span class="label">JavaScript</span><button class="button" type="button" data-copy aria-label="Copy JavaScript code">Copy</button></div><pre><code class="language-javascript">// true: the wheel and the trackpad swipe move the carousel along its axis. 'both': all wheel motions move a horizontal carousel. false: off.
 BetterCarousel(element, { wheel: true });</code></pre></div>
 	</div>
 </section>
@@ -1240,7 +1240,7 @@ BetterCarousel(element, {
 <tr><td><code id="option-startSnap">startSnap</code></td><td><code>number</code></td><td><code>0</code></td><td>The index of the snap at the start. (<a href="#options-usage">example</a>)</td></tr>
 <tr><td><code id="option-lazy">lazy</code></td><td><code>boolean</code>, <code>number</code></td><td><code>false</code></td><td><code>true</code>: start when the carousel comes within one screen of the view. A number: the distance in px. (<a href="#lazy">example</a>)</td></tr>
 <tr><td><code id="option-drag">drag</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Drag with the mouse, the pen and the finger. A press during a motion stops the motion. A press on a form field does not start a drag. To keep the drag off another element, such as a map in a slide, stop the propagation of its <code>pointerdown</code> event. An element in a slide that can scroll does not keep a touch move along the axis. To let it scroll along the axis, such as a wide table, give it <code>touch-action: auto</code>.</td></tr>
-<tr><td><code id="option-wheel">wheel</code></td><td><code>boolean</code>, <code>'axis'</code>, <code>'both'</code></td><td><code>true</code></td><td>The mouse wheel moves a vertical carousel. <code>'axis'</code>: also a horizontal carousel, but only with a horizontal wheel motion, such as a trackpad swipe. A vertical wheel scrolls the page. <code>'both'</code>: also a horizontal carousel, with all wheel motions. <code>false</code>: the wheel does not move the carousel. In nested carousels, the inner carousel gets the wheel first. (<a href="#vertical">example</a>)</td></tr>
+<tr><td><code id="option-wheel">wheel</code></td><td><code>boolean</code>, <code>'both'</code></td><td><code>true</code></td><td>The wheel moves the carousel along its axis. A vertical wheel motion moves a vertical carousel. A horizontal wheel motion, such as a trackpad swipe, moves a horizontal carousel, and a vertical wheel motion scrolls the page. <code>'both'</code>: all wheel motions move a horizontal carousel. <code>false</code>: the wheel does not move the carousel. In nested carousels, the inner carousel gets the wheel first. (<a href="#vertical">example</a>)</td></tr>
 <tr><td><code id="option-keys">keys</code></td><td><code>boolean</code></td><td><code>true</code></td><td>The arrow keys move the carousel while the keyboard focus is in it: left and right in a horizontal carousel, up and down in a vertical carousel. A key in a form field does not move the carousel. In nested carousels, the inner carousel gets the key first.</td></tr>
 <tr><td><code id="option-resize">resize</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Measure again when a size changes. (<a href="#options-usage">example</a>)</td></tr>
 <tr><td><code id="option-slideChanges">slideChanges</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Measure again when the page adds or removes a slide. (<a href="#changes">example</a>)</td></tr>
@@ -1260,7 +1260,7 @@ BetterCarousel(element, {
 <tr><td><code id="option-sync">sync</code></td><td>carousel, <code>Element</code>, <code>string</code></td><td><code>null</code></td><td>Another carousel, its container or a selector. This carousel follows the selected slide of the other carousel. A click on a slide selects it in the other carousel. (<a href="#product">example</a>)</td></tr>
 <tr><td><code id="option-autoplay">autoplay</code></td><td><code>boolean</code>, <code>number</code>, <code>object</code></td><td><code>false</code></td><td>Go to the next slide after a delay. <code>true</code>, a delay in ms, or an object. (<a href="#autoplay">example</a>)</td></tr>
 <tr><td><code id="option-autoScroll">autoScroll</code></td><td><code>boolean</code>, <code>number</code>, <code>object</code></td><td><code>false</code></td><td>Move the slides at a constant speed. <code>true</code>, a speed in px/s, or an object. (<a href="#logos">example</a>)</td></tr>
-<tr><td><code id="option-autoHeight">autoHeight</code></td><td><code>boolean</code></td><td><code>false</code></td><td>The viewport gets the height of the tallest slide in view. (<a href="#height">example</a>)</td></tr>
+<tr><td><code id="option-autoHeight">autoHeight</code></td><td><code>boolean</code></td><td><code>false</code></td><td>The viewport gets the height of the tallest slide in view. During a motion or a drag, the slides in view at the selected snap set the height. The height transition has the duration and the curve of a motion: the carousel sets the <code>duration</code> option as <code>--better-duration</code> on the root. (<a href="#height">example</a>)</td></tr>
 <tr><td><code id="option-progress">progress</code></td><td><code>boolean</code>, <code>function</code></td><td><code>false</code></td><td>Follow the progress, from 0 to 1. <code>true</code> sets <code>--better-progress</code> on the root. A function gets <code>{ progress, snap }</code> on each frame of a motion. See <a href="#progress-and-offset">Progress and offset</a>.</td></tr>
 <tr><td><code id="option-offset">offset</code></td><td><code>boolean</code>, <code>function</code></td><td><code>false</code></td><td>Follow the distance of each slide from its snap position, in slides. <code>true</code> sets <code>--better-offset</code> on each slide. A function gets <code>{ node, index, offset, distance, size, visible }</code> for each slide on each frame of a motion.</td></tr>
 </tbody></table></div>
@@ -1451,11 +1451,11 @@ BetterCarousel(element, { classes: { selected: 'snapped' } });</code></pre></div
 	<div class="content">
 	<ul><li>A motion is a Web Animations API animation of <code>translate</code>. No script runs for each frame.</li><li>The auto scroll is one animation that does not stop. During the motion, the browser does no script, style, layout or paint work.</li><li>One <code>ResizeObserver</code> serves all carousels. It reads the layout of all carousels first, and then it writes. For this reason, the browser calculates the layout only one time.</li><li>Only two elements of the dots animate: the row of the dots and the marker of the selected dot. Both move with <code>translate</code>. A click on a dot causes no layout work.</li><li>The listeners for the autoplay and the mouse wheel exist only while they can do something.</li><li>The <code>progress</code> and <code>offset</code> options run a script on each frame of a motion. For this reason, they are off by default.</li></ul><!-- generated:sizes -->
 <div class="table table_reference"><table><thead><tr><th>File</th><th>Minified</th><th>Gzip</th><th>Brotli</th></tr></thead><tbody>
-<tr><td><code>better-carousel.min.js</code></td><td>31.2 KB</td><td>12.8 KB</td><td>11.7 KB</td></tr>
-<tr><td><code>better-carousel.css</code></td><td>4.8 KB</td><td>1.4 KB</td><td>1.2 KB</td></tr>
-<tr><td>Total</td><td>36.1 KB</td><td>14.2 KB</td><td>12.9 KB</td></tr>
+<tr><td><code>better-carousel.min.js</code></td><td>31.4 KB</td><td>12.9 KB</td><td>11.8 KB</td></tr>
+<tr><td><code>better-carousel.css</code></td><td>4.9 KB</td><td>1.4 KB</td><td>1.2 KB</td></tr>
+<tr><td>Total</td><td>36.2 KB</td><td>14.3 KB</td><td>13.0 KB</td></tr>
 </tbody></table></div>
-<!-- /generated --><p>The same features in Embla 9 (the core, three plugins and a wrapper) are 12.6 KB gzip.</p><div class="table"><table><thead><tr><th>Measure, on a phone with a CPU 4 times slower</th><th>Better Carousel</th></tr></thead><tbody><tr><td>JS size, gzip</td><td><!-- generated:gzip -->12.8 KB<!-- /generated --></td></tr><tr><td>CPU load during 10 s of auto scroll</td><td>0.5%</td></tr><tr><td>CPU load during 10 s of autoplay</td><td>1.1%</td></tr><tr><td>Total Blocking Time added at page load</td><td>0 ms</td></tr><tr><td>Layout shift</td><td>0</td></tr></tbody></table></div>
+<!-- /generated --><p>The same features in Embla 9 (the core, three plugins and a wrapper) are 12.6 KB gzip.</p><div class="table"><table><thead><tr><th>Measure, on a phone with a CPU 4 times slower</th><th>Better Carousel</th></tr></thead><tbody><tr><td>JS size, gzip</td><td><!-- generated:gzip -->12.9 KB<!-- /generated --></td></tr><tr><td>CPU load during 10 s of auto scroll</td><td>0.5%</td></tr><tr><td>CPU load during 10 s of autoplay</td><td>1.1%</td></tr><tr><td>Total Blocking Time added at page load</td><td>0 ms</td></tr><tr><td>Layout shift</td><td>0</td></tr></tbody></table></div>
 	</div>
 </section>
 

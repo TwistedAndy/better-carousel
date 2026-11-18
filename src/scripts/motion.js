@@ -82,7 +82,9 @@ export function snapDuration(duration, count) {
  * @returns {{run: Function, loop: Function, retarget: Function, stop: Function, current: Function, shifts: Function}}
  */
 export function animator(element, css, frame, done, tick) {
-	let state = null;
+	let state = null,
+		// The timeline time when the last motion stopped
+		stopped = null;
 
 	const time = () => state.animations ? state.animations[0].currentTime || 0 : performance.now() - state.start,
 		current = () => state && state.from + (state.to - state.from) * state.ease(time() / state.duration);
@@ -115,13 +117,21 @@ export function animator(element, css, frame, done, tick) {
 			state.animations?.forEach((animation) => animation.cancel());
 			cancelAnimationFrame(state.raf);
 			state = null;
+			stopped = document.timeline.currentTime;
 		}
 		return at;
 	}
 
 	function animate(at) {
 		const animation = element.animate([{ translate: css(state.from) }, { translate: css(state.to) }], { duration: state.duration, easing: 'cubic-bezier(' + state.curve + ')', fill: 'forwards' });
-		animation.currentTime = at;
+		// A new animation waits for the compositor, and its time stays at its start until then. This gives a smooth start from rest.
+		// A motion that replaces a motion in the same frame, such as on each wheel event of a trackpad, starts at once. Otherwise each
+		// event replaces a motion that did not start yet, and the carousel does not move.
+		if (!at && stopped === document.timeline.currentTime) {
+			animation.startTime = stopped;
+		} else {
+			animation.currentTime = at;
+		}
 		animation.onfinish = finish;
 		state.animations = [animation];
 	}

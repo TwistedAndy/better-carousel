@@ -1508,7 +1508,9 @@ function snapDuration(duration, count) {
  * @returns {{run: Function, loop: Function, retarget: Function, stop: Function, current: Function, shifts: Function}}
  */
 function animator(element, css, frame, done, tick) {
-	let state = null;
+	let state = null,
+		// The timeline time when the last motion stopped
+		stopped = null;
 
 	const time = () => state.animations ? state.animations[0].currentTime || 0 : performance.now() - state.start,
 		current = () => state && state.from + (state.to - state.from) * state.ease(time() / state.duration);
@@ -1541,13 +1543,21 @@ function animator(element, css, frame, done, tick) {
 			state.animations?.forEach((animation) => animation.cancel());
 			cancelAnimationFrame(state.raf);
 			state = null;
+			stopped = document.timeline.currentTime;
 		}
 		return at;
 	}
 
 	function animate(at) {
 		const animation = element.animate([{ translate: css(state.from) }, { translate: css(state.to) }], { duration: state.duration, easing: 'cubic-bezier(' + state.curve + ')', fill: 'forwards' });
-		animation.currentTime = at;
+		// A new animation waits for the compositor, and its time stays at its start until then. This gives a smooth start from rest.
+		// A motion that replaces a motion in the same frame, such as on each wheel event of a trackpad, starts at once. Otherwise each
+		// event replaces a motion that did not start yet, and the carousel does not move.
+		if (!at && stopped === document.timeline.currentTime) {
+			animation.startTime = stopped;
+		} else {
+			animation.currentTime = at;
+		}
 		animation.onfinish = finish;
 		state.animations = [animation];
 	}
@@ -2051,6 +2061,7 @@ function carousel(element, userOptions, defaults, features) {
 
 		if (options.autoHeight) {
 			addClass(root, cls.autoHeight);
+			setStyle(root, '--better-duration', options.duration + 'ms');
 		}
 
 		viewport.addEventListener('scroll', onScroll);
@@ -2103,6 +2114,7 @@ function carousel(element, userOptions, defaults, features) {
 		setStyle(viewport, 'touch-action', '');
 		setStyle(viewport, 'height', '');
 		setStyle(root, '--better-progress', '');
+		setStyle(root, '--better-duration', '');
 
 		for (const name of ['horizontal', 'vertical', 'fit', 'dragging']) {
 			setClass(root, cls[name], false);
@@ -2407,9 +2419,10 @@ function carousel(element, userOptions, defaults, features) {
 			write(geo.fit ? 0 : location);
 		}
 
-		// Auto height: the height of the tallest slide in view at the target location
+		// Auto height: the height of the tallest slide in view. During a motion or a drag, the slides in view at the selected snap give it,
+		// so that a taller slide makes the viewport taller only when it is selected. The CSS transition has the duration and the curve of a motion.
 		if (options.autoHeight) {
-			setStyle(viewport, 'height', x ? Math.max(...inView(geo, location, 0).map((index) => geo.slides[index].cross)) + 'px' : '');
+			setStyle(viewport, 'height', x ? Math.max(...inView(geo, keep ? geo.snaps[selected].location : location, 0).map((index) => geo.slides[index].cross)) + 'px' : '');
 		}
 
 		const chosen = selectedSlide(),
@@ -2713,14 +2726,13 @@ function carousel(element, userOptions, defaults, features) {
 	}
 
 	/**
-	 * Write a location without a motion, and select the snap that is nearest to it.
+	 * Write a location during a drag, and select the snap that is nearest to it.
 	 *
 	 * @param {number} value
-	 * @param {boolean} [moving] Emit "scroll", as during a motion.
 	 */
-	function hold(value, moving) {
+	function hold(value) {
 		location = value;
-		(moving ? frame : write)(value);
+		frame(value);
 		pick();
 	}
 
@@ -2968,7 +2980,7 @@ function drag(context) {
 			edge = clamp(value, geo.min, geo.max);
 
 		// Out of the limits, the carousel moves at a quarter of the pointer speed
-		context.hold(geo.period ? value : edge + (value - edge) / 4, true);
+		context.hold(geo.period ? value : edge + (value - edge) / 4);
 		samples.push([main, event.timeStamp]);
 
 		if (samples.length > 10) {
@@ -3059,9 +3071,9 @@ function scrolls(node, viewport, axis, delta) {
 }
 
 /**
- * Make the wheel input of a viewport: in a vertical carousel, and with wheel: 'both' also in a horizontal carousel. With wheel: 'axis',
- * a horizontal carousel follows only a horizontal wheel motion, such as a trackpad swipe, and a vertical wheel scrolls the page. The carousel follows
- * the wheel distance with a short motion on the compositor. When the wheel stops, the carousel goes to a snap. At the first and the last
+ * Make the wheel input of a viewport. The carousel follows the wheel motion along its axis. A horizontal carousel follows a horizontal wheel motion,
+ * such as a trackpad swipe, and a vertical wheel scrolls the page. With wheel: 'both', a horizontal carousel follows all wheel motions. The carousel
+ * follows the wheel distance with a short motion on the compositor. When the wheel stops, the carousel goes to a snap. At the first and the last
  * location, the page scrolls.
  *
  * @param {object} context What the features share. See carousel.js.
@@ -3094,7 +3106,7 @@ function wheel(context) {
 			delta = side ? event.deltaX * geo.sign : event.deltaY;
 
 		// A nested carousel or the page took the event before: it cancelled the default action
-		if (event.defaultPrevented || event.ctrlKey || !delta || context.dragging() || (options.wheel === 'axis' && geo.axis === 'x' && !side)) {
+		if (event.defaultPrevented || event.ctrlKey || !delta || context.dragging() || (geo.axis === 'x' && !side && options.wheel !== 'both')) {
 			return;
 		}
 
@@ -3163,7 +3175,7 @@ function wheel(context) {
 
 	context.on('init reinit resize', () => {
 		const geo = context.geo();
-		listen(!geo.fit && (geo.axis === 'y' || options.wheel !== true));
+		listen(!geo.fit);
 	});
 
 	return {

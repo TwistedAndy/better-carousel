@@ -243,6 +243,7 @@ export default function carousel(element, userOptions, defaults, features) {
 
 		if (options.autoHeight) {
 			addClass(root, cls.autoHeight);
+			setStyle(root, '--better-duration', options.duration + 'ms');
 		}
 
 		viewport.addEventListener('scroll', onScroll);
@@ -295,6 +296,7 @@ export default function carousel(element, userOptions, defaults, features) {
 		setStyle(viewport, 'touch-action', '');
 		setStyle(viewport, 'height', '');
 		setStyle(root, '--better-progress', '');
+		setStyle(root, '--better-duration', '');
 
 		for (const name of ['horizontal', 'vertical', 'fit', 'dragging']) {
 			setClass(root, cls[name], false);
@@ -599,9 +601,10 @@ export default function carousel(element, userOptions, defaults, features) {
 			write(geo.fit ? 0 : location);
 		}
 
-		// Auto height: the height of the tallest slide in view at the target location
+		// Auto height: the height of the tallest slide in view. During a motion or a drag, the slides in view at the selected snap give it,
+		// so that a taller slide makes the viewport taller only when it is selected. The CSS transition has the duration and the curve of a motion.
 		if (options.autoHeight) {
-			setStyle(viewport, 'height', x ? Math.max(...inView(geo, location, 0).map((index) => geo.slides[index].cross)) + 'px' : '');
+			setStyle(viewport, 'height', x ? Math.max(...inView(geo, keep ? geo.snaps[selected].location : location, 0).map((index) => geo.slides[index].cross)) + 'px' : '');
 		}
 
 		const chosen = selectedSlide(),
@@ -905,14 +908,13 @@ export default function carousel(element, userOptions, defaults, features) {
 	}
 
 	/**
-	 * Write a location without a motion, and select the snap that is nearest to it.
+	 * Write a location during a drag, and select the snap that is nearest to it.
 	 *
 	 * @param {number} value
-	 * @param {boolean} [moving] Emit "scroll", as during a motion.
 	 */
-	function hold(value, moving) {
+	function hold(value) {
 		location = value;
-		(moving ? frame : write)(value);
+		frame(value);
 		pick();
 	}
 

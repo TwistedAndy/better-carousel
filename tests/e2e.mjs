@@ -5,8 +5,8 @@ import puppeteer from 'puppeteer-core';
 
 const url = process.env.URL || 'http://better.test/';
 const chrome = process.env.CHROME || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
-// The number of Chromes at the same time. A Chrome uses about two CPU threads: with more Chromes, the frames come late and the motion checks fail.
-const workers = +process.env.E2E_WORKERS || Math.max(1, Math.floor(availableParallelism() / 2));
+// The number of Chromes at the same time. A Chrome needs about four CPU threads: with more Chromes, the frames come late and the motion checks fail.
+const workers = +process.env.E2E_WORKERS || Math.max(1, Math.floor(availableParallelism() / 4));
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -300,11 +300,11 @@ const groups = [
 	}],
 	['wheel', async ({ page, check, state }) => {
 		// Send wheel events over a carousel, with a time between them, and get the snap and the page scroll
-		const wheel = async (id, list, gap = 16) => {
+		const wheel = async (id, list, gap = 16, axis = 'deltaY') => {
 			const start = await state(id);
 			await page.mouse.move(start.x, start.y);
 			for (const delta of list) {
-				await page.mouse.wheel({ deltaY: delta });
+				await page.mouse.wheel({ [axis]: delta });
 				await wait(gap);
 			}
 			await wait(700);
@@ -340,7 +340,12 @@ const groups = [
 
 		top = await reset('start');
 		const horizontal = await wheel('start', [100]);
-		check('wheel: the default does not change a horizontal carousel', horizontal.snap === 0 && horizontal.scroll > top, JSON.stringify({ top, horizontal }));
+		check('wheel: by default, a vertical wheel over a horizontal carousel scrolls the page', horizontal.snap === 0 && horizontal.scroll > top, JSON.stringify({ top, horizontal }));
+
+		// A trackpad swipe along the axis: a stream of horizontal deltas with inertia
+		top = await reset('start');
+		const swipe = await wheel('start', Array.from({ length: 12 }, (item, index) => 40 - index * 3), 16, 'deltaX');
+		check('wheel: by default, a horizontal trackpad swipe moves a horizontal carousel, and the page does not scroll', swipe.snap >= 1 && swipe.aligned && swipe.scroll === top, JSON.stringify({ top, swipe }));
 
 		await page.evaluate(async () => {
 			const carousel = window.byId('start');
@@ -816,6 +821,20 @@ const groups = [
 			});
 			check('auto height: the viewport gets the height of the slide in view, with a transition', value.first === value.wide && value.last === value.square && value.wide < value.square && value.middle > value.wide && value.middle < value.square && value.transition.includes('height'), JSON.stringify(value));
 			check('auto height: the height transition during a motion causes no measure pass', value.resized === 0, JSON.stringify(value));
+
+			// A trackpad step of 100 px shows a part of the taller next slide. The height changes only when the carousel selects that slide.
+			const stepped = await page.evaluate(async () => {
+				const carousel = window.byId('height'),
+					viewport = carousel.viewportNode(),
+					style = getComputedStyle(viewport);
+				viewport.dispatchEvent(new WheelEvent('wheel', { deltaX: 100, bubbles: true, cancelable: true }));
+				const during = viewport.style.height;
+				await new Promise((resolve) => setTimeout(resolve, 900));
+				const after = viewport.style.height;
+				carousel.goToSnap(0, true);
+				return { during, after, duration: style.transitionDuration, curve: style.transitionTimingFunction };
+			});
+			check('auto height: a part of a taller slide in view does not change the height before the slide is selected, and the transition has the duration and the curve of a motion', stepped.during === '280px' && stepped.after === '480px' && stepped.duration === '0.4s' && stepped.curve === 'cubic-bezier(0.25, 1, 0.5, 1)', JSON.stringify(stepped));
 		}
 	}],
 	['navigation', async ({ page, check, idle, scrollTo }) => {
