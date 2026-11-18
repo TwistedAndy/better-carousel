@@ -834,7 +834,7 @@ const groups = [
 				carousel.goToSnap(0, true);
 				return { during, after, duration: style.transitionDuration, curve: style.transitionTimingFunction };
 			});
-			check('auto height: a part of a taller slide in view does not change the height before the slide is selected, and the transition has the duration and the curve of a motion', stepped.during === '280px' && stepped.after === '480px' && stepped.duration === '0.4s' && stepped.curve === 'cubic-bezier(0.25, 1, 0.5, 1)', JSON.stringify(stepped));
+			check('auto height: a part of a taller slide in view does not change the height before the slide is selected, and the transition has the duration and the curve of a motion', stepped.during === '280px' && stepped.after === '480px' && stepped.duration === '0.5s' && stepped.curve === 'cubic-bezier(0.25, 1, 0.5, 1)', JSON.stringify(stepped));
 		}
 	}],
 	['navigation', async ({ page, check, idle, scrollTo }) => {
@@ -1104,8 +1104,8 @@ const groups = [
 			return { slide: carousel.selectedSlide(), playing: carousel.autoplay.isPlaying(), live: carousel.containerNode().getAttribute('aria-live'), label: button.getAttribute('aria-label'), state: carousel.rootNode().classList.contains('playing') };
 		});
 		const first = await read();
-		// A short delay, so that the checks do not wait for the 2 s delay of the demo. The timer starts at "settle", and a motion takes 400 ms,
-		// so the slide changes at 300 ms and again at 1000 ms. A read at 700 ms is between them.
+		// A short delay, so that the checks do not wait for the 2 s delay of the demo. The timer starts at "settle", and a motion takes 500 ms,
+		// so the slide changes at 300 ms and again at 1100 ms. A read at 700 ms is between them.
 		await page.evaluate(() => {
 			const carousel = window.byId('autoplay');
 			window.autoplayOptions = carousel.options().autoplay;
@@ -1213,7 +1213,8 @@ const groups = [
 							rect = node.getBoundingClientRect();
 						return rect.left + rect.width / 2 - view.left - view.width / 2;
 					};
-				// The largest speed between two frames, in px/ms, so that a dropped frame is not a jump
+				// The largest speed between two frames, in px/ms, so that a dropped frame is not a jump. The limit is 4 px/ms for a motion of 400 ms:
+				// a shorter motion is faster.
 				let last = offset(),
 					time = begin,
 					jump = 0;
@@ -1224,11 +1225,11 @@ const groups = [
 					last = value;
 					time = now;
 				}
-				rows.push({ target, center: Math.round(last), jump: +jump.toFixed(2) });
+				rows.push({ target, center: Math.round(last), jump: +jump.toFixed(2), limit: +(1600 / carousel.options().duration).toFixed(2) });
 			}
 			return rows;
 		});
-		check('a selected slide that grows: the motion does not jump and ends in the center', grow.every((row) => Math.abs(row.center) <= 1 && row.jump < 4), JSON.stringify(grow));
+		check('a selected slide that grows: the motion does not jump and ends in the center', grow.every((row) => Math.abs(row.center) <= 1 && row.jump < row.limit), JSON.stringify(grow));
 	}],
 	['touch', async ({ page, check, state, settle, scrollTo }) => {
 		await scrollTo('drag');

@@ -17,7 +17,7 @@ export const options = [
 	{ name: 'slidesPerSnap', type: "`number`, `'auto'`", default: 1, text: "The number of slides in one snap. `'auto'`: the slides that fit in the viewport.", example: 'groups' },
 	{ name: 'skipSnaps', type: '`boolean`, `number`', default: true, text: 'A fast flick can move more than one snap. `false`: one snap. A number: the maximum number of snaps.', example: 'skip' },
 	{ name: 'dragThreshold', type: '`number`', default: 10, text: 'The distance in px that the pointer moves before a drag starts.' },
-	{ name: 'duration', type: '`number`', default: 400, text: 'The duration of a motion by one snap, in ms. A longer motion takes more time, to a maximum of 2 times this value.', example: 'options-usage' },
+	{ name: 'duration', type: '`number`', default: 500, text: 'The duration of a motion by one snap, in ms. A longer motion takes more time, to a maximum of 2 times this value.', example: 'duration' },
 	{ name: 'startSnap', type: '`number`', default: 0, text: 'The index of the snap at the start.', example: 'options-usage' },
 	{ name: 'lazy', type: '`boolean`, `number`', default: false, text: '`true`: start when the carousel comes within one screen of the view. A number: the distance in px.', example: 'lazy' },
 	{ name: 'drag', type: '`boolean`', default: true, text: 'Drag with the mouse, the pen and the finger. A press during a motion stops the motion. A press on a form field does not start a drag. To keep the drag off another element, such as a map in a slide, stop the propagation of its `pointerdown` event. An element in a slide that can scroll does not keep a touch move along the axis. To let it scroll along the axis, such as a wide table, give it `touch-action: auto`.' },

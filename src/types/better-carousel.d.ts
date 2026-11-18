@@ -157,7 +157,7 @@ export interface Options {
 	skipSnaps?: boolean | number;
 	/** The distance in px that the pointer moves before a drag starts. @default 10 */
 	dragThreshold?: number;
-	/** The duration of a motion by one snap, in ms. A longer motion takes more time, to a maximum of 2 times this value. @default 400 @see {@link https://twistedandy.github.io/better-carousel/#options-usage | example} */
+	/** The duration of a motion by one snap, in ms. A longer motion takes more time, to a maximum of 2 times this value. @default 500 @see {@link https://twistedandy.github.io/better-carousel/#duration | example} */
 	duration?: number;
 	/** The index of the snap at the start. @default 0 @see {@link https://twistedandy.github.io/better-carousel/#options-usage | example} */
 	startSnap?: number;

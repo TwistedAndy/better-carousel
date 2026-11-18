@@ -1280,7 +1280,7 @@ pre {
 }
 
 .better_auto_height .better_viewport {
-  transition: height var(--better-duration, 0.4s) cubic-bezier(0.25, 1, 0.5, 1);
+  transition: height var(--better-duration) cubic-bezier(0.25, 1, 0.5, 1);
 }
 .better_auto_height .better_container {
   align-items: flex-start;
@@ -1530,7 +1530,7 @@ pre {
   --gap-grid-x: 0px;
 }
 .demo_classes .embla_auto_height .embla_viewport {
-  transition: height var(--better-duration, 0.4s) cubic-bezier(0.25, 1, 0.5, 1);
+  transition: height var(--better-duration) cubic-bezier(0.25, 1, 0.5, 1);
 }
 .demo_classes .embla_auto_height .embla_container {
   align-items: flex-start;

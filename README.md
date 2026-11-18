@@ -29,13 +29,13 @@ Load the minified script and the stylesheet from jsDelivr. The script adds the g
 ```html
 <link
   rel="stylesheet"
-  href="https://cdn.jsdelivr.net/gh/TwistedAndy/better-carousel@v1.1.4/dist/better-carousel.css"
-  integrity="sha384-GpH1O9+ukH0hzcDGBkYIU9la7E3pZ+OeRZw0HEmJgdyDoxnZkWv1uj8faIfGsxMl"
+  href="https://cdn.jsdelivr.net/gh/TwistedAndy/better-carousel@v1.1.5/dist/better-carousel.css"
+  integrity="sha384-2kYH/3D4NZj8lsDP2GHudOgPnUskWVUbMw0LIKm1BavDatvjrvqLODOXb4S0Rxd4"
   crossorigin="anonymous"
 />
 <script
-  src="https://cdn.jsdelivr.net/gh/TwistedAndy/better-carousel@v1.1.4/dist/better-carousel.min.js"
-  integrity="sha384-+c7uKMWUCtkZsxuHjDFe/+U4Od33v1vyAggNFsIEsTNfkPfx+re7ssDyv46ihNpI"
+  src="https://cdn.jsdelivr.net/gh/TwistedAndy/better-carousel@v1.1.5/dist/better-carousel.min.js"
+  integrity="sha384-tHhgKaJkTC8L68pE5n/z0ySasDHBouzNL7aphawjkp7EmkYcfpFxk8/klQqr4a5d"
   crossorigin="anonymous"
 ></script>
 ```
@@ -353,7 +353,7 @@ BetterCarousel(element, {
 | `slidesPerSnap` | `number`, `'auto'` | `1` | The number of slides in one snap. `'auto'`: the slides that fit in the viewport. ([example](https://twistedandy.github.io/better-carousel/#groups)) |
 | `skipSnaps` | `boolean`, `number` | `true` | A fast flick can move more than one snap. `false`: one snap. A number: the maximum number of snaps. ([example](https://twistedandy.github.io/better-carousel/#skip)) |
 | `dragThreshold` | `number` | `10` | The distance in px that the pointer moves before a drag starts. |
-| `duration` | `number` | `400` | The duration of a motion by one snap, in ms. A longer motion takes more time, to a maximum of 2 times this value. ([example](https://twistedandy.github.io/better-carousel/#options-usage)) |
+| `duration` | `number` | `500` | The duration of a motion by one snap, in ms. A longer motion takes more time, to a maximum of 2 times this value. ([example](https://twistedandy.github.io/better-carousel/#duration)) |
 | `startSnap` | `number` | `0` | The index of the snap at the start. ([example](https://twistedandy.github.io/better-carousel/#options-usage)) |
 | `lazy` | `boolean`, `number` | `false` | `true`: start when the carousel comes within one screen of the view. A number: the distance in px. ([example](https://twistedandy.github.io/better-carousel/#lazy)) |
 | `drag` | `boolean` | `true` | Drag with the mouse, the pen and the finger. A press during a motion stops the motion. A press on a form field does not start a drag. To keep the drag off another element, such as a map in a slide, stop the propagation of its `pointerdown` event. An element in a slide that can scroll does not keep a touch move along the axis. To let it scroll along the axis, such as a wide table, give it `touch-action: auto`. |

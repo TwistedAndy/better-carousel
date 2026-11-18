@@ -13,7 +13,7 @@ export const defaults = {
 	slidesPerSnap: 1,
 	skipSnaps: true,
 	dragThreshold: 10,
-	duration: 400,
+	duration: 500,
 	startSnap: 0,
 	lazy: false,
 	drag: true,
