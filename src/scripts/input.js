@@ -11,6 +11,9 @@ import { EASE, GLIDE } from './motion.js';
 // The targets that keep their own pointer and key behavior
 const fields = 'input,textarea,select,[contenteditable]';
 
+// true if an event comes from a form field. An event from a shadow root has the host as its target, so the check uses the first element of the event path.
+const inField = (event) => event.composedPath()[0].closest(fields);
+
 // The pointerdown events that a carousel took for a drag
 const claimed = new WeakSet();
 
@@ -145,7 +148,7 @@ export function drag(context) {
 		const geo = context.geo();
 
 		// In nested carousels, the inner carousel gets the press first and claims it
-		if (pointer !== null || event.button || !geo || geo.fit || claimed.has(event) || event.target.closest(fields)) {
+		if (pointer !== null || event.button || !geo || geo.fit || claimed.has(event) || inField(event)) {
 			return;
 		}
 
@@ -338,7 +341,8 @@ export function wheel(context) {
 			side = geo.axis === 'x' && abs(event.deltaX) > abs(event.deltaY),
 			delta = side ? event.deltaX * geo.sign : event.deltaY;
 
-		if (event.ctrlKey || !delta || context.dragging() || (options.wheel === 'axis' && geo.axis === 'x' && !side)) {
+		// A nested carousel or the page took the event before: it cancelled the default action
+		if (event.defaultPrevented || event.ctrlKey || !delta || context.dragging() || (options.wheel === 'axis' && geo.axis === 'x' && !side)) {
 			return;
 		}
 
@@ -434,12 +438,11 @@ export function keys(context) {
 
 	function onKey(event) {
 		const geo = context.geo(),
-			{ key, target } = event,
 			// -1 for the previous slide, 1 for the next slide. A right-to-left carousel has the next slide at the left.
-			direction = geo && !geo.fit && (geo.axis === 'y' ? { ArrowUp: -1, ArrowDown: 1 } : { ArrowLeft: -geo.sign, ArrowRight: geo.sign })[key],
+			direction = geo && !geo.fit && (geo.axis === 'y' ? { ArrowUp: -1, ArrowDown: 1 } : { ArrowLeft: -geo.sign, ArrowRight: geo.sign })[event.key],
 			name = direction > 0 ? 'Next' : 'Prev';
-		// At the first and the last slide, the key scrolls the page
-		if (direction && !(event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || target.closest(fields)) && api['canGoTo' + name]()) {
+		// At the first and the last slide, the key scrolls the page. A key that a nested carousel or the page took before has no default action.
+		if (direction && !(event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || inField(event)) && api['canGoTo' + name]()) {
 			event.preventDefault();
 			api['goTo' + name]();
 		}
@@ -465,7 +468,7 @@ export function focus(context) {
 	let pressed = -1e4;
 
 	function press(event) {
-		if (!event.target.closest(fields)) {
+		if (!inField(event)) {
 			pressed = event.timeStamp;
 		}
 	}

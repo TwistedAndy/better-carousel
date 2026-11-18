@@ -491,6 +491,73 @@ const groups = [
 			check('a tap on a button in a slide that shows in part clicks and focuses it, and the carousel stays', partial.snap === 0 && partial.clicked === '2' && partial.focused === '2', JSON.stringify(partial));
 		}
 
+		// Nested carousels: an arrow key and a wheel step in the inner carousel move only the inner carousel
+		await make({ wheel: 'both' });
+		{
+			await page.evaluate(async () => {
+				const slot = window.fixed.slideNodes()[0];
+				slot.innerHTML = '<div style="display: flex; gap: 10px">' + '<div style="flex: 0 0 140px; height: 80px"><button type="button">x</button></div>'.repeat(4) + '</div>';
+				window.inner = BetterCarousel(slot.firstChild, { arrows: false, dots: false, wheel: 'both' });
+				await new Promise((resolve) => window.inner.on('init', resolve));
+				window.inner.slideNodes()[0].querySelector('button').focus();
+			});
+			const snaps = () => page.evaluate(() => ({ inner: window.inner.selectedSnap(), outer: window.fixed.selectedSnap() }));
+			await page.keyboard.press('ArrowRight');
+			const key = await snaps();
+			const at = await page.evaluate(() => {
+				const rect = window.inner.viewportNode().getBoundingClientRect();
+				return { x: rect.left + 50, y: rect.top + 40 };
+			});
+			await page.mouse.move(at.x, at.y);
+			await page.mouse.wheel({ deltaY: 100 });
+			await wait(500);
+			const wheel = await snaps();
+			await page.evaluate(() => window.inner.destroy());
+			check('nested carousels: an arrow key and a wheel step in the inner carousel do not move the outer carousel', key.inner === 1 && key.outer === 0 && wheel.inner === 2 && wheel.outer === 0, JSON.stringify({ key, wheel }));
+		}
+
+		// An input in a shadow root: the event target is the host, but the input keeps its keys and its pointer
+		await make({}, { html: '<span data-host style="display: block; padding: 10px"></span>' });
+		{
+			await page.evaluate(() => {
+				document.querySelectorAll('#fixture [data-host]').forEach((host) => (host.attachShadow({ mode: 'open' }).innerHTML = '<input value="abc">'));
+				const input = window.fixed.slideNodes()[0].querySelector('[data-host]').shadowRoot.querySelector('input');
+				input.focus();
+				input.setSelectionRange(0, 0);
+			});
+			await page.keyboard.press('ArrowRight');
+			const key = await page.evaluate(() => ({ snap: window.fixed.selectedSnap(), caret: window.fixed.slideNodes()[0].querySelector('[data-host]').shadowRoot.activeElement.selectionStart }));
+			const at = await page.evaluate(() => {
+				const rect = window.fixed.slideNodes()[1].querySelector('[data-host]').getBoundingClientRect();
+				return { x: rect.left + 30, y: rect.top + rect.height / 2 };
+			});
+			await page.mouse.move(at.x, at.y);
+			await page.mouse.down();
+			await moveBy(at, -100, 6);
+			await page.mouse.up();
+			const drags = await page.evaluate(() => window.counts.dragstart);
+			check('an input in a shadow root keeps the arrow keys and the press', key.snap === 0 && key.caret === 1 && drags === 0, JSON.stringify({ key, drags }));
+		}
+
+		// A touch on an element in a slide that scrolls across the axis: a move along the axis moves the carousel, and a move across it scrolls the element
+		await make({}, { html: '<div data-inner style="height: 100px; overflow-y: auto"><div style="height: 400px">%i</div></div>' });
+		{
+			const at = await point(1, '[data-inner]'),
+				swipe = async (dx, dy) => {
+					await page.touchscreen.touchStart(at.x, at.y);
+					for (let step = 1; step <= 10; step++) {
+						await page.touchscreen.touchMove(at.x + dx * step, at.y + dy * step);
+					}
+					await page.touchscreen.touchEnd();
+					await wait(600);
+				};
+			await swipe(0, -6);
+			const across = await page.evaluate(() => ({ snap: window.fixed.selectedSnap(), top: window.fixed.slideNodes()[1].querySelector('[data-inner]').scrollTop }));
+			await swipe(-25, 0);
+			const along = await page.evaluate(() => window.fixed.selectedSnap());
+			check('touch: on an element that scrolls across the axis, a move along the axis moves the carousel, and a move across it scrolls the element', across.snap === 0 && across.top > 0 && along > 0, JSON.stringify({ across, along }));
+		}
+
 		// A touch move more across the axis than along it. Chrome cancels such a touch before the carousel gets it, so the check sends the events.
 		await make();
 		const across = await page.evaluate(() => {
@@ -1484,7 +1551,7 @@ const groups = [
 		});
 		check('progress and offset: the auto scroll calls the callback on each frame, and not after the stop', scroll.frames > 10 && scroll.moved && scroll.after === 0, JSON.stringify(scroll));
 	}],
-	['slide fixtures', async ({ page, check }) => {
+	['slide fixtures', async ({ page, check, frames }) => {
 		const { make, center } = fixture(page);
 
 		// Clones: a click on a button in a clone clicks the same button in its slide, and a change in a slide goes to its clones
@@ -1555,6 +1622,25 @@ const groups = [
 			return { selected: node.classList.contains('selected'), label: node.getAttribute('aria-label'), events: window.counts.slideschanged };
 		});
 		check('a slide that replaces the selected slide with the same size gets the selected class and a name, and slideschanged occurs', replaced.selected && replaced.label === '2 of 6' && replaced.events === 1, JSON.stringify(replaced));
+
+		// An effect that scales the slides: the measure after a resize uses the slide sizes without the scale
+		await make();
+		{
+			await page.evaluate(async () => {
+				window.fixed.reinit({ offset: ({ node, offset }) => (node.style.scale = String(1 - 0.4 * Math.min(1, Math.abs(offset)))) });
+				await new Promise((resolve) => window.fixed.on('reinit', resolve));
+				window.fixed.goToSnap(2, true);
+			});
+			await frames();
+			await page.evaluate(() => (document.getElementById('fixture').style.width = '640px'));
+			await frames();
+			const scaled = await page.evaluate(() => {
+				window.fixed.goToSnap(3, true);
+				const view = window.fixed.viewportNode().getBoundingClientRect();
+				return { snaps: window.fixed.snapProgress().length, start: Math.round(window.fixed.slideNodes()[3].getBoundingClientRect().left - view.left) };
+			});
+			check('an effect that scales the slides: after a resize, the snaps come from the slide sizes without the scale', scaled.snaps === 5 && scaled.start === 0, JSON.stringify(scaled));
+		}
 
 		// The pause reasons of the autoplay: the mouse with pauseOnHover, a hidden browser tab, and reduced motion
 		await page.mouse.move(1100, 850);

@@ -29,6 +29,13 @@ $better-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'
 	z-index: 1;
 }
 
+// The elements in the slides get the touch-action of the viewport. Without it, an element that can scroll, such as a list with overflow-y: auto,
+// keeps a touch move along the axis, and the carousel does not move. :where() gives no specificity: a page rule, such as touch-action: auto
+// for a table that scrolls along the axis, applies.
+:where(.#{$better}_viewport) * {
+	touch-action: inherit;
+}
+
 // The width comes from the parent, not from the slides. Without it, a carousel in a flex item or a grid column grows to the width of all slides.
 .#{$better}_horizontal .#{$better}_viewport {
 	contain: inline-size;

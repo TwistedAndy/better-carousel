@@ -79,11 +79,24 @@ export function readRects(viewport, nodes, layout, written, size) {
 
 	const slides = nodes.map((node, index) => {
 		const rect = node.getBoundingClientRect(),
-			offset = sign * (shift + (known && written.slides[index] || 0)),
-			start = (x ? (layout.rtl ? box.right - rect.right : rect.left - box.left) : rect.top - box.top) / scale - pad.start - offset,
-			size = (x ? rect.width : rect.height) / scale;
+			offset = sign * (shift + (known && written.slides[index] || 0));
 
-		return { start, end: start + size, cross: (x ? rect.height : rect.width) / scale, hidden: !rect.width && !rect.height };
+		let start = (x ? (layout.rtl ? box.right - rect.right : rect.left - box.left) : rect.top - box.top) / scale - pad.start - offset,
+			size = (x ? rect.width : rect.height) / scale,
+			cross = (x ? rect.height : rect.width) / scale;
+
+		// An effect can scale or turn a slide, for example through the offset option. offsetWidth has no transform. If it is not the size
+		// of the rect, take the sizes from the CSS, and move the start back by the part that the transform took around its origin.
+		if (abs(size - (x ? node.offsetWidth : node.offsetHeight)) >= 1) {
+			const style = getComputedStyle(node),
+				full = borderBox(style, x),
+				origin = parseFloat(style.transformOrigin.split(' ')[x ? 0 : 1]);
+			start -= (x && layout.rtl ? full - origin : origin) * (1 - size / full);
+			size = full;
+			cross = borderBox(style, !x);
+		}
+
+		return { start, end: start + size, cross, hidden: !rect.width && !rect.height };
 	});
 
 	// A hidden slide goes to the end of the visible slide before it. The first and the last visible slides give the margins of the loop gap.
@@ -128,6 +141,21 @@ export function readRects(viewport, nodes, layout, written, size) {
 		scale,
 		area: { start: -before, size: before + after }
 	};
+}
+
+/**
+ * Get the border box size of an element on an axis from its CSS. This size has no transform.
+ *
+ * @param {CSSStyleDeclaration} style The computed style of the element.
+ * @param {boolean} x true for the width, false for the height.
+ * @returns {number}
+ */
+function borderBox(style, x) {
+	const names = [x ? 'width' : 'height'];
+	if (style.boxSizing !== 'border-box') {
+		(x ? ['Left', 'Right'] : ['Top', 'Bottom']).forEach((side) => names.push('padding' + side, 'border' + side + 'Width'));
+	}
+	return names.reduce((total, name) => total + (parseFloat(style[name]) || 0), 0);
 }
 
 /**

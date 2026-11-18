@@ -1224,11 +1224,24 @@ function readRects(viewport, nodes, layout, written, size) {
 
 	const slides = nodes.map((node, index) => {
 		const rect = node.getBoundingClientRect(),
-			offset = sign * (shift + (known && written.slides[index] || 0)),
-			start = (x ? (layout.rtl ? box.right - rect.right : rect.left - box.left) : rect.top - box.top) / scale - pad.start - offset,
-			size = (x ? rect.width : rect.height) / scale;
+			offset = sign * (shift + (known && written.slides[index] || 0));
 
-		return { start, end: start + size, cross: (x ? rect.height : rect.width) / scale, hidden: !rect.width && !rect.height };
+		let start = (x ? (layout.rtl ? box.right - rect.right : rect.left - box.left) : rect.top - box.top) / scale - pad.start - offset,
+			size = (x ? rect.width : rect.height) / scale,
+			cross = (x ? rect.height : rect.width) / scale;
+
+		// An effect can scale or turn a slide, for example through the offset option. offsetWidth has no transform. If it is not the size
+		// of the rect, take the sizes from the CSS, and move the start back by the part that the transform took around its origin.
+		if (abs(size - (x ? node.offsetWidth : node.offsetHeight)) >= 1) {
+			const style = getComputedStyle(node),
+				full = borderBox(style, x),
+				origin = parseFloat(style.transformOrigin.split(' ')[x ? 0 : 1]);
+			start -= (x && layout.rtl ? full - origin : origin) * (1 - size / full);
+			size = full;
+			cross = borderBox(style, !x);
+		}
+
+		return { start, end: start + size, cross, hidden: !rect.width && !rect.height };
 	});
 
 	// A hidden slide goes to the end of the visible slide before it. The first and the last visible slides give the margins of the loop gap.
@@ -1273,6 +1286,21 @@ function readRects(viewport, nodes, layout, written, size) {
 		scale,
 		area: { start: -before, size: before + after }
 	};
+}
+
+/**
+ * Get the border box size of an element on an axis from its CSS. This size has no transform.
+ *
+ * @param {CSSStyleDeclaration} style The computed style of the element.
+ * @param {boolean} x true for the width, false for the height.
+ * @returns {number}
+ */
+function borderBox(style, x) {
+	const names = [x ? 'width' : 'height'];
+	if (style.boxSizing !== 'border-box') {
+		(x ? ['Left', 'Right'] : ['Top', 'Bottom']).forEach((side) => names.push('padding' + side, 'border' + side + 'Width'));
+	}
+	return names.reduce((total, name) => total + (parseFloat(style[name]) || 0), 0);
 }
 
 /**
@@ -2735,6 +2763,9 @@ function carousel(element, userOptions, defaults, features) {
 // The targets that keep their own pointer and key behavior
 const fields = 'input,textarea,select,[contenteditable]';
 
+// true if an event comes from a form field. An event from a shadow root has the host as its target, so the check uses the first element of the event path.
+const inField = (event) => event.composedPath()[0].closest(fields);
+
 // The pointerdown events that a carousel took for a drag
 const claimed = new WeakSet();
 
@@ -2869,7 +2900,7 @@ function drag(context) {
 		const geo = context.geo();
 
 		// In nested carousels, the inner carousel gets the press first and claims it
-		if (pointer !== null || event.button || !geo || geo.fit || claimed.has(event) || event.target.closest(fields)) {
+		if (pointer !== null || event.button || !geo || geo.fit || claimed.has(event) || inField(event)) {
 			return;
 		}
 
@@ -3062,7 +3093,8 @@ function wheel(context) {
 			side = geo.axis === 'x' && abs(event.deltaX) > abs(event.deltaY),
 			delta = side ? event.deltaX * geo.sign : event.deltaY;
 
-		if (event.ctrlKey || !delta || context.dragging() || (options.wheel === 'axis' && geo.axis === 'x' && !side)) {
+		// A nested carousel or the page took the event before: it cancelled the default action
+		if (event.defaultPrevented || event.ctrlKey || !delta || context.dragging() || (options.wheel === 'axis' && geo.axis === 'x' && !side)) {
 			return;
 		}
 
@@ -3158,12 +3190,11 @@ function keys(context) {
 
 	function onKey(event) {
 		const geo = context.geo(),
-			{ key, target } = event,
 			// -1 for the previous slide, 1 for the next slide. A right-to-left carousel has the next slide at the left.
-			direction = geo && !geo.fit && (geo.axis === 'y' ? { ArrowUp: -1, ArrowDown: 1 } : { ArrowLeft: -geo.sign, ArrowRight: geo.sign })[key],
+			direction = geo && !geo.fit && (geo.axis === 'y' ? { ArrowUp: -1, ArrowDown: 1 } : { ArrowLeft: -geo.sign, ArrowRight: geo.sign })[event.key],
 			name = direction > 0 ? 'Next' : 'Prev';
-		// At the first and the last slide, the key scrolls the page
-		if (direction && !(event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || target.closest(fields)) && api['canGoTo' + name]()) {
+		// At the first and the last slide, the key scrolls the page. A key that a nested carousel or the page took before has no default action.
+		if (direction && !(event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || inField(event)) && api['canGoTo' + name]()) {
 			event.preventDefault();
 			api['goTo' + name]();
 		}
@@ -3189,7 +3220,7 @@ function focus(context) {
 	let pressed = -1e4;
 
 	function press(event) {
-		if (!event.target.closest(fields)) {
+		if (!inField(event)) {
 			pressed = event.timeStamp;
 		}
 	}
