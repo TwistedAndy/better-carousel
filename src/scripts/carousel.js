@@ -163,6 +163,8 @@ export default function carousel(element, userOptions, defaults, features) {
 			geo: () => geo,
 			selected: () => selected,
 			dragging: () => dragging,
+			// true while a motion to a location runs, such as a goToSnap() motion or a glide. The auto scroll is not such a motion.
+			moving: () => !free && motion.current() !== null,
 			// The location at rest or at the end of the motion. During a free motion, the location now.
 			location: () => free ? current() : location,
 			current,
@@ -286,13 +288,7 @@ export default function carousel(element, userOptions, defaults, features) {
 		viewport.removeEventListener('input', onInput);
 		removeEventListener('resize', onWindow);
 
-		for (const node of nodes) {
-			setStyle(node, 'translate', '');
-			setStyle(node, '--better-offset', '');
-			setClass(node, cls.selected, false);
-			setClass(node, cls.inView, false);
-			cleanStyle(node);
-		}
+		nodes.forEach(clean);
 
 		setStyle(container, 'translate', '');
 		setStyle(container, 'will-change', '');
@@ -411,17 +407,37 @@ export default function carousel(element, userOptions, defaults, features) {
 		return same && options.autoHeight && geo?.axis === 'x';
 	}
 
+	/**
+	 * Remove the styles and the classes that the carousel wrote on a slide or a clone.
+	 *
+	 * @param {HTMLElement} node
+	 */
+	function clean(node) {
+		setStyle(node, 'translate', '');
+		setStyle(node, '--better-offset', '');
+		setClass(node, cls.selected, false);
+		setClass(node, cls.inView, false);
+		cleanStyle(node);
+	}
+
 	// Keep the selected slide. If the page removed it, select the slide that is now at its index, or the last slide.
+	// The loop shift of a slide stays with the slide at its new index, because the measure pass subtracts it from the slide box.
+	// A new slide can have the same size as the slide that it replaced, so the measure pass must not skip.
 	function onMutation() {
 		const old = ready ? selectedSlide() : -1,
-			node = slides[old];
+			node = slides[old],
+			shifts = new Map(slides.map((item, index) => [item, written.slides[index]]));
 		slides = readSlides(container, options.slides);
 		if (old > -1) {
 			const index = slides.indexOf(node);
 			requested = index > -1 ? index : Math.min(old, slides.length - 1);
 		}
+		// A removed slide can come back later, for example after a sort. It must not keep a loop shift.
+		shifts.forEach((shift, item) => slides.includes(item) || clean(item));
 		setClones(0);
 		nodes = slides;
+		written.slides = slides.map((item) => shifts.get(item) || 0);
+		signature = [];
 		changed = true;
 		observe(true);
 	}

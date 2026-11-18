@@ -1943,6 +1943,8 @@ function carousel(element, userOptions, defaults, features) {
 			geo: () => geo,
 			selected: () => selected,
 			dragging: () => dragging,
+			// true while a motion to a location runs, such as a goToSnap() motion or a glide. The auto scroll is not such a motion.
+			moving: () => !free && motion.current() !== null,
 			// The location at rest or at the end of the motion. During a free motion, the location now.
 			location: () => free ? current() : location,
 			current,
@@ -2066,13 +2068,7 @@ function carousel(element, userOptions, defaults, features) {
 		viewport.removeEventListener('input', onInput);
 		removeEventListener('resize', onWindow);
 
-		for (const node of nodes) {
-			setStyle(node, 'translate', '');
-			setStyle(node, '--better-offset', '');
-			setClass(node, cls.selected, false);
-			setClass(node, cls.inView, false);
-			cleanStyle(node);
-		}
+		nodes.forEach(clean);
 
 		setStyle(container, 'translate', '');
 		setStyle(container, 'will-change', '');
@@ -2191,17 +2187,37 @@ function carousel(element, userOptions, defaults, features) {
 		return same && options.autoHeight && geo?.axis === 'x';
 	}
 
+	/**
+	 * Remove the styles and the classes that the carousel wrote on a slide or a clone.
+	 *
+	 * @param {HTMLElement} node
+	 */
+	function clean(node) {
+		setStyle(node, 'translate', '');
+		setStyle(node, '--better-offset', '');
+		setClass(node, cls.selected, false);
+		setClass(node, cls.inView, false);
+		cleanStyle(node);
+	}
+
 	// Keep the selected slide. If the page removed it, select the slide that is now at its index, or the last slide.
+	// The loop shift of a slide stays with the slide at its new index, because the measure pass subtracts it from the slide box.
+	// A new slide can have the same size as the slide that it replaced, so the measure pass must not skip.
 	function onMutation() {
 		const old = ready ? selectedSlide() : -1,
-			node = slides[old];
+			node = slides[old],
+			shifts = new Map(slides.map((item, index) => [item, written.slides[index]]));
 		slides = readSlides(container, options.slides);
 		if (old > -1) {
 			const index = slides.indexOf(node);
 			requested = index > -1 ? index : Math.min(old, slides.length - 1);
 		}
+		// A removed slide can come back later, for example after a sort. It must not keep a loop shift.
+		shifts.forEach((shift, item) => slides.includes(item) || clean(item));
 		setClones(0);
 		nodes = slides;
+		written.slides = slides.map((item) => shifts.get(item) || 0);
+		signature = [];
 		changed = true;
 		observe(true);
 	}
@@ -2839,6 +2855,8 @@ function drag(context) {
 		base,
 		axis,
 		block = false,
+		// true if the press stopped a motion
+		stopped = false,
 		samples = [],
 		// The selected snap at the drag start
 		snap = 0;
@@ -2867,6 +2885,16 @@ function drag(context) {
 		axis = { x: geo.axis === 'x', sign: geo.sign, scale: geo.scale };
 		start = [event.clientX, event.clientY];
 		samples = [];
+
+		// A press stops a motion where it is. The release goes to a snap, and the click after it does not count.
+		// The auto scroll does not stop here: its feature stops it during the press and starts it again after the release.
+		stopped = context.moving();
+		if (stopped) {
+			base = context.halt();
+			snap = context.selected();
+			context.emit('interact');
+		}
+
 		listen(true);
 	}
 
@@ -2926,28 +2954,35 @@ function drag(context) {
 		listen();
 		pointer = null;
 
-		if (!context.dragging()) {
+		const dragged = context.dragging();
+
+		if (!dragged && !stopped) {
 			return;
 		}
 
 		const geo = context.geo(),
 			location = context.location(),
-			speed = up ? velocity(samples) : 0,
+			// A press that only stopped a motion has no samples
+			speed = up && samples.length ? velocity(samples) : 0,
 			// The snaps and the limits come from the geometry, and skipSnaps, dragFree and dragFriction from the options
 			target = releaseTarget({ ...geo, ...options, location, from: base, velocity: speed, current: snap }),
 			curve = options.dragFree === true ? GLIDE : EASE;
 
 		block = true;
-		context.drag(false);
+		if (dragged) {
+			context.drag(false);
+		}
 		context.move(target.snap, target.location, releaseDuration(target.location - location, speed, curve, options.duration), curve);
 	}
 
+	// Cancel the click after a drag. A touch drag sends no click, so the next click can come from the keyboard or a script.
+	// Such a click has no detail (the click count), and it is not cancelled.
 	function click(event) {
-		if (block) {
-			block = false;
+		if (block && event.detail) {
 			event.preventDefault();
 			event.stopPropagation();
 		}
+		block = false;
 	}
 
 	const prevent = (event) => event.preventDefault();

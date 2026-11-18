@@ -163,7 +163,7 @@ export interface Options {
 	startSnap?: number;
 	/** `true`: start when the carousel comes within one screen of the view. A number: the distance in px. @default false @see {@link https://twistedandy.github.io/better-carousel/#lazy | example} */
 	lazy?: boolean | number;
-	/** Drag with the mouse, the pen and the finger. A press on a form field does not start a drag. To keep the drag off another element, such as a map in a slide, stop the propagation of its `pointerdown` event. @default true */
+	/** Drag with the mouse, the pen and the finger. A press during a motion stops the motion. A press on a form field does not start a drag. To keep the drag off another element, such as a map in a slide, stop the propagation of its `pointerdown` event. @default true */
 	drag?: boolean;
 	/** The mouse wheel moves a vertical carousel. `'axis'`: also a horizontal carousel, but only with a horizontal wheel motion, such as a trackpad swipe. A vertical wheel scrolls the page. `'both'`: also a horizontal carousel, with all wheel motions. `false`: the wheel does not move the carousel. @default true @see {@link https://twistedandy.github.io/better-carousel/#vertical | example} */
 	wheel?: boolean | 'axis' | 'both';

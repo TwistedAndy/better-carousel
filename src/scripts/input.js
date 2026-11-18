@@ -131,6 +131,8 @@ export function drag(context) {
 		base,
 		axis,
 		block = false,
+		// true if the press stopped a motion
+		stopped = false,
 		samples = [],
 		// The selected snap at the drag start
 		snap = 0;
@@ -159,6 +161,16 @@ export function drag(context) {
 		axis = { x: geo.axis === 'x', sign: geo.sign, scale: geo.scale };
 		start = [event.clientX, event.clientY];
 		samples = [];
+
+		// A press stops a motion where it is. The release goes to a snap, and the click after it does not count.
+		// The auto scroll does not stop here: its feature stops it during the press and starts it again after the release.
+		stopped = context.moving();
+		if (stopped) {
+			base = context.halt();
+			snap = context.selected();
+			context.emit('interact');
+		}
+
 		listen(true);
 	}
 
@@ -218,28 +230,35 @@ export function drag(context) {
 		listen();
 		pointer = null;
 
-		if (!context.dragging()) {
+		const dragged = context.dragging();
+
+		if (!dragged && !stopped) {
 			return;
 		}
 
 		const geo = context.geo(),
 			location = context.location(),
-			speed = up ? velocity(samples) : 0,
+			// A press that only stopped a motion has no samples
+			speed = up && samples.length ? velocity(samples) : 0,
 			// The snaps and the limits come from the geometry, and skipSnaps, dragFree and dragFriction from the options
 			target = releaseTarget({ ...geo, ...options, location, from: base, velocity: speed, current: snap }),
 			curve = options.dragFree === true ? GLIDE : EASE;
 
 		block = true;
-		context.drag(false);
+		if (dragged) {
+			context.drag(false);
+		}
 		context.move(target.snap, target.location, releaseDuration(target.location - location, speed, curve, options.duration), curve);
 	}
 
+	// Cancel the click after a drag. A touch drag sends no click, so the next click can come from the keyboard or a script.
+	// Such a click has no detail (the click count), and it is not cancelled.
 	function click(event) {
-		if (block) {
-			block = false;
+		if (block && event.detail) {
 			event.preventDefault();
 			event.stopPropagation();
 		}
+		block = false;
 	}
 
 	const prevent = (event) => event.preventDefault();
