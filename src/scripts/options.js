@@ -12,6 +12,7 @@ export const defaults = {
 	containScroll: 'trimSnaps',
 	slidesPerSnap: 1,
 	skipSnaps: true,
+	snapOverdrag: 0.5,
 	dragThreshold: 10,
 	duration: 500,
 	startSnap: 0,

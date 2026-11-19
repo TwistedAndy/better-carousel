@@ -155,8 +155,10 @@ export interface Options {
 	containScroll?: 'trimSnaps' | 'keepSnaps' | false;
 	/** The number of slides in one snap. `'auto'`: the slides that fit in the viewport. @default 1 @see {@link https://twistedandy.github.io/better-carousel/#groups | example} */
 	slidesPerSnap?: number | 'auto';
-	/** A fast flick can move more than one snap. `false`: one snap. A number: the maximum number of snaps. @default true @see {@link https://twistedandy.github.io/better-carousel/#skip | example} */
+	/** The maximum number of snaps for one drag or flick. `true`: no limit, and a fast flick can move more than one snap. `false`: one snap. A number: this number of snaps. A drag can go past the limit by `snapOverdrag`. @default true @see {@link https://twistedandy.github.io/better-carousel/#skip | example} */
 	skipSnaps?: boolean | number;
+	/** The maximum distance that a drag can go past the `skipSnaps` limit, as a part of a snap. Past the limit, the carousel moves at a quarter of the pointer speed. `0`: the drag stops at the limit. @default 0.5 @see {@link https://twistedandy.github.io/better-carousel/#skip | example} */
+	snapOverdrag?: number;
 	/** The distance in px that the pointer moves before a drag starts. @default 10 */
 	dragThreshold?: number;
 	/** The duration of a motion by one snap, in ms. A longer motion takes more time, to a maximum of 2 times this value. @default 500 @see {@link https://twistedandy.github.io/better-carousel/#duration | example} */

@@ -4,7 +4,7 @@
 
 <p>A small, fast and accessible JavaScript carousel.<br />The CSS sets the layout, and the motion runs on the compositor, also on slow phones.</p>
 
-[![Gzip size](https://flat.badgen.net/static/gzip/13.1%20KB/green)](dist/better-carousel.min.js)
+[![Gzip size](https://flat.badgen.net/static/gzip/13.3%20KB/green)](dist/better-carousel.min.js)
 [![MIT license](https://flat.badgen.net/static/license/MIT/purple)](LICENSE)
 [![No dependencies](https://flat.badgen.net/static/dependencies/0/blue)](package.json)
 
@@ -16,7 +16,7 @@
 
 - **Layout from CSS** - Your CSS sets the sizes of the slides, the space between them, the axis and the alignment. One carousel can show 1 slide on a phone and 4 slides on a desktop.
 - **Smooth** - Each motion is a Web Animations API animation of `translate`. No script runs on each frame, also during the auto scroll.
-- **Small** - <!-- generated:gzip -->13.1 KB<!-- /generated --> gzip with loop, autoplay, auto scroll, auto height, sync and the mouse wheel.
+- **Small** - <!-- generated:gzip -->13.3 KB<!-- /generated --> gzip with loop, autoplay, auto scroll, auto height, sync and the mouse wheel.
 - **Loop** - The loop moves the original slides. It adds clones only if the slides are too few.
 - **Vertical and grid** - A column layout makes a vertical carousel. A CSS grid with more rows also works.
 - **Accessible** - WCAG 2.1 AA: names for the carousel, the slides and the buttons, the keyboard focus, a live region and reduced motion.
@@ -351,7 +351,8 @@ BetterCarousel(element, {
 | `dragFriction` | `number` | `1` | The length of the glide after a fast drag: the glide distance is divided by this number. `2`: half the distance. `0.5`: 2 times the distance. It also changes how many snaps a flick moves. The value must be more than 0. ([example](https://twistedandy.github.io/better-carousel/#free)) |
 | `containScroll` | `'trimSnaps'`, `'keepSnaps'`, `false` | `'trimSnaps'` | `'trimSnaps'`: no empty space at the ends. `'keepSnaps'`: no empty space, but keep a snap for each group. `false`: snaps can show empty space. ([example](https://twistedandy.github.io/better-carousel/#contain)) |
 | `slidesPerSnap` | `number`, `'auto'` | `1` | The number of slides in one snap. `'auto'`: the slides that fit in the viewport. ([example](https://twistedandy.github.io/better-carousel/#groups)) |
-| `skipSnaps` | `boolean`, `number` | `true` | A fast flick can move more than one snap. `false`: one snap. A number: the maximum number of snaps. ([example](https://twistedandy.github.io/better-carousel/#skip)) |
+| `skipSnaps` | `boolean`, `number` | `true` | The maximum number of snaps for one drag or flick. `true`: no limit, and a fast flick can move more than one snap. `false`: one snap. A number: this number of snaps. A drag can go past the limit by `snapOverdrag`. ([example](https://twistedandy.github.io/better-carousel/#skip)) |
+| `snapOverdrag` | `number` | `0.5` | The maximum distance that a drag can go past the `skipSnaps` limit, as a part of a snap. Past the limit, the carousel moves at a quarter of the pointer speed. `0`: the drag stops at the limit. ([example](https://twistedandy.github.io/better-carousel/#skip)) |
 | `dragThreshold` | `number` | `10` | The distance in px that the pointer moves before a drag starts. |
 | `duration` | `number` | `500` | The duration of a motion by one snap, in ms. A longer motion takes more time, to a maximum of 2 times this value. ([example](https://twistedandy.github.io/better-carousel/#duration)) |
 | `startSnap` | `number` | `0` | The index of the snap at the start. ([example](https://twistedandy.github.io/better-carousel/#options-usage)) |
@@ -720,9 +721,9 @@ The library is made for slow phones. A motion runs on the compositor, and a caro
 <!-- generated:sizes -->
 | File | Minified | Gzip | Brotli |
 | --- | --- | --- | --- |
-| `better-carousel.min.js` | 31.8 KB | 13.1 KB | 11.9 KB |
-| `better-carousel.css` | 5.0 KB | 1.4 KB | 1.2 KB |
-| Total | 36.8 KB | 14.5 KB | 13.2 KB |
+| `better-carousel.min.js` | 32.3 KB | 13.3 KB | 12.1 KB |
+| `better-carousel.css` | 5.1 KB | 1.5 KB | 1.2 KB |
+| Total | 37.4 KB | 14.8 KB | 13.4 KB |
 <!-- /generated -->
 
 The [Comparison](#comparison) section gives the sizes and the runtime costs of other carousel libraries.

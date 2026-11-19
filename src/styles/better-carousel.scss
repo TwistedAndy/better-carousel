@@ -147,7 +147,7 @@ $better-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'
 
 	// The play and pause button of the autoplay and the auto scroll: a triangle, or two bars while it plays
 	.#{$better}_play {
-		inset-inline-start: calc(var(--height-button) + 0.5rem);
+		inset-inline-start: 0;
 		inset-inline-end: auto;
 
 		&:before {
@@ -158,6 +158,17 @@ $better-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'
 			clip-path: polygon(0 0, 100% 50%, 0 100%);
 		}
 
+	}
+
+	// With the arrows in the root, the play button is next to the previous arrow
+	.#{$better}_prev ~ .#{$better}_play {
+		inset-inline-start: calc(var(--height-button) + 0.5rem);
+	}
+
+	// With no arrows and no dots in the root, no row holds the play button: it goes under the slides, and not on them
+	.#{$better}_viewport + .#{$better}_play {
+		position: relative;
+		margin-top: var(--gap-grid-y, 20px);
 	}
 
 	.#{$better}.#{$better-state}playing .#{$better}_play:before {

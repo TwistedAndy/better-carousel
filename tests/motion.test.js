@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { releaseDuration, releaseTarget, velocity } from '../src/scripts/input.js';
+import { dragLimits, releaseDuration, releaseTarget, velocity } from '../src/scripts/input.js';
 import { bezier, EASE, GLIDE, snapDuration } from '../src/scripts/motion.js';
 
 // Find the easing value by a dense sample of the curve
@@ -61,6 +61,34 @@ test('release target: a number in skipSnaps limits the snaps of one flick', () =
 
 	// Loop: the limit goes across the end of the period
 	assert.deepEqual(releaseTarget({ ...args, current: 5, from: -1600, location: -1650, velocity: -5, period: 1920, skipSnaps: 2 }), { location: -2240, snap: 1 });
+});
+
+test('drag limits: skipSnaps keeps one drag between the snaps around the start snap', () => {
+	const snaps = [0, -320, -640, -960, -1280, -1600].map((location) => ({ location })),
+		args = { snaps, min: -1600, max: 0, current: 1, from: -320 };
+
+	assert.deepEqual(dragLimits({ ...args, skipSnaps: true }), [-Infinity, Infinity]);
+	assert.deepEqual(dragLimits({ ...args, skipSnaps: false }), [-640, 0]);
+	assert.deepEqual(dragLimits({ ...args, skipSnaps: 6 }), [-Infinity, Infinity]);
+
+	// Without the loop, a side with no snap at this number of snaps has no limit
+	assert.deepEqual(dragLimits({ ...args, skipSnaps: 2 }), [-960, Infinity]);
+	assert.deepEqual(dragLimits({ ...args, current: 0, from: 0, skipSnaps: false }), [-320, Infinity]);
+
+	// A stretch moves each limit out by a part of the last snap distance
+	assert.deepEqual(dragLimits({ ...args, skipSnaps: false }, 0.5), [-800, 160]);
+	assert.deepEqual(dragLimits({ ...args, skipSnaps: 2 }, 0.5), [-1120, Infinity]);
+
+	// dragFree has no limit for false, but it keeps the limit of a number
+	assert.deepEqual(dragLimits({ ...args, skipSnaps: false, dragFree: true }), [-Infinity, Infinity]);
+	assert.deepEqual(dragLimits({ ...args, skipSnaps: 2, dragFree: 'snap' }), [-960, Infinity]);
+
+	// Loop: no limit without skipSnaps, and the limits go across the end of the period
+	const loop = { ...args, current: 5, from: -1600, period: 1920 };
+	assert.deepEqual(dragLimits({ ...loop, skipSnaps: true }), [-Infinity, Infinity]);
+	assert.deepEqual(dragLimits({ ...loop, skipSnaps: false }), [-1920, -1280]);
+	assert.deepEqual(dragLimits({ ...loop, skipSnaps: false }, 0.5), [-2080, -1120]);
+	assert.deepEqual(dragLimits({ ...loop, skipSnaps: 5 }), [-3200, 0]);
 });
 
 test('velocity from the last 100 ms', () => {

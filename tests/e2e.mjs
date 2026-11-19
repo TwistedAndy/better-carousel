@@ -627,7 +627,7 @@ const groups = [
 			}
 		}
 	}],
-	['fill and skipSnaps', async ({ page, check, scrollTo, mouseDrag }) => {
+	['fill and skipSnaps', async ({ page, check, state, settle, scrollTo, mouseDrag }) => {
 		// clones: 'fill': the slides fill the window when the viewport overflow shows
 		{
 			const empty = () => page.evaluate(async () => {
@@ -672,9 +672,45 @@ const groups = [
 			});
 			const limited = await mouseDrag('start', -500, true);
 			check('skipSnaps: 1: a long flick goes one snap only', limited.snap === 1 && limited.aligned, JSON.stringify(limited));
+
+			// skipSnaps: false: a long slow drag goes past the next snap by the overdrag only, at a quarter of the pointer speed. A move back moves the carousel at once.
+			for (const snapOverdrag of [0, 0.5]) {
+				await page.evaluate(async (snapOverdrag) => {
+					const carousel = window.byId('start');
+					carousel.reinit({ skipSnaps: false, snapOverdrag });
+					await new Promise((resolve) => carousel.on('reinit', resolve));
+					carousel.goToSnap(0, true);
+				}, snapOverdrag);
+				const start = await state('start'),
+					step = await page.evaluate(() => {
+						const [a, b] = window.byId('start').slideNodes().map((node) => node.getBoundingClientRect().left);
+						return b - a;
+					}),
+					done = settle('start');
+				await page.mouse.move(start.x, start.y);
+				await page.mouse.down();
+				for (let index = 1; index <= 12; index++) {
+					await page.mouse.move(start.x - 900 * index / 12, start.y);
+					await wait(16);
+				}
+				const held = await state('start');
+				await page.mouse.move(start.x - 850, start.y);
+				await wait(16);
+				const back = await state('start');
+				await wait(200);
+				await page.mouse.up();
+				await done;
+				const released = await state('start'),
+					offset = start.first - held.first,
+					returned = start.first - back.first,
+					// The pointer distance past the next snap after the move back
+					rest = 4 * snapOverdrag * step - 50,
+					expected = step + (rest > 0 ? rest / 4 : rest);
+				check(`skipSnaps: false, snapOverdrag: ${snapOverdrag}: a long drag stops past the next snap by the overdrag, a move back moves at once, and the release goes to the next snap`, Math.abs(offset - step * (1 + snapOverdrag)) <= 1 && Math.abs(returned - expected) <= 1 && released.snap === 1 && released.aligned, JSON.stringify({ step, offset, returned, released }));
+			}
 			await page.evaluate(async () => {
 				const carousel = window.byId('start');
-				carousel.reinit({ skipSnaps: true });
+				carousel.reinit({ skipSnaps: true, snapOverdrag: 0.5 });
 				await new Promise((resolve) => carousel.on('reinit', resolve));
 			});
 		}

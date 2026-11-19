@@ -56,6 +56,45 @@ export function velocity(samples) {
 }
 
 /**
+ * Get the skipSnaps limits of the location for one drag: the snaps that are this number of snaps before and after the start snap.
+ * false is one snap, but not with dragFree. Without the loop, a side that has no snap at this number of snaps has no limit, so that the ends keep their resistance.
+ *
+ * @param {object} args
+ * @param {number} args.from The location at the drag start.
+ * @param {number} args.current The selected snap at the drag start.
+ * @param {Array<{location: number}>} args.snaps
+ * @param {number} [args.period]
+ * @param {boolean|number} [args.skipSnaps]
+ * @param {boolean|string} [args.dragFree]
+ * @param {number} [stretch] Move each limit out by this part of the distance between the limit snap and the snap before it.
+ * @returns {[number, number]} The lowest and the highest location.
+ */
+export function dragLimits({ from, current, snaps, period, skipSnaps, dragFree }, stretch = 0) {
+	const count = snaps.length,
+		steps = skipSnaps === false && !dragFree ? 1 : skipSnaps;
+
+	// A limit of count snaps or more does not stop the motion
+	if (typeof steps !== 'number' || steps <= 0 || steps >= count) {
+		return [-Infinity, Infinity];
+	}
+
+	const limit = (direction) => {
+		const index = current + direction * steps;
+
+		if (!period && (index < 0 || index >= count)) {
+			return -direction * Infinity;
+		}
+
+		const at = targetLocation(snaps[snapIndex(index, count, period)].location, from, period, direction),
+			before = targetLocation(snaps[snapIndex(index - direction, count, period)].location, at, period);
+
+		return at - direction * stretch * abs(at - before);
+	};
+
+	return [limit(1), limit(-1)];
+}
+
+/**
  * Find the target of the motion after a drag.
  *
  * @param {object} args
@@ -74,7 +113,8 @@ export function velocity(samples) {
  * @returns {{location: number, snap: number}}
  */
 export function releaseTarget({ location, from, velocity, current, snaps, min, max, period, skipSnaps, dragFree, dragFriction = 1 }) {
-	const count = snaps.length;
+	const count = snaps.length,
+		[low, high] = dragLimits({ from, current, snaps, period, skipSnaps, dragFree });
 
 	let projected = location + velocity * MOMENTUM / dragFriction;
 
@@ -82,11 +122,7 @@ export function releaseTarget({ location, from, velocity, current, snaps, min, m
 		projected = clamp(projected, min, max);
 	}
 
-	// A number in skipSnaps: keep the projected location between the snaps that are skipSnaps snaps before and after the start snap
-	if (typeof skipSnaps === 'number' && skipSnaps > 0 && skipSnaps < count - 1 + !period) {
-		const limit = (direction) => targetLocation(snaps[snapIndex(current + direction * skipSnaps, count, period)].location, from, period, direction);
-		projected = clamp(projected, limit(1), limit(-1));
-	}
+	projected = clamp(projected, low, high);
 
 	if (dragFree === true) {
 		return { location: projected, snap: nearestSnap(snaps, projected, period) };
@@ -138,7 +174,12 @@ export function drag(context) {
 		stopped = false,
 		samples = [],
 		// The selected snap at the drag start
-		snap = 0;
+		snap = 0,
+		// The pointer distance past the hard limits, which the carousel does not follow
+		slack = 0,
+		// The limits of the drag. Past the soft limits, the carousel moves at a quarter of the pointer speed. At the hard limits, it stops.
+		soft,
+		hard;
 
 	const listen = bind(window, [['pointermove', handle], ['pointerup', handle], ['pointercancel', handle]]);
 
@@ -206,18 +247,32 @@ export function drag(context) {
 			// Stop the motion, and start the drag at the location where the carousel is now
 			base = context.halt();
 			snap = context.selected();
+			slack = 0;
+
+			const geo = context.geo(),
+				args = { ...geo, from: base, current: snap, skipSnaps: options.skipSnaps, dragFree: options.dragFree };
+
+			// The overdrag is a quarter of the pointer distance, so the hard limits are 4 times farther out
+			soft = dragLimits(args);
+			hard = dragLimits(args, 4 * options.snapOverdrag);
+
+			// Without the loop, the soft limits include the ends
+			if (!geo.period) {
+				soft = [Math.max(geo.min, soft[0]), Math.min(geo.max, soft[1])];
+			}
+
 			context.drag(true);
 			// Capture only now: with capture, a link in a slide does not get the click
 			viewport.setPointerCapture(pointer);
 		}
 
-		const geo = context.geo(),
-			value = base + main,
-			edge = clamp(value, geo.min, geo.max);
+		// The slack keeps the pointer distance past a hard limit, so that a move back moves the carousel at once
+		const value = clamp(base + main - slack, hard[0], hard[1]),
+			inside = clamp(value, soft[0], soft[1]);
 
-		// Out of the limits, the carousel moves at a quarter of the pointer speed
-		context.hold(geo.period ? value : edge + (value - edge) / 4);
-		samples.push([main, event.timeStamp]);
+		slack = base + main - value;
+		context.hold(inside + (value - inside) / 4);
+		samples.push([value - base, event.timeStamp]);
 
 		if (samples.length > 10) {
 			samples.shift();

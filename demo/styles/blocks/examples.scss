@@ -250,7 +250,8 @@
 }
 
 // The examples of the autoplay timer, and of the "progress" and "offset" options
-.demo_bar {
+.demo_bar,
+.demo_progress .better::before {
 	height: 4px;
 	margin-bottom: 12px;
 	border-radius: 2px;
@@ -259,14 +260,9 @@
 	scale: 0 1;
 }
 
-.demo_progress .better_viewport::after {
+.demo_progress .better::before {
 	content: "";
-	position: absolute;
-	inset: auto 0 0;
-	z-index: 3;
-	height: 4px;
-	background: var(--color-primary);
-	transform-origin: left;
+	display: block;
 	scale: var(--better-progress, 0) 1;
 }
 
