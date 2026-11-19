@@ -34,7 +34,7 @@
 					</picture>
 				</h1>
 				<div class="content">
-					<p>A small, fast and accessible carousel. The CSS sets the layout, and the motion runs on the compositor, so it stays smooth on slow phones. Loop, drag, autoplay, auto scroll and vertical carousels, with no dependencies.</p>
+					<p>A small, fast and accessible carousel. Your grid of cards becomes a carousel with the same HTML and CSS. The motion runs on the compositor, also on slow phones.</p>
 				</div>
 				<div class="images">
 					<img src="https://flat.badgen.net/static/gzip/13.3%20KB/green" alt="13.3 KB gzipped" height="20">
@@ -53,10 +53,10 @@
 	<section class="cards_box is_dark has_no_top">
 		<div class="fixed">
 			<ul class="items items_4">
-				<li class="item"><h3>Smooth</h3><p class="text">Each motion runs on the compositor, so no script runs on each frame of a motion.</p></li>
-				<li class="item"><h3>CSS layout</h3><p class="text">The sizes, the margins, the axis and the alignment come from your CSS.</p></li>
-				<li class="item"><h3>Small</h3><p class="text"><!-- generated:gzip -->13.3 KB<!-- /generated --> gzip with loop, autoplay, auto scroll, auto height and sync.</p></li>
-				<li class="item"><h3>Accessible</h3><p class="text">WCAG 2.1 AA: names, keyboard, focus, live region and reduced motion.</p></li>
+				<li class="item"><h3>Your HTML and CSS</h3><p class="text">No special classes or markup. Your CSS sets the layout.</p></li>
+				<li class="item"><h3>Smooth on slow phones</h3><p class="text">The browser animates the slides, not JavaScript.</p></li>
+				<li class="item"><h3>Small</h3><p class="text"><!-- generated:gzip -->13.3 KB<!-- /generated --> gzip with all features.</p></li>
+				<li class="item"><h3>Accessible</h3><p class="text">WCAG 2.1 AA, with keyboard and screen reader support.</p></li>
 			</ul>
 		</div>
 	</section>
@@ -83,15 +83,24 @@ import '@twistedandy/better-carousel/css';</code></pre></div><h3>Files</h3><div 
 <section class="section" id="quick-start">
 	<div class="contents">
 		<h2><a href="#quick-start">Quick start</a></h2>
-		<div class="content"><p>A carousel is a container with slides. The CSS gives the container a row layout, and the library moves the container.</p></div>
+		<div class="content"><p>A carousel is a container with slides. Your CSS gives the container a row layout, and the library moves the container.</p></div>
 	</div>
 	<div class="content">
-	<ol><li>Put the slides into a container.</li><li>Give the container a flex row with CSS.</li><li>Give each slide a width and a right margin.</li><li>Start the carousel.</li></ol><div class="code"><div class="heading"><span class="label">HTML</span><button class="button" type="button" data-copy aria-label="Copy HTML code">Copy</button></div><pre><code class="language-html">&lt;div class="items carousel"&gt;
+	<h3>Add the slides</h3><p>Put the slides into a container, and make the container a flex row.</p><p><strong>Use your own class names.</strong> The library takes each child of the container as a slide, so <code>items</code> and <code>item</code> are only examples.</p><div class="code"><div class="heading"><span class="label">HTML</span><button class="button" type="button" data-copy aria-label="Copy HTML code">Copy</button></div><pre><code class="language-html">&lt;div class="items carousel"&gt;
   &lt;div class="item"&gt;&lt;img src="photo-1.jpg" alt="Photo 1"&gt;&lt;/div&gt;
   &lt;div class="item"&gt;&lt;img src="photo-2.jpg" alt="Photo 2"&gt;&lt;/div&gt;
   &lt;div class="item"&gt;&lt;img src="photo-3.jpg" alt="Photo 3"&gt;&lt;/div&gt;
   &lt;div class="item"&gt;&lt;img src="photo-4.jpg" alt="Photo 4"&gt;&lt;/div&gt;
-&lt;/div&gt;</code></pre></div><div class="code"><div class="heading"><span class="label">CSS</span><button class="button" type="button" data-copy aria-label="Copy CSS code">Copy</button></div><pre><code class="language-css">/* The negative margin of the container cancels the margin of the last slide in the row */
+&lt;/div&gt;</code></pre></div><p>Set the space between the slides with <code>gap</code>:</p><div class="code"><div class="heading"><span class="label">CSS</span><button class="button" type="button" data-copy aria-label="Copy CSS code">Copy</button></div><pre><code class="language-css">/* 3 slides with 2 gaps of 20px */
+.items {
+  display: flex;
+  gap: 20px;
+}
+
+.items .item {
+  flex: none;
+  width: calc((100% - 40px) / 3);
+}</code></pre></div><p>Or set the space with margins. A negative margin of the container cancels the margin of the last slide:</p><div class="code"><div class="heading"><span class="label">CSS</span><button class="button" type="button" data-copy aria-label="Copy CSS code">Copy</button></div><pre><code class="language-css">/* 3 slides with 20px between them */
 .items {
   --gap: 20px;
   display: flex;
@@ -103,11 +112,36 @@ import '@twistedandy/better-carousel/css';</code></pre></div><h3>Files</h3><div 
   flex: none;
   width: calc(100% / 3 - var(--gap));
   margin-right: var(--gap);
-}</code></pre></div><div class="code"><div class="heading"><span class="label">JavaScript</span><button class="button" type="button" data-copy aria-label="Copy JavaScript code">Copy</button></div><pre><code class="language-javascript">// One carousel
+}</code></pre></div><p><code>margin-left</code> and <code>margin-inline-end</code> also work. Use <code>margin-inline-end</code> for a carousel that can be right-to-left.</p><h3>Start the carousel</h3><div class="code"><div class="heading"><span class="label">JavaScript</span><button class="button" type="button" data-copy aria-label="Copy JavaScript code">Copy</button></div><pre><code class="language-javascript">// One carousel
 const carousel = BetterCarousel(document.querySelector('.items'));
 
 // All carousels on the page
-const carousels = BetterCarousel.initAll('.items.carousel');</code></pre></div><p>The <a href="#concepts">How it works</a> section shows the markup that the library adds.</p>
+const carousels = BetterCarousel.initAll('.items.carousel');</code></pre></div><p>The library puts the container into a viewport, and adds the arrows and the dots. It reads the size of the slides, the <code>gap</code>, the axis and the alignment from your CSS. Then it moves only the container. The <a href="#concepts">How it works</a> section shows the markup that the library adds.</p><h3>Turn a grid into a carousel</h3><p>A grid of cards can become a carousel with the same HTML. Add a class, such as <code>carousel</code>, with one or two CSS rules. Without this class, the cards show as a grid.</p><ul><li>In a flex layout, set <code>flex-wrap: nowrap</code>. Set <code>flex: none</code> on the cards, so that they do not shrink.</li><li>In a CSS grid, set <code>grid-auto-flow: column</code> and <code>grid-template-columns: none</code>. Set the width of a card in <code>grid-auto-columns</code>. Do not use <code>fr</code>, because it divides the width of the container between all cards. For more rows, set <code>grid-template-rows</code>, such as <code>repeat(2, auto)</code> (<a href="#gallery">example</a>).</li></ul><div class="code"><div class="heading"><span class="label">CSS</span><button class="button" type="button" data-copy aria-label="Copy CSS code">Copy</button></div><pre><code class="language-css">/* A flex layout */
+.items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.items .item {
+  flex: none;
+  width: calc((100% - 40px) / 3);
+}
+
+.items.carousel {
+  flex-wrap: nowrap;
+}</code></pre></div><div class="code"><div class="heading"><span class="label">CSS</span><button class="button" type="button" data-copy aria-label="Copy CSS code">Copy</button></div><pre><code class="language-css">/* A CSS grid */
+.items {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.items.carousel {
+  grid-auto-flow: column;
+  grid-template-columns: none;
+  grid-auto-columns: calc((100% - 40px) / 3);
+}</code></pre></div><p>A width in percent is relative to the width of the carousel. To show a different number of cards on a phone, change the width in a media query.</p>
 	</div>
 </section>
 
@@ -136,7 +170,7 @@ const carousels = BetterCarousel.initAll('.items.carousel');</code></pre></div><
 		<div class="content"><p>The library does not set the size of the slides or the space between them. It reads these values from the CSS and moves only the container. For this reason, one carousel can show 1 slide on a phone and 4 slides on a desktop, with no change in the script.</p></div>
 	</div>
 	<div class="content">
-	<div class="table"><table><thead><tr><th>The CSS of the container</th><th>The result</th></tr></thead><tbody><tr><td><code>display: flex</code>, a row</td><td>A horizontal carousel</td></tr><tr><td><code>flex-direction: column</code></td><td>A vertical carousel (<a href="#vertical">example</a>)</td></tr><tr><td><code>display: grid</code> with <code>grid-auto-flow: column</code></td><td>A horizontal carousel with more rows (<a href="#gallery">example</a>)</td></tr><tr><td><code>justify-content: center</code></td><td>The selected slide is in the center (<a href="#center">example</a>)</td></tr><tr><td><code>justify-content: flex-end</code></td><td>The selected slide is at the end (<a href="#end">example</a>)</td></tr><tr><td>The margins of the slides and a negative margin of the container</td><td>The space between the slides. In a loop, also the space between the last slide and the first slide.</td></tr><tr><td><code>direction: rtl</code></td><td>A right-to-left carousel</td></tr><tr><td>The padding of the viewport</td><td>The snaps align to the inner edge of the padding. The padding shows parts of the slides next to the selected slide.</td></tr></tbody></table></div><p>The carousel measures again when the CSS changes, when the page adds or removes a slide, and when an image loads. A slide with <code>display: none</code> gets no snap. The <code>template</code>, <code>script</code> and <code>style</code> elements in the container are not slides. A CSS <code>scale</code> or <code>zoom</code> on a parent, such as the open animation of a modal window, does not change the snaps.</p><p>A horizontal carousel gets its width from its parent, not from its slides, so it does not overflow a flex item or a grid column. For this reason, a parent that gets its width from its content, such as an <code>inline-block</code> element or a flex item with no <code>flex</code> value, must have a width.</p>
+	<div class="table"><table><thead><tr><th>The CSS of the container</th><th>The result</th></tr></thead><tbody><tr><td><code>display: flex</code>, a row</td><td>A horizontal carousel</td></tr><tr><td><code>flex-direction: column</code></td><td>A vertical carousel (<a href="#vertical">example</a>)</td></tr><tr><td><code>display: grid</code> with <code>grid-auto-flow: column</code></td><td>A horizontal carousel with more rows (<a href="#gallery">example</a>)</td></tr><tr><td><code>justify-content: center</code></td><td>The selected slide is in the center (<a href="#center">example</a>)</td></tr><tr><td><code>justify-content: flex-end</code></td><td>The selected slide is at the end (<a href="#end">example</a>)</td></tr><tr><td><code>gap</code>, <code>column-gap</code> or <code>row-gap</code></td><td>The space between the slides. In a loop, also the space between the last slide and the first slide.</td></tr><tr><td>The margins of the slides and a negative margin of the container</td><td>The same, for a layout without <code>gap</code>. The library adds the margins to the <code>gap</code>.</td></tr><tr><td><code>direction: rtl</code></td><td>A right-to-left carousel</td></tr><tr><td>The padding of the viewport</td><td>The snaps align to the inner edge of the padding. The padding shows parts of the slides next to the selected slide.</td></tr></tbody></table></div><p>The carousel measures again when the CSS changes, when the page adds or removes a slide, and when an image loads. A slide with <code>display: none</code> gets no snap. The <code>template</code>, <code>script</code> and <code>style</code> elements in the container are not slides. A CSS <code>scale</code> or <code>zoom</code> on a parent, such as the open animation of a modal window, does not change the snaps.</p><p>A horizontal carousel gets its width from its parent, not from its slides, so it does not overflow a flex item or a grid column. For this reason, a parent that gets its width from its content, such as an <code>inline-block</code> element or a flex item with no <code>flex</code> value, must have a width.</p>
 	</div>
 </section>
 
@@ -1574,7 +1608,7 @@ BetterCarousel(element, { classes: { selected: 'snapped' } });</code></pre></div
 <tr><td><code>better-carousel.css</code></td><td>5.1 KB</td><td>1.5 KB</td><td>1.2 KB</td></tr>
 <tr><td>Total</td><td>37.4 KB</td><td>14.8 KB</td><td>13.4 KB</td></tr>
 </tbody></table></div>
-<!-- /generated --><p>The same features in Embla 9 (the core, three plugins and a wrapper) are 12.6 KB gzip.</p><div class="table"><table><thead><tr><th>Measure, on a phone with a CPU 4 times slower</th><th>Better Carousel</th></tr></thead><tbody><tr><td>JS size, gzip</td><td><!-- generated:gzip -->13.3 KB<!-- /generated --></td></tr><tr><td>CPU load during 10 s of auto scroll</td><td>0.5%</td></tr><tr><td>CPU load during 10 s of autoplay</td><td>1.1%</td></tr><tr><td>Total Blocking Time added at page load</td><td>0 ms</td></tr><tr><td>Layout shift</td><td>0</td></tr></tbody></table></div>
+<!-- /generated --><p>The benchmark compares Better Carousel with Swiper, Embla Carousel and Glide in Chrome, on a phone with a CPU 4 times slower. Less is better.</p><div class="table"><table><thead><tr><th>Measure</th><th>Better</th><th>Swiper</th><th>Embla</th><th>Glide</th></tr></thead><tbody><tr><td>6 slide changes, main-thread ms</td><td>118</td><td>128</td><td>866</td><td>197</td></tr><tr><td>5 drags, main-thread ms</td><td>519</td><td>619</td><td>1477</td><td>816</td></tr><tr><td>Autoplay, CPU %</td><td>0.6</td><td>16.7</td><td>16.9</td><td>1.6</td></tr><tr><td>Dropped or late frames on a busy page, %</td><td>1.9</td><td>3.0</td><td>15.5</td><td>0.7</td></tr><tr><td>Total Blocking Time, 10 carousels, ms</td><td>41</td><td>65</td><td>42</td><td>54</td></tr><tr><td>All features, JS and CSS, KB gzip</td><td>15.0</td><td>32.9</td><td>13.7</td><td>not available</td></tr></tbody></table></div><p>The <a href="https://github.com/TwistedAndy/better-carousel#comparison">README</a> gives the method, the desktop values and the feature list.</p>
 	</div>
 </section>
 

@@ -2,7 +2,7 @@
 
 <a href="https://twistedandy.github.io/better-carousel/"><img src="demo/assets/logo.svg" alt="Better Carousel" width="560" /></a>
 
-<p>A small, fast and accessible JavaScript carousel.<br />The CSS sets the layout, and the motion runs on the compositor, also on slow phones.</p>
+<p>A small, fast and accessible JavaScript carousel.<br />Your grid of cards becomes a carousel with the same HTML and CSS.<br />The motion runs on the compositor, also on slow phones.</p>
 
 [![Gzip size](https://flat.badgen.net/static/gzip/13.3%20KB/green)](dist/better-carousel.min.js)
 [![MIT license](https://flat.badgen.net/static/license/MIT/purple)](LICENSE)
@@ -14,17 +14,19 @@
 
 ## Features
 
-- **Layout from CSS** - Your CSS sets the sizes of the slides, the space between them, the axis and the alignment. One carousel can show 1 slide on a phone and 4 slides on a desktop.
-- **Smooth** - Each motion is a Web Animations API animation of `translate`. No script runs on each frame, also during the auto scroll.
-- **Small** - <!-- generated:gzip -->13.3 KB<!-- /generated --> gzip with loop, autoplay, auto scroll, auto height, sync and the mouse wheel.
-- **Loop** - The loop moves the original slides. It adds clones only if the slides are too few.
-- **Vertical and grid** - A column layout makes a vertical carousel. A CSS grid with more rows also works.
-- **Accessible** - WCAG 2.1 AA: names for the carousel, the slides and the buttons, the keyboard focus, a live region and reduced motion.
-- **Lazy start** - With the `lazy` option, a carousel out of view starts when it comes near the screen.
+- **Your HTML and CSS** - No special classes or markup. Your CSS sets the layout.
+- **Smooth on slow phones** - The browser animates the slides, not JavaScript.
+- **Small** - <!-- generated:gzip -->13.3 KB<!-- /generated --> gzip with all features.
+- **Accessible** - WCAG 2.1 AA, with keyboard and screen reader support.
+- **Loop** - It moves the original slides, with clones only when needed.
+- **Vertical, grid and right-to-left** - Your CSS sets them.
+- **Lazy start** - A carousel starts when it comes near the screen.
 
-## Install
+## Quick start
 
-Load the minified script and the stylesheet from jsDelivr. The script adds the global `BetterCarousel` function.
+### Install
+
+Load the script and the stylesheet from jsDelivr. The script adds the global `BetterCarousel` function.
 
 ```html
 <link
@@ -40,7 +42,7 @@ Load the minified script and the stylesheet from jsDelivr. The script adds the g
 ></script>
 ```
 
-Or install the package from npm, and import the script and the stylesheet with a bundler:
+Or install the package from npm, and import the files with a bundler:
 
 ```sh
 npm install @twistedandy/better-carousel
@@ -51,20 +53,11 @@ import BetterCarousel from '@twistedandy/better-carousel'
 import '@twistedandy/better-carousel/css'
 ```
 
-| File | Format | Use |
-| --- | --- | --- |
-| `dist/better-carousel.min.js` | IIFE, minified | For a `script` tag. It adds the global `BetterCarousel` function. |
-| `dist/better-carousel.js` | ES module | For a bundler: `import BetterCarousel from '@twistedandy/better-carousel'`. |
-| `dist/better-carousel.css` | CSS | The styles with the default class names. |
-| `src/types/better-carousel.d.ts` | TypeScript | The types. TypeScript and the editors find them automatically. |
-| `src/styles/better-carousel.scss` | SCSS | The styles with your class names: `@twistedandy/better-carousel/scss`. See [Styling](#styling). |
+### Add the slides
 
-## Quick start
+Put the slides into a container, and make the container a flex row.
 
-1. Put the slides into a container.
-2. Give the container a flex row with CSS.
-3. Give each slide a width and a right margin.
-4. Start the carousel.
+**Use your own class names.** The library takes each child of the container as a slide, so `items` and `item` are only examples.
 
 ```html
 <div class="items carousel">
@@ -75,8 +68,25 @@ import '@twistedandy/better-carousel/css'
 </div>
 ```
 
+Set the space between the slides with `gap`:
+
 ```css
-/* The negative margin of the container cancels the margin of the last slide in the row */
+/* 3 slides with 2 gaps of 20px */
+.items {
+  display: flex;
+  gap: 20px;
+}
+
+.items .item {
+  flex: none;
+  width: calc((100% - 40px) / 3);
+}
+```
+
+Or set the space with margins. A negative margin of the container cancels the margin of the last slide:
+
+```css
+/* 3 slides with 20px between them */
 .items {
   --gap: 20px;
   display: flex;
@@ -91,6 +101,10 @@ import '@twistedandy/better-carousel/css'
 }
 ```
 
+`margin-left` and `margin-inline-end` also work. Use `margin-inline-end` for a carousel that can be right-to-left.
+
+### Start the carousel
+
 ```js
 // One carousel
 const carousel = BetterCarousel(document.querySelector('.items'))
@@ -99,64 +113,51 @@ const carousel = BetterCarousel(document.querySelector('.items'))
 const carousels = BetterCarousel.initAll('.items.carousel')
 ```
 
-The [documentation](https://twistedandy.github.io/better-carousel/) has live examples: alignment, vertical carousels, grids, free drag, thumbnails, autoplay, auto scroll and auto height.
+The library puts the container into a viewport, and adds the arrows and the dots. It reads the size of the slides, the `gap`, the axis and the alignment from your CSS. Then it moves only the container.
 
-## Concepts
+### Turn a grid into a carousel
 
-The library puts the container into a viewport and a root. Then it adds the arrows and the dots to the root:
+A grid of cards can become a carousel with the same HTML. Add a class, such as `carousel`, with one or two CSS rules. Without this class, the cards show as a grid.
 
-```html
-<div class="better" role="region" aria-roledescription="carousel" aria-label="Carousel">
-  <div class="better_viewport">
-    <div class="items carousel better_container">
-      <div class="item">...</div>
-    </div>
-  </div>
-  <button class="better_button better_prev" aria-label="Previous slide"></button>
-  <button class="better_button better_next" aria-label="Next slide"></button>
-  <div class="better_dots">...</div>
-</div>
+- In a flex layout, set `flex-wrap: nowrap`. Set `flex: none` on the cards, so that they do not shrink.
+- In a CSS grid, set `grid-auto-flow: column` and `grid-template-columns: none`. Set the width of a card in `grid-auto-columns`. Do not use `fr`, because it divides the width of the container between all cards. For more rows, set `grid-template-rows`, such as `repeat(2, auto)`.
+
+```css
+/* A flex layout */
+.items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.items .item {
+  flex: none;
+  width: calc((100% - 40px) / 3);
+}
+
+.items.carousel {
+  flex-wrap: nowrap;
+}
 ```
 
-| Term | Meaning |
-| --- | --- |
-| Root | The outer element. It holds the viewport, the arrows and the dots. The library adds it if the page does not have it. |
-| Viewport | The element that clips the slides. Its size is the visible area. |
-| Container | The element that moves. Your CSS sets its layout, and the library sets its `translate`. |
-| Slide | A child of the container, or an element that matches the `slides` selector. |
-| Snap | A position where the carousel can stop. A snap shows one slide or a group of slides. |
-| Selected snap | The snap that shows now. `selectedSnap()` gives its index. |
-| Selected slide | The slide at the selected snap. It gets the `selected` class. `selectedSlide()` gives its index. |
-| Clone | A copy of a slide that the loop adds when the slides are too few. Clones are not in `slideNodes()`, and they have no index. A change in the content of a slide also changes its clones. |
-| Motion | A change of position with an animation. When a motion stops, the `settle` event occurs. |
-| Fit | All slides show in the viewport. The carousel does not move, and it does not show the arrows and the dots. |
+```css
+/* A CSS grid */
+.items {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
 
-A carousel can have fewer snaps than slides. For example, `slidesPerSnap: 2` puts two slides into each snap. Also, `containScroll: 'trimSnaps'` removes the snaps that show empty space at the ends. For this reason, the methods use two types of index:
+.items.carousel {
+  grid-auto-flow: column;
+  grid-template-columns: none;
+  grid-auto-columns: calc((100% - 40px) / 3);
+}
+```
 
-- `goToSnap()`, `selectedSnap()` and `snapProgress()` use a snap index.
-- `goToSlide()`, `selectedSlide()`, `slidesInView()` and `slideNodes()` use a slide index.
-- `snapOfSlide(index)` gives the snap index of a slide.
+A width in percent is relative to the width of the carousel. To show a different number of cards on a phone, change the width in a media query.
 
-## CSS layout
-
-The library does not set the size of the slides or the space between them. It reads these values from the CSS and moves only the container.
-
-| The CSS of the container | The result |
-| --- | --- |
-| `display: flex`, a row | A horizontal carousel |
-| `flex-direction: column` | A vertical carousel |
-| `display: grid` with `grid-auto-flow: column` | A horizontal carousel with more rows |
-| `justify-content: center` | The selected slide is in the center |
-| `justify-content: flex-end` | The selected slide is at the end |
-| The margins of the slides and a negative margin of the container | The space between the slides. In a loop, also the space between the last slide and the first slide. |
-| `direction: rtl` | A right-to-left carousel |
-| The padding of the viewport | The snaps align to the inner edge of the padding. The padding shows parts of the slides next to the selected slide. |
-
-The carousel measures again when the CSS changes, when the page adds or removes a slide, and when an image loads. A slide with `display: none` gets no snap. The `template`, `script` and `style` elements in the container are not slides. A CSS `scale` or `zoom` on a parent, such as the open animation of a modal window, does not change the snaps. To add or remove a slide, change the elements in the container.
-
-A carousel can start in a hidden element, such as a tab, an accordion or a modal window. It has no size, so it shows no arrows and no dots. When the element shows, the carousel measures and starts to move.
-
-A horizontal carousel gets its width from its parent, not from its slides, so it does not overflow a flex item or a grid column. For this reason, a parent that gets its width from its content, such as an `inline-block` element or a flex item with no `flex` value, must have a width.
+The [documentation](https://twistedandy.github.io/better-carousel/) has live examples: alignment, vertical carousels, grids, free drag, thumbnails, autoplay, auto scroll and auto height.
 
 ## Frameworks
 
@@ -302,6 +303,64 @@ export default function Carousel(props) {
 
 NOTE: When the framework adds or removes a slide, the carousel measures again. A `reinit()` call is not necessary.
 
+## CSS layout
+
+The library does not set the size of the slides or the space between them. It reads the layout from the CSS of the container:
+
+| The CSS of the container | The result |
+| --- | --- |
+| `display: flex`, a row | A horizontal carousel |
+| `flex-direction: column` | A vertical carousel |
+| `display: grid` with `grid-auto-flow: column` | A horizontal carousel with more rows |
+| `justify-content: center` | The selected slide is in the center |
+| `justify-content: flex-end` | The selected slide is at the end |
+| `gap`, `column-gap` or `row-gap` | The space between the slides. In a loop, also the space between the last slide and the first slide. |
+| The margins of the slides and a negative margin of the container | The same, for a layout without `gap`. The library adds the margins to the `gap`. |
+| `direction: rtl` | A right-to-left carousel |
+| The padding of the viewport | The snaps align to the inner edge of the padding. The padding shows parts of the slides next to the selected slide. |
+
+The carousel measures again when the CSS changes, when the page adds or removes a slide, and when an image loads. A slide with `display: none` gets no snap. The `template`, `script` and `style` elements in the container are not slides. A CSS `scale` or `zoom` on a parent, such as the open animation of a modal window, does not change the snaps. To add or remove a slide, change the elements in the container.
+
+A carousel can start in a hidden element, such as a tab, an accordion or a modal window. It has no size, so it shows no arrows and no dots. When the element shows, the carousel measures and starts to move.
+
+A horizontal carousel gets its width from its parent, not from its slides, so it does not overflow a flex item or a grid column. For this reason, a parent that gets its width from its content, such as an `inline-block` element or a flex item with no `flex` value, must have a width.
+
+## Concepts
+
+The library puts the container into a viewport and a root. Then it adds the arrows and the dots to the root:
+
+```html
+<div class="better" role="region" aria-roledescription="carousel" aria-label="Carousel">
+  <div class="better_viewport">
+    <div class="items carousel better_container">
+      <div class="item">...</div>
+    </div>
+  </div>
+  <button class="better_button better_prev" aria-label="Previous slide"></button>
+  <button class="better_button better_next" aria-label="Next slide"></button>
+  <div class="better_dots">...</div>
+</div>
+```
+
+| Term | Meaning |
+| --- | --- |
+| Root | The outer element. It holds the viewport, the arrows and the dots. The library adds it if the page does not have it. |
+| Viewport | The element that clips the slides. Its size is the visible area. |
+| Container | The element that moves. Your CSS sets its layout, and the library sets its `translate`. |
+| Slide | A child of the container, or an element that matches the `slides` selector. |
+| Snap | A position where the carousel can stop. A snap shows one slide or a group of slides. |
+| Selected snap | The snap that shows now. `selectedSnap()` gives its index. |
+| Selected slide | The slide at the selected snap. It gets the `selected` class. `selectedSlide()` gives its index. |
+| Clone | A copy of a slide that the loop adds when the slides are too few. Clones are not in `slideNodes()`, and they have no index. A change in the content of a slide also changes its clones. |
+| Motion | A change of position with an animation. When a motion stops, the `settle` event occurs. |
+| Fit | All slides show in the viewport. The carousel does not move, and it does not show the arrows and the dots. |
+
+A carousel can have fewer snaps than slides. For example, `slidesPerSnap: 2` puts two slides into each snap. Also, `containScroll: 'trimSnaps'` removes the snaps that show empty space at the ends. For this reason, the methods use two types of index:
+
+- `goToSnap()`, `selectedSnap()` and `snapProgress()` use a snap index.
+- `goToSlide()`, `selectedSlide()`, `slidesInView()` and `slideNodes()` use a slide index.
+- `snapOfSlide(index)` gives the snap index of a slide.
+
 ## Options
 
 Set the options in one of these places:
@@ -400,8 +459,8 @@ BetterCarousel(element, {
   autoplay: {
     delay: 4000,               // ms on each slide, or an array with ms for each snap
     stopOnInteraction: true,   // A drag, an arrow or a dot stops the autoplay
-    pauseOnHover: false,   // Pause while the mouse is on the carousel
-    pauseOnFocus: true,       // Pause while the keyboard focus is in the carousel
+    pauseOnHover: false,       // Pause while the mouse is on the carousel
+    pauseOnFocus: true,        // Pause while the keyboard focus is in the carousel
     stopOnLastSnap: false,     // Stop at the last snap, if loop is false
     playOnInit: true,
     instant: false,            // Jump to the next slide with no motion
@@ -548,7 +607,7 @@ In loop mode, the progress goes from 1 back to 0. The auto scroll is a motion th
 
 ## Methods
 
-`BetterCarousel(element, options)` returns the carousel. The methods below are the methods of the carousel, and of the `BetterCarousel` function.
+`BetterCarousel(element, options)` returns the carousel. The `BetterCarousel` function also has the last three methods.
 
 <!-- generated:methods -->
 | Method | Returns | Description |
@@ -726,21 +785,14 @@ The library is made for slow phones. A motion runs on the compositor, and a caro
 | Total | 37.4 KB | 14.8 KB | 13.4 KB |
 <!-- /generated -->
 
-The [Comparison](#comparison) section gives the sizes and the runtime costs of other carousel libraries.
-
-| Measure, on a phone with a CPU 4 times slower | Better Carousel |
-| --- | --- |
-| CPU load during 10 s of auto scroll | 0.5% |
-| CPU load during 10 s of autoplay | 1.1% |
-| Total Blocking Time added at page load | 0 ms |
-| Layout shift | 0 |
-
 - A motion is a Web Animations API animation of `translate`. No script runs on each frame.
 - The auto scroll is one animation that does not stop. During the motion, the browser does no script, style, layout or paint work.
 - One `ResizeObserver` serves all carousels. It reads the layout of all carousels first, and then it writes. For this reason, the browser calculates the layout only one time.
 - Only two elements of the dots animate: the row of the dots and the marker of the selected dot. Both move with `translate`. A click on a dot causes no layout work.
 - The listeners for the autoplay and the mouse wheel exist only while they can do something.
 - The `progress` and `offset` options run a script on each frame of a motion. For this reason, they are off by default.
+
+The [Comparison](#comparison) section gives the measured values, also for other carousel libraries.
 
 ## Comparison
 
@@ -802,7 +854,7 @@ KB after gzip, JS and CSS. Core: the smallest setup that the user can drag. Typi
 
 Load: the main-thread time and the Total Blocking Time of a page with 10 carousels. Navigate: 6 calls of `next()`. Drag: 5 drags. Busy: the share of frames that were dropped or late during navigate, while another script blocks the main thread. Less is better in all columns.
 
-### Features
+### Feature list
 
 | Feature | Better | Swiper | Embla | Glide |
 | --- | ---: | ---: | ---: | ---: |
@@ -824,7 +876,17 @@ Load: the main-thread time and the Total Blocking Time of a page with 10 carouse
 | Fade and other effects | no | modules (fade, cube, flip, coverflow, cards, creative) | plugin (fade) | no |
 | TypeScript types | yes | yes | yes | separate package |
 
-Run the benchmark: `npm run bench`. The [bench/README.md](bench/README.md) file gives the method and the options.
+## Files
+
+The package has these files:
+
+| File | Format | Use |
+| --- | --- | --- |
+| `dist/better-carousel.min.js` | IIFE, minified | For a `script` tag. It adds the global `BetterCarousel` function. |
+| `dist/better-carousel.js` | ES module | For a bundler: `import BetterCarousel from '@twistedandy/better-carousel'`. |
+| `dist/better-carousel.css` | CSS | The styles with the default class names. |
+| `src/types/better-carousel.d.ts` | TypeScript | The types. TypeScript and the editors find them automatically. |
+| `src/styles/better-carousel.scss` | SCSS | The styles with your class names: `@twistedandy/better-carousel/scss`. See [Styling](#styling). |
 
 ## Development
 
@@ -835,6 +897,7 @@ npm run build   # build dist/ and demo/demo.css, then update the docs
 npm run docs    # update the generated parts of README.md and index.html
 npm test        # unit tests
 npm run e2e     # build, then run the browser tests in Chrome
+npm run bench   # build, then compare the carousel libraries in Chrome
 ```
 
 The browser tests open `http://better.test/` in Chrome. The test groups run at the same time, with one Chrome for each two CPU threads. To use a different address or a different Chrome, set `URL` and `CHROME`. If the motion checks fail on a slow CPU, for example on a laptop that runs on battery, set `E2E_WORKERS` to a smaller number of Chromes.
