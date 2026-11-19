@@ -34,7 +34,7 @@ export function setAttribute(element, name, value) {
  * Set an inline style property.
  *
  * @param {HTMLElement} element
- * @param {string} name The CSS name, such as 'touch-action' or '--better-dot'.
+ * @param {string} name The CSS name, such as 'touch-action' or '--better-touch'.
  * @param {string|number} value An empty string removes the property.
  */
 export function setStyle(element, name, value) {

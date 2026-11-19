@@ -10,7 +10,7 @@ export function mount(root, config) {
 	const carousel = BetterCarousel(root.firstElementChild, {
 		loop: true,
 		duration: config.speed,
-		// All dots with the same size, as the dots of the other libraries. The default 'zoom' style animates a window of 5 dots.
+		// All dots with the same size, as the dots of the other libraries. The default 'glide' style shows 5 dots of different sizes.
 		dotsStyle: 'all',
 		autoplay: config.autoplay ? { delay: config.autoplay, stopOnInteraction: true } : false
 	});

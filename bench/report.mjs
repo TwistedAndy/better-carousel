@@ -49,10 +49,10 @@ function sizeSection(sizes) {
 		'',
 		'- **Core**: the smallest import that makes a carousel that the user can drag.',
 		'- **Typical**: loop, drag, arrows, dots, autoplay, and the accessibility module if the library has one. For Embla, the arrows and the dots are the script and the CSS of the Embla examples, and the ClassNames plugin gives the state classes.',
-		'- **Parity**: the typical set, with the mouse wheel, the auto scroll, the auto height, the free drag and the sync. "no" means that the library does not have these features.',
-		'- **Shipped file**: the minified file that the package gives for a script tag, as it is. It can include more or fewer modules than the typical set.',
+		'- **Parity**: the typical set, with the mouse wheel, the auto scroll, the auto height, the free drag, the sync and the lazy load. For Embla, the sync and the lazy load are the scripts of the Embla examples. "no" means that the library does not have these features.',
+		'- **Shipped files**: the minified files that the package gives for a script tag, as they are, for all the features of the parity set. For Embla, the core file and the files of the Autoplay, ClassNames, AutoScroll, AutoHeight and WheelGestures plugins, each compressed separately.',
 		'',
-		table(['Library', 'Core JS', 'Typical JS', 'Typical CSS', 'Typical JS + CSS', 'Typical, brotli', 'Parity JS + CSS', 'Shipped file JS'], rows)
+		table(['Library', 'Core JS', 'Typical JS', 'Typical CSS', 'Typical JS + CSS', 'Typical, brotli', 'Parity JS + CSS', 'Shipped files JS'], rows)
 	].join('\n');
 }
 
@@ -244,7 +244,7 @@ function charts(sizes, runtime) {
 		list = [];
 	mkdirSync(folder, { recursive: true });
 	if (sizes) {
-		list.push(['size', barChart('Typical setup: JS + CSS, gzip', 'KB', sizes.libs.map((lib) => [lib.id, lib.sets.typical.total.gzip / 1024]), 1)]);
+		list.push(['size', barChart('All features: JS + CSS, gzip (Glide: typical setup)', 'KB', sizes.libs.map((lib) => [lib.id, (lib.sets.parity || lib.sets.typical).total.gzip / 1024]), 1)]);
 	}
 	if (runtime && runtime.settings.profiles.mobile) {
 		const chart = (name, title, unit, scenario, get, digits) => list.push([name, barChart(title, unit, ids.map((id) => [id, median('mobile', scenario, get)(id)]), digits)]);

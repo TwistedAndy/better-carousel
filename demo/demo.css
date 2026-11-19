@@ -1244,8 +1244,10 @@ pre {
   display: block;
   position: relative;
 }
-.better.dragging {
-  cursor: grabbing;
+@media (pointer: fine) {
+  .better.dragging {
+    cursor: grabbing;
+  }
 }
 
 .better_viewport {
@@ -1257,7 +1259,7 @@ pre {
 }
 
 :where(.better_viewport) * {
-  touch-action: inherit;
+  touch-action: var(--better-touch);
 }
 
 .better_horizontal .better_viewport {
@@ -1444,15 +1446,21 @@ pre {
   translate: calc(var(--better-dot, 0) * -1.5rem);
 }
 
+.better_dots_glide .better_dot.current:before {
+  transform: scale(0.666);
+}
+
 .better_dots.better_dots_all {
   width: max-content;
   max-width: 100%;
 }
-.better_dots.better_dots_all .better_dots_track {
-  translate: none;
-}
 .better_dots.better_dots_all .better_dot:before {
-  transform: scale(0.666);
+  width: 0.5625rem;
+  height: 0.5625rem;
+  transform: none;
+}
+.better_dots.better_dots_all .better_dot.current:before {
+  background: var(--button-base, #222);
 }
 
 .better_vertical .better_button {
@@ -1500,8 +1508,10 @@ pre {
   display: block;
   position: relative;
 }
-.demo_classes .embla.is_dragging {
-  cursor: grabbing;
+@media (pointer: fine) {
+  .demo_classes .embla.is_dragging {
+    cursor: grabbing;
+  }
 }
 .demo_classes .embla_viewport {
   position: relative;
@@ -1511,7 +1521,7 @@ pre {
   z-index: 1;
 }
 .demo_classes :where(.embla_viewport) * {
-  touch-action: inherit;
+  touch-action: var(--better-touch);
 }
 .demo_classes .embla_horizontal .embla_viewport {
   contain: inline-size;
@@ -1684,15 +1694,20 @@ pre {
 .demo_classes .embla_dots_marker:dir(rtl) {
   translate: calc(var(--better-dot, 0) * -1.5rem);
 }
+.demo_classes .embla_dots_glide .embla_dot.is_current:before {
+  transform: scale(0.666);
+}
 .demo_classes .embla_dots.embla_dots_all {
   width: max-content;
   max-width: 100%;
 }
-.demo_classes .embla_dots.embla_dots_all .embla_dots_track {
-  translate: none;
-}
 .demo_classes .embla_dots.embla_dots_all .embla_dot:before {
-  transform: scale(0.666);
+  width: 0.5625rem;
+  height: 0.5625rem;
+  transform: none;
+}
+.demo_classes .embla_dots.embla_dots_all .embla_dot.is_current:before {
+  background: var(--button-base, #222);
 }
 .demo_classes .embla_vertical .embla_button {
   top: auto;

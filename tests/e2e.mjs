@@ -27,6 +27,16 @@ async function open(list, viewport) {
 	// Helpers in the page: the active slide box and the viewport box on the main axis, the carousel of a section,
 	// and the largest empty space in the viewport on the main axis, on each frame while a sampler runs
 	await page.evaluateOnNewDocument(() => {
+		// The tests use dotsStyle: 'all' by default, as the benchmark. The checks of the zoom set dotsStyle: 'zoom'.
+		let library;
+		Object.defineProperty(window, 'BetterCarousel', {
+			configurable: true,
+			get: () => library,
+			set(value) {
+				library = value;
+				value.defaults.dotsStyle = 'all';
+			}
+		});
 		window.box = (carousel) => {
 			const x = !carousel.rootNode().classList.contains('better_vertical'),
 				view = carousel.viewportNode().getBoundingClientRect(),
@@ -856,14 +866,17 @@ const groups = [
 					active: names(carousel.slideNodes()[0])
 				};
 			});
-			check('embla preset: the class names of the old wrapper', value.root === 'embla embla_horizontal' && value.viewport === 'embla_viewport' && value.container && value.buttons.join() === 'embla_button embla_prev,embla_button embla_next' && value.dots === 'embla_dots' && value.dot.startsWith('embla_dot') && value.active === 'item is_selected', JSON.stringify(value));
+			check('embla preset: the class names of the old wrapper', value.root === 'embla embla_horizontal' && value.viewport === 'embla_viewport' && value.container && value.buttons.join() === 'embla_button embla_prev,embla_button embla_next' && value.dots === 'embla_dots embla_dots_all' && value.dot.startsWith('embla_dot') && value.active === 'item is_selected', JSON.stringify(value));
 		}
 
 		{
 			await scrollTo('embla');
 			const value = await page.evaluate(async () => {
-				const carousel = window.byId('embla'),
-					dots = [...carousel.rootNode().querySelectorAll('.embla_dot')];
+				const carousel = window.byId('embla');
+				carousel.reinit({ dotsStyle: 'zoom' });
+				await new Promise((resolve) => setTimeout(resolve, 100));
+				const dots = [...carousel.rootNode().querySelectorAll('.embla_dot')],
+					marker = carousel.rootNode().querySelector('.embla_dots_marker');
 				carousel.goToSnap(6, true);
 				await new Promise((resolve) => setTimeout(resolve, 500));
 				let changes = 0;
@@ -871,7 +884,10 @@ const groups = [
 					changes += list.length;
 				});
 				dots.forEach((dot) => observer.observe(dot, { attributes: true, attributeFilter: ['class'] }));
+				// The marker stretches only with dotsStyle: 'glide'
+				const stretches = (node) => node.getAnimations().some((animation) => animation.effect.getKeyframes?.().some((frame) => String(frame.scale).startsWith('1.5')));
 				carousel.goToNext(true);
+				const still = !stretches(marker);
 				await new Promise((resolve) => setTimeout(resolve, 500));
 				observer.disconnect();
 				const marked = dots.filter((dot) => /first|prev|current|next|last/.test(dot.className)),
@@ -880,21 +896,33 @@ const groups = [
 						const rect = dot.getBoundingClientRect();
 						return rect.left >= box.left - 1 && rect.right <= box.right + 1;
 					},
-					current = dots.find((dot) => dot.getAttribute('aria-current') === 'true').getBoundingClientRect();
-				return {
-					count: dots.length,
-					marked: marked.map((dot) => dot.className.replace('embla_dot ', '')).join(),
-					hidden: dots.filter((dot) => !marked.includes(dot)).every((dot) => dot.tabIndex === -1 && (!inside(dot) || getComputedStyle(dot, ':before').transform === 'matrix(0, 0, 0, 0, 0, 0)')),
-					shown: marked.every(inside),
-					centered: Math.abs((current.left + current.right) / 2 - (box.left + box.right) / 2) < 1,
-					tabbable: marked.every((dot) => dot.tabIndex === 0),
-					current: dots.findIndex((dot) => dot.getAttribute('aria-current') === 'true'),
-					changes
-				};
+					current = dots.find((dot) => dot.getAttribute('aria-current') === 'true').getBoundingClientRect(),
+					cover = marker.getBoundingClientRect(),
+					result = {
+						count: dots.length,
+						marked: marked.map((dot) => dot.className.replace('embla_dot ', '')).join(),
+						hidden: dots.filter((dot) => !marked.includes(dot)).every((dot) => dot.tabIndex === -1 && (!inside(dot) || getComputedStyle(dot, ':before').transform === 'matrix(0, 0, 0, 0, 0, 0)')),
+						shown: marked.every(inside),
+						centered: Math.abs((current.left + current.right) / 2 - (box.left + box.right) / 2) < 1,
+						marker: Math.abs((cover.left + cover.right) / 2 - (current.left + current.right) / 2) < 1,
+						tabbable: marked.every((dot) => dot.tabIndex === 0),
+						current: dots.findIndex((dot) => dot.getAttribute('aria-current') === 'true'),
+						still,
+						changes
+					};
+				carousel.reinit({ dotsStyle: 'glide' });
+				await new Promise((resolve) => setTimeout(resolve, 100));
+				carousel.goToNext(true);
+				const list = carousel.rootNode().querySelector('.embla_dots');
+				result.glide = list.classList.contains('embla_dots_glide') && stretches(list.querySelector('.embla_dots_marker'));
+				carousel.reinit({ dotsStyle: 'all' });
+				await new Promise((resolve) => setTimeout(resolve, 100));
+				return result;
 			});
-			check('dots: 5 dots around the current dot have state classes', value.count === 15 && value.marked === 'is_first,is_prev,is_current,is_next,is_last' && value.current === 7, JSON.stringify(value));
-			check('dots: the 5 dots show in the window with the current dot in the center, and the other dots do not show and are out of the tab order', value.hidden && value.shown && value.centered && value.tabbable, JSON.stringify(value));
-			check('dots: one select changes no more than 10 class lists', value.changes <= 10, value.changes + ' changes');
+			check('dots zoom: 5 dots around the current dot have state classes', value.count === 15 && value.marked === 'is_first,is_prev,is_current,is_next,is_last' && value.current === 7, JSON.stringify(value));
+			check('dots zoom: the 5 dots show in the window with the current dot and the marker in the center, and the other dots do not show and are out of the tab order', value.hidden && value.shown && value.centered && value.marker && value.tabbable, JSON.stringify(value));
+			check('dots zoom: one select changes no more than 10 class lists, and the marker does not stretch', value.changes <= 10 && value.still, JSON.stringify(value));
+			check("dotsStyle 'glide': the window of the dots has the glide class, and the marker stretches on its way", value.glide, JSON.stringify(value));
 		}
 
 		// The arrow keys: the right arrow goes to the next slide and the left arrow back, while the focus is in the carousel
@@ -913,33 +941,33 @@ const groups = [
 			check('arrow keys: the right arrow goes to the next slide, the left arrow to the previous slide', next === 3 && prev === 1, JSON.stringify({ next, prev }));
 		}
 
-		// dotsStyle: 'all'
+		// dotsStyle: 'all', the default of the tests
 		{
 			const value = await page.evaluate(async () => {
 				const carousel = window.byId('embla');
-				carousel.reinit({ dotsStyle: 'all' });
 				carousel.goToSnap(6, true);
 				await new Promise((resolve) => setTimeout(resolve, 500));
 				const root = carousel.rootNode(),
 					box = root.querySelector('.embla_dots').getBoundingClientRect(),
 					dots = [...root.querySelectorAll('.embla_dot')],
-					marker = root.querySelector('.embla_dots_marker').getBoundingClientRect(),
-					current = dots.find((dot) => dot.getAttribute('aria-current') === 'true').getBoundingClientRect(),
+					color = (dot) => getComputedStyle(dot, ':before').backgroundColor,
+					current = dots.find((dot) => dot.getAttribute('aria-current') === 'true'),
+					other = dots.find((dot) => dot !== current),
 					result = {
 						all: root.querySelector('.embla_dots').classList.contains('embla_dots_all'),
 						inside: dots.every((dot) => {
 							const rect = dot.getBoundingClientRect();
 							return rect.left >= box.left - 1 && rect.right <= box.right + 1;
 						}),
-						sizes: [...new Set(dots.map((dot) => getComputedStyle(dot, ':before').transform))].length,
-						marker: Math.abs((marker.left + marker.right) / 2 - (current.left + current.right) / 2) < 1,
+						sizes: [...new Set(dots.map((dot) => getComputedStyle(dot, ':before').width))].length,
+						children: root.querySelector('.embla_dots').children.length === dots.length,
+						color: dots.every((dot) => dot === current || color(dot) === color(other)) && color(current) !== color(other),
 						tabbable: dots.every((dot) => dot.tabIndex === 0)
 					};
-				carousel.reinit({ dotsStyle: 'zoom' });
-				await new Promise((resolve) => setTimeout(resolve, 100));
+				carousel.goToSnap(0, true);
 				return result;
 			});
-			check("dotsStyle 'all': all dots show in the window with one size, the marker is on the current dot, and all dots are in the tab order", value.all && value.inside && value.sizes === 1 && value.marker && value.tabbable, JSON.stringify(value));
+			check("dotsStyle 'all': all dots are in the window and show with one size, only the current dot has another color, and all dots are in the tab order", value.all && value.inside && value.sizes === 1 && value.children && value.color && value.tabbable, JSON.stringify(value));
 		}
 
 		{
@@ -1339,15 +1367,11 @@ const groups = [
 			next.click();
 			await new Promise((resolve) => carousel.on('settle', resolve));
 			const second = right(1);
-			carousel.goToSnap(3, true);
-			// The dots move with a transition of 0.4 s
-			await new Promise((resolve) => setTimeout(resolve, 600));
-			const dots = root.querySelector('.better_dots').getBoundingClientRect(),
-				current = root.querySelector('.better_dot[aria-current="true"]').getBoundingClientRect();
+			const dots = [...root.querySelectorAll('.better_dot')].map((dot) => dot.getBoundingClientRect().left);
 			carousel.goToSnap(0, true);
-			return { first, second, prev: prev.left > next.getBoundingClientRect().left, dot: Math.round((current.left + current.right) / 2 - (dots.left + dots.right) / 2) };
+			return { first, second, prev: prev.left > next.getBoundingClientRect().left, dot: dots[0] > dots.at(-1) };
 		});
-		check('right to left: the first slide is at the right, the next button shows the next slide there, the previous button is at the right, and the current dot is in the center', Math.abs(rtl.first) <= 1 && Math.abs(rtl.second) <= 1 && rtl.prev && Math.abs(rtl.dot) <= 1, JSON.stringify(rtl));
+		check('right to left: the first slide is at the right, the next button shows the next slide there, the previous button is at the right, and the first dot is at the right', Math.abs(rtl.first) <= 1 && Math.abs(rtl.second) <= 1 && rtl.prev && rtl.dot, JSON.stringify(rtl));
 
 		await scrollTo('groups');
 		const groups = await page.evaluate(() => {

@@ -6,6 +6,9 @@
 
 import { bind, create, createButton, optionElement, setAttribute, setClass, setStyle } from './markup.js';
 
+// The state classes of the 5 dots of the zoom, from the left
+const STATES = ['first', 'prev', 'current', 'next', 'last'];
+
 /**
  * Make the arrows and the dots of a carousel. They update on the carousel events.
  *
@@ -19,22 +22,31 @@ export function nav(context) {
 		box = optionElement(options.dots, root),
 		buttons = [],
 		dots = [],
-		// The window of 5 dots, or all dots with dotsStyle: 'all'
-		windowed = options.dotsStyle !== 'all',
-		// The window of the dots, the track that slides in it, and the marker of the selected dot
-		list = box && create('div', windowed ? cls.dots : cls.dots + ' ' + cls.dotsAll),
-		track = list && create('div', cls.dotsTrack);
+		// The class of each dot
+		marks = [],
+		// dotsStyle: 'zoom': a window of 5 dots, with a track that slides in it and a marker of the selected dot. 'glide': the zoom, and the marker
+		// stretches on its way. 'all': all dots, directly in the window, and the selected dot gets a class.
+		style = options.dotsStyle,
+		zoom = style !== 'all',
+		glide = style === 'glide',
+		reduced = glide && matchMedia('(prefers-reduced-motion: reduce)'),
+		list = box && create('div', cls.dots + (zoom ? (glide ? ' ' + cls.dotsGlide : '') : ' ' + cls.dotsAll)),
+		track = list && (zoom ? create('div', cls.dotsTrack) : list),
+		marker = list && zoom && create('span', cls.dotsMarker);
 
-	let marks = new Map();
+	// The dot under the marker
+	let shown = -1;
 
 	if (!arrows && !box) {
 		return;
 	}
 
 	// Add the window of the dots now: its CSS height is fixed, so the dots that the first measure adds do not shift the page
-	if (list) {
-		track.append(create('span', cls.dotsMarker));
+	if (marker) {
+		track.append(marker);
 		list.append(track);
+	}
+	if (list) {
 		box.append(list);
 	}
 
@@ -73,16 +85,12 @@ export function nav(context) {
 
 		while (dots.length > count) {
 			dots.pop().remove();
-			marks.delete(dots.length);
+			marks.length = dots.length;
 		}
 
 		while (dots.length < count) {
 			const index = dots.length,
 				dot = createButton(cls.dot, context.container, labels.dot.replace('%d', index + 1), () => api.goToSnap(index));
-			// The window of the dots hides the dots out of the zoom: keep them out of the tab order
-			if (windowed) {
-				dot.tabIndex = -1;
-			}
 			dots.push(dot);
 			track.append(dot);
 		}
@@ -91,36 +99,34 @@ export function nav(context) {
 			box.append(list);
 		}
 
-		// The zoom effect: the 5 dots around the selected dot get state classes
-		const next = new Map();
+		// The zoom effect: the 5 dots around the selected dot get state classes, and the window hides the other dots: they are out of the tab order.
+		// With dotsStyle: 'all', only the selected dot gets a class: each change of a class makes the browser calculate the style of the dot again.
+		dots.forEach((dot, index) => {
+			const name = ((zoom || index === selected) && cls[STATES[index - selected + 2]]) || '';
 
-		['first', 'prev', 'current', 'next', 'last'].forEach((key, offset) => {
-			if (dots[selected + offset - 2]) {
-				next.set(selected + offset - 2, cls[key]);
+			if (marks[index] !== name) {
+				setClass(dot, marks[index], false);
+				setClass(dot, name, true);
+				setAttribute(dot, 'aria-current', index === selected && 'true');
+				setAttribute(dot, 'tabindex', zoom && !name && '-1');
+				marks[index] = name;
 			}
 		});
 
-		marks.forEach((name, index) => {
-			if (next.get(index) !== name) {
-				setClass(dots[index], name, false);
-				setAttribute(dots[index], 'aria-current', false);
-				dots[index].tabIndex = windowed ? -1 : 0;
+		// Center the group of up to 5 dots in the window, and move the marker to the selected dot. The CSS moves the track and the marker with "translate".
+		// Each variable is on the element that uses it: a variable on the window makes the browser calculate the style of all dots again.
+		if (zoom) {
+			setStyle(track, '--better-shift', 2 - (Math.max(0, selected - 2) + Math.min(count - 1, selected + 2)) / 2);
+			setStyle(marker, '--better-dot', selected);
+
+			// dotsStyle: 'glide': the marker stretches along the axis on its way, more for a longer way. The animation of "scale" runs on the compositor
+			// with the "translate" transition, and has the same duration and curve.
+			if (glide && shown >= 0 && shown !== selected && !reduced.matches) {
+				const stretch = 1 + Math.min(Math.abs(selected - shown), 3) * 0.5;
+				marker.animate([{ scale: 1 }, { scale: context.geo().axis === 'x' ? stretch + ' 0.8' : '0.8 ' + stretch, offset: 0.35 }, { scale: 1 }], { duration: 400, easing: 'ease' });
 			}
-		});
-
-		next.forEach((name, index) => {
-			setClass(dots[index], name, true);
-			setAttribute(dots[index], 'aria-current', index === selected && 'true');
-			dots[index].tabIndex = 0;
-		});
-
-		marks = next;
-
-		// Center the group of up to 5 dots in the window of the dots, and move the marker to the selected dot. The CSS moves the track and the marker with "translate".
-		if (windowed) {
-			setStyle(list, '--better-shift', 2 - (Math.max(0, selected - 2) + Math.min(count - 1, selected + 2)) / 2);
+			shown = selected;
 		}
-		setStyle(list, '--better-dot', selected);
 	}
 
 	context.on('init reinit resize select slideschanged', update);

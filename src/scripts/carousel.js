@@ -294,6 +294,7 @@ export default function carousel(element, userOptions, defaults, features) {
 		setStyle(container, 'translate', '');
 		setStyle(container, 'will-change', '');
 		setStyle(viewport, 'touch-action', '');
+		setStyle(viewport, '--better-touch', '');
 		setStyle(viewport, 'height', '');
 		setStyle(root, '--better-progress', '');
 		setStyle(root, '--better-duration', '');
@@ -582,8 +583,9 @@ export default function carousel(element, userOptions, defaults, features) {
 	 * Write the location, the classes, the touch action and the auto height.
 	 *
 	 * @param {boolean} [keep] Do not write the location, because a motion or a drag writes it.
+	 * @param {boolean} [rest] At the end of a motion: keep the place of the loop slides that are not in view. See place().
 	 */
-	function render(keep) {
+	function render(keep, rest) {
 		const x = geo.axis === 'x';
 
 		setClass(root, cls.horizontal, x);
@@ -593,12 +595,14 @@ export default function carousel(element, userOptions, defaults, features) {
 		// or down. Safari has no pan-up and pan-down, so there the carousel keeps the touch.
 		const first = !can(-1),
 			last = !can(1),
-			edge = !x && (first || last) && (directional ??= CSS.supports('touch-action', 'pan-up')) ? (first && last ? 'pan-y ' : first ? 'pan-up ' : 'pan-down ') : '';
-		setStyle(viewport, 'touch-action', geo.fit ? '' : x ? 'pan-y pinch-zoom' : 'pan-x ' + edge + 'pinch-zoom');
+			edge = !x && (first || last) && (directional ??= CSS.supports('touch-action', 'pan-up')) ? (first && last ? 'pan-y ' : first ? 'pan-up ' : 'pan-down ') : '',
+			touch = geo.fit ? '' : x ? 'pan-y pinch-zoom' : 'pan-x ' + edge + 'pinch-zoom';
+		setStyle(viewport, 'touch-action', touch);
+		setStyle(viewport, '--better-touch', touch);
 		setStyle(container, 'will-change', geo.fit ? '' : 'translate');
 
 		if (!keep) {
-			write(geo.fit ? 0 : location);
+			write(geo.fit ? 0 : location, rest);
 		}
 
 		// Auto height: the height of the tallest slide in view. During a motion or a drag, the slides in view at the selected snap give it,
@@ -644,8 +648,9 @@ export default function carousel(element, userOptions, defaults, features) {
 	 * Write the location as the translate of the container, and give it to the "progress" and the "offset" options.
 	 *
 	 * @param {number} value
+	 * @param {boolean} [rest] At the end of a motion: keep the place of the loop slides that are not in view. See place().
 	 */
-	function write(value) {
+	function write(value, rest) {
 		if (written.axis !== geo.axis) {
 			nodes.forEach((node) => setStyle(node, 'translate', ''));
 			written = { axis: geo.axis, container: 0, slides: [] };
@@ -653,7 +658,7 @@ export default function carousel(element, userOptions, defaults, features) {
 
 		written.container = screen(value);
 		setStyle(container, 'translate', translate(written.container));
-		place(value, value);
+		place(value, value, rest);
 		track(value, written.slides);
 	}
 
@@ -704,12 +709,25 @@ export default function carousel(element, userOptions, defaults, features) {
 	 *
 	 * @param {number} from
 	 * @param {number} to
+	 * @param {boolean} [rest] At the end of a motion: keep the place of the slides that are not in view.
 	 */
-	function place(from, to) {
-		const list = geo.period ? placement(geo.slides, from, to, geo.area.size, geo.period, geo.area.start) : [];
+	function place(from, to, rest) {
+		const list = geo.period ? placement(geo.slides, from, to, geo.area.size, geo.period, geo.area.start) : [],
+			start = geo.area.start - to,
+			end = start + geo.area.size,
+			lazy = rest && list.length && !options.progress && !options.offset;
 
 		nodes.forEach((node, index) => {
-			const value = list.length ? screen(list[index] * geo.period) : 0;
+			const value = list.length ? screen(list[index] * geo.period) : 0,
+				slide = geo.slides[index],
+				shift = list[index] * geo.period;
+			// At the end of a motion, a slide that is not in view at its new place keeps its place: the next motion, drag or jump moves it.
+			// Then the end of a motion moves no slide, and the browser does not paint the slides again. A slide that is in view
+			// at its old place has the same new place, because the loop period is longer than the view and the largest slide.
+			// The "progress" and "offset" options give the place of all slides, so they need the full placement.
+			if (lazy && (slide.end + shift < start || slide.start + shift > end)) {
+				return;
+			}
 			if ((written.slides[index] || 0) !== value) {
 				written.slides[index] = value;
 				setStyle(node, 'translate', translate(value));
@@ -868,9 +886,10 @@ export default function carousel(element, userOptions, defaults, features) {
 	 * Write a location during a motion or a drag.
 	 *
 	 * @param {number} value
+	 * @param {boolean} [rest] At the end of a motion: keep the place of the loop slides that are not in view. See place().
 	 */
-	function frame(value) {
-		write(value);
+	function frame(value, rest) {
+		write(value, rest);
 		events.emit('scroll');
 	}
 
@@ -885,7 +904,7 @@ export default function carousel(element, userOptions, defaults, features) {
 		if (geo.period) {
 			location = normalize(location, geo.period);
 		}
-		render();
+		render(false, true);
 		events.emit('settle');
 	}
 

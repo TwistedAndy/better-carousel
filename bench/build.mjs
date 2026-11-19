@@ -99,10 +99,11 @@ for (const lib of [...libs, baseline]) {
 		entry.sets[set] = { js, css: style, total: sum([js, style]) };
 	}
 
-	// The files that the package ships for a script tag, as they are
-	const cdnJs = sizes(readFileSync(lib.cdn.js)),
-		cdnCss = sum(lib.cdn.css.map((file) => sizes(readFileSync(file))));
-	entry.cdn = { file: lib.cdn.js.replace(/^.*node_modules\//, ''), js: cdnJs, css: cdnCss, total: sum([cdnJs, cdnCss]) };
+	// The files that the package ships for a script tag, as they are. Each file is compressed separately, as a browser loads it.
+	const shipped = (files) => sum(files.map((file) => sizes(readFileSync(file)))),
+		cdnJs = shipped(lib.cdn.js),
+		cdnCss = shipped(lib.cdn.css);
+	entry.cdn = { files: lib.cdn.js.map((file) => file.replace(/^.*node_modules\//, '')), js: cdnJs, css: cdnCss, total: sum([cdnJs, cdnCss]) };
 
 	report.libs.push(entry);
 }

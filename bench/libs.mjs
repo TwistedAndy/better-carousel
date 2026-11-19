@@ -13,8 +13,8 @@ const typical = (id) => "import { mount } from './adapters/" + id + ".js'; windo
  * - package: the npm package that gives the version. Better Carousel uses the package of the project.
  * - core: the smallest import that makes a carousel that the user can drag.
  * - typical: loop, drag, arrows, dots, autoplay and the accessibility module, if the library has one.
- * - parity: the typical set, with the mouse wheel, the auto scroll, the auto height, the free drag and the sync. null if the library does not have them.
- * - cdn: the minified files that the package ships for a script tag.
+ * - parity: the typical set, with the mouse wheel, the auto scroll, the auto height, the free drag, the sync and the lazy load. null if the library does not have them.
+ * - cdn: the minified files that the package ships for a script tag, for all the features of the parity set. The JS and the CSS are lists of files.
  * - css: the CSS files for each set.
  */
 export const libs = [
@@ -26,7 +26,7 @@ export const libs = [
 		typical: typical('better'),
 		parity: typical('better'),
 		css: { core: ['../dist/better-carousel.css', 'adapters/better.css'], typical: ['../dist/better-carousel.css', 'adapters/better.css'] },
-		cdn: { js: '../dist/better-carousel.min.js', css: ['../dist/better-carousel.css'] }
+		cdn: { js: ['../dist/better-carousel.min.js'], css: ['../dist/better-carousel.css'] }
 	},
 	{
 		id: 'swiper',
@@ -40,7 +40,7 @@ export const libs = [
 			core: [modules + 'swiper/swiper.css'],
 			typical: [modules + 'swiper/swiper.css', modules + 'swiper/modules/navigation.css', modules + 'swiper/modules/pagination.css', modules + 'swiper/modules/a11y.css']
 		},
-		cdn: { js: modules + 'swiper/swiper-bundle.min.js', css: [modules + 'swiper/swiper-bundle.min.css'] }
+		cdn: { js: [modules + 'swiper/swiper-bundle.min.js'], css: [modules + 'swiper/swiper-bundle.min.css'] }
 	},
 	{
 		id: 'embla',
@@ -49,9 +49,9 @@ export const libs = [
 		released: '2025-04-04',
 		core: "import EmblaCarousel from 'embla-carousel'; window.x = EmblaCarousel;",
 		typical: typical('embla'),
-		parity: "import { mount } from './adapters/embla.js'; import AutoScroll from 'embla-carousel-auto-scroll'; import AutoHeight from 'embla-carousel-auto-height'; import { WheelGesturesPlugin } from 'embla-carousel-wheel-gestures'; window.x = [mount, AutoScroll, AutoHeight, WheelGesturesPlugin];",
+		parity: "import { mount } from './adapters/embla.js'; import AutoScroll from 'embla-carousel-auto-scroll'; import AutoHeight from 'embla-carousel-auto-height'; import { WheelGesturesPlugin } from 'embla-carousel-wheel-gestures'; import { addThumbBtnsClickHandlers, addToggleThumbBtnsActive, setupLazyLoadImage } from './adapters/embla-extras.js'; window.x = [mount, AutoScroll, AutoHeight, WheelGesturesPlugin, addThumbBtnsClickHandlers, addToggleThumbBtnsActive, setupLazyLoadImage];",
 		css: { core: ['adapters/embla-core.css'], typical: ['adapters/embla-core.css', 'adapters/embla-controls.css'] },
-		cdn: { js: modules + 'embla-carousel/embla-carousel.umd.js', css: [] }
+		cdn: { js: ['embla-carousel/embla-carousel.umd.js', 'embla-carousel-autoplay/embla-carousel-autoplay.umd.js', 'embla-carousel-class-names/embla-carousel-class-names.umd.js', 'embla-carousel-auto-scroll/embla-carousel-auto-scroll.umd.js', 'embla-carousel-auto-height/embla-carousel-auto-height.umd.js', 'embla-carousel-wheel-gestures/dist/embla-carousel-wheel-gestures.umd.js'].map((file) => modules + file), css: [] }
 	},
 	{
 		id: 'glide',
@@ -65,7 +65,7 @@ export const libs = [
 			core: [modules + '@glidejs/glide/dist/css/glide.core.css'],
 			typical: [modules + '@glidejs/glide/dist/css/glide.core.css', modules + '@glidejs/glide/dist/css/glide.theme.css']
 		},
-		cdn: { js: modules + '@glidejs/glide/dist/glide.min.js', css: [modules + '@glidejs/glide/dist/css/glide.core.min.css', modules + '@glidejs/glide/dist/css/glide.theme.min.css'] }
+		cdn: { js: [modules + '@glidejs/glide/dist/glide.min.js'], css: [modules + '@glidejs/glide/dist/css/glide.core.min.css', modules + '@glidejs/glide/dist/css/glide.theme.min.css'] }
 	}
 ];
 

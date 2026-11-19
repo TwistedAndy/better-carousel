@@ -102,10 +102,12 @@ export interface ClassNames {
 	nextButton?: string;
 	/** The window of the dots. */
 	dots?: string;
-	/** The row of the dots that slides in the window. */
+	/** The row of the dots that slides in the window, with `dotsStyle: 'zoom'` and `'glide'`. */
 	dotsTrack?: string;
-	/** The marker of the selected dot, on top of the dots. */
+	/** The marker of the selected dot, on top of the dots, with `dotsStyle: 'zoom'` and `'glide'`. */
 	dotsMarker?: string;
+	/** On the window of the dots, with `dotsStyle: 'glide'`. */
+	dotsGlide?: string;
 	/** On the window of the dots, with `dotsStyle: 'all'`. */
 	dotsAll?: string;
 	dot?: string;
@@ -191,8 +193,8 @@ export interface Options {
 	arrows?: boolean | Element | string;
 	/** Add the dots. The values are the same as for `arrows`. @default true @see {@link https://twistedandy.github.io/better-carousel/#heading | example} */
 	dots?: boolean | Element | string;
-	/** The style of the dots. `'zoom'`: a window of 5 dots that slides, with smaller dots at the ends. `'all'`: all dots with the same size. @default 'zoom' */
-	dotsStyle?: 'zoom' | 'all';
+	/** The style of the dots. `'zoom'`: a window of 5 dots that slides, with smaller dots at the ends. `'glide'`: the zoom, and the marker of the selected dot stretches on its way. `'all'`: all dots with the same size, and the selected dot has another color. @default 'glide' @see {@link https://twistedandy.github.io/better-carousel/#dots | example} */
+	dotsStyle?: 'zoom' | 'glide' | 'all';
 	/** The texts for screen readers: `carousel`, `slide` (`'%d of %n'`), `prev`, `next`, `dot` (`'Go to slide %d'`), `play`, `pause`. `%d` is the slide number, and `%n` is the number of slides. An empty text adds no name. @see {@link https://twistedandy.github.io/better-carousel/#accessibility | example} */
 	labels?: Labels;
 	/** A class prefix such as `'embla'`, or an object with the names to change. The Classes table gives all names. @default null @see {@link https://twistedandy.github.io/better-carousel/#embla | example} */

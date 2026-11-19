@@ -34,7 +34,7 @@ function setAttribute(element, name, value) {
  * Set an inline style property.
  *
  * @param {HTMLElement} element
- * @param {string} name The CSS name, such as 'touch-action' or '--better-dot'.
+ * @param {string} name The CSS name, such as 'touch-action' or '--better-touch'.
  * @param {string|number} value An empty string removes the property.
  */
 function setStyle(element, name, value) {
@@ -1502,7 +1502,7 @@ function snapDuration(duration, count) {
  *
  * @param {HTMLElement} element The container.
  * @param {(location: number) => string} css Get the CSS translate value of a location.
- * @param {(location: number) => void} frame Write a location.
+ * @param {(location: number, rest?: boolean) => void} frame Write a location. With rest, it is the end of a motion.
  * @param {() => void} done Called when a motion ends. A loop motion does not end.
  * @param {((location: number) => void)|null} [tick] Called on each frame of a motion on the compositor, because such a motion runs no script.
  * @returns {{run: Function, loop: Function, retarget: Function, stop: Function, current: Function, shifts: Function}}
@@ -1528,7 +1528,7 @@ function animator(element, css, frame, done, tick) {
 	function finish() {
 		const to = state.to;
 		stop();
-		frame(to);
+		frame(to, true);
 		done();
 	}
 
@@ -1700,7 +1700,7 @@ const defaults = {
 	wrapper: true,
 	arrows: true,
 	dots: true,
-	dotsStyle: 'zoom',
+	dotsStyle: 'glide',
 	labels: { carousel: 'Carousel', slide: '%d of %n', prev: 'Previous slide', next: 'Next slide', dot: 'Go to slide %d', play: 'Start the slide show', pause: 'Stop the slide show' },
 	classes: null,
 	state: '',
@@ -1728,6 +1728,7 @@ const names = (prefix) => ({
 	dots: prefix + '_dots',
 	dotsTrack: prefix + '_dots_track',
 	dotsMarker: prefix + '_dots_marker',
+	dotsGlide: prefix + '_dots_glide',
 	dotsAll: prefix + '_dots_all',
 	dot: prefix + '_dot',
 	playButton: prefix + '_play',
@@ -2112,6 +2113,7 @@ function carousel(element, userOptions, defaults, features) {
 		setStyle(container, 'translate', '');
 		setStyle(container, 'will-change', '');
 		setStyle(viewport, 'touch-action', '');
+		setStyle(viewport, '--better-touch', '');
 		setStyle(viewport, 'height', '');
 		setStyle(root, '--better-progress', '');
 		setStyle(root, '--better-duration', '');
@@ -2400,8 +2402,9 @@ function carousel(element, userOptions, defaults, features) {
 	 * Write the location, the classes, the touch action and the auto height.
 	 *
 	 * @param {boolean} [keep] Do not write the location, because a motion or a drag writes it.
+	 * @param {boolean} [rest] At the end of a motion: keep the place of the loop slides that are not in view. See place().
 	 */
-	function render(keep) {
+	function render(keep, rest) {
 		const x = geo.axis === 'x';
 
 		setClass(root, cls.horizontal, x);
@@ -2411,12 +2414,14 @@ function carousel(element, userOptions, defaults, features) {
 		// or down. Safari has no pan-up and pan-down, so there the carousel keeps the touch.
 		const first = !can(-1),
 			last = !can(1),
-			edge = !x && (first || last) && (directional ??= CSS.supports('touch-action', 'pan-up')) ? (first && last ? 'pan-y ' : first ? 'pan-up ' : 'pan-down ') : '';
-		setStyle(viewport, 'touch-action', geo.fit ? '' : x ? 'pan-y pinch-zoom' : 'pan-x ' + edge + 'pinch-zoom');
+			edge = !x && (first || last) && (directional ??= CSS.supports('touch-action', 'pan-up')) ? (first && last ? 'pan-y ' : first ? 'pan-up ' : 'pan-down ') : '',
+			touch = geo.fit ? '' : x ? 'pan-y pinch-zoom' : 'pan-x ' + edge + 'pinch-zoom';
+		setStyle(viewport, 'touch-action', touch);
+		setStyle(viewport, '--better-touch', touch);
 		setStyle(container, 'will-change', geo.fit ? '' : 'translate');
 
 		if (!keep) {
-			write(geo.fit ? 0 : location);
+			write(geo.fit ? 0 : location, rest);
 		}
 
 		// Auto height: the height of the tallest slide in view. During a motion or a drag, the slides in view at the selected snap give it,
@@ -2462,8 +2467,9 @@ function carousel(element, userOptions, defaults, features) {
 	 * Write the location as the translate of the container, and give it to the "progress" and the "offset" options.
 	 *
 	 * @param {number} value
+	 * @param {boolean} [rest] At the end of a motion: keep the place of the loop slides that are not in view. See place().
 	 */
-	function write(value) {
+	function write(value, rest) {
 		if (written.axis !== geo.axis) {
 			nodes.forEach((node) => setStyle(node, 'translate', ''));
 			written = { axis: geo.axis, container: 0, slides: [] };
@@ -2471,7 +2477,7 @@ function carousel(element, userOptions, defaults, features) {
 
 		written.container = screen(value);
 		setStyle(container, 'translate', translate(written.container));
-		place(value, value);
+		place(value, value, rest);
 		track(value, written.slides);
 	}
 
@@ -2522,12 +2528,25 @@ function carousel(element, userOptions, defaults, features) {
 	 *
 	 * @param {number} from
 	 * @param {number} to
+	 * @param {boolean} [rest] At the end of a motion: keep the place of the slides that are not in view.
 	 */
-	function place(from, to) {
-		const list = geo.period ? placement(geo.slides, from, to, geo.area.size, geo.period, geo.area.start) : [];
+	function place(from, to, rest) {
+		const list = geo.period ? placement(geo.slides, from, to, geo.area.size, geo.period, geo.area.start) : [],
+			start = geo.area.start - to,
+			end = start + geo.area.size,
+			lazy = rest && list.length && !options.progress && !options.offset;
 
 		nodes.forEach((node, index) => {
-			const value = list.length ? screen(list[index] * geo.period) : 0;
+			const value = list.length ? screen(list[index] * geo.period) : 0,
+				slide = geo.slides[index],
+				shift = list[index] * geo.period;
+			// At the end of a motion, a slide that is not in view at its new place keeps its place: the next motion, drag or jump moves it.
+			// Then the end of a motion moves no slide, and the browser does not paint the slides again. A slide that is in view
+			// at its old place has the same new place, because the loop period is longer than the view and the largest slide.
+			// The "progress" and "offset" options give the place of all slides, so they need the full placement.
+			if (lazy && (slide.end + shift < start || slide.start + shift > end)) {
+				return;
+			}
 			if ((written.slides[index] || 0) !== value) {
 				written.slides[index] = value;
 				setStyle(node, 'translate', translate(value));
@@ -2686,9 +2705,10 @@ function carousel(element, userOptions, defaults, features) {
 	 * Write a location during a motion or a drag.
 	 *
 	 * @param {number} value
+	 * @param {boolean} [rest] At the end of a motion: keep the place of the loop slides that are not in view. See place().
 	 */
-	function frame(value) {
-		write(value);
+	function frame(value, rest) {
+		write(value, rest);
 		events.emit('scroll');
 	}
 
@@ -2703,7 +2723,7 @@ function carousel(element, userOptions, defaults, features) {
 		if (geo.period) {
 			location = normalize(location, geo.period);
 		}
-		render();
+		render(false, true);
 		events.emit('settle');
 	}
 
@@ -3264,6 +3284,9 @@ function focus(context) {
  */
 
 
+// The state classes of the 5 dots of the zoom, from the left
+const STATES = ['first', 'prev', 'current', 'next', 'last'];
+
 /**
  * Make the arrows and the dots of a carousel. They update on the carousel events.
  *
@@ -3277,22 +3300,31 @@ function nav(context) {
 		box = optionElement(options.dots, root),
 		buttons = [],
 		dots = [],
-		// The window of 5 dots, or all dots with dotsStyle: 'all'
-		windowed = options.dotsStyle !== 'all',
-		// The window of the dots, the track that slides in it, and the marker of the selected dot
-		list = box && create('div', windowed ? cls.dots : cls.dots + ' ' + cls.dotsAll),
-		track = list && create('div', cls.dotsTrack);
+		// The class of each dot
+		marks = [],
+		// dotsStyle: 'zoom': a window of 5 dots, with a track that slides in it and a marker of the selected dot. 'glide': the zoom, and the marker
+		// stretches on its way. 'all': all dots, directly in the window, and the selected dot gets a class.
+		style = options.dotsStyle,
+		zoom = style !== 'all',
+		glide = style === 'glide',
+		reduced = glide && matchMedia('(prefers-reduced-motion: reduce)'),
+		list = box && create('div', cls.dots + (zoom ? (glide ? ' ' + cls.dotsGlide : '') : ' ' + cls.dotsAll)),
+		track = list && (zoom ? create('div', cls.dotsTrack) : list),
+		marker = list && zoom && create('span', cls.dotsMarker);
 
-	let marks = new Map();
+	// The dot under the marker
+	let shown = -1;
 
 	if (!arrows && !box) {
 		return;
 	}
 
 	// Add the window of the dots now: its CSS height is fixed, so the dots that the first measure adds do not shift the page
-	if (list) {
-		track.append(create('span', cls.dotsMarker));
+	if (marker) {
+		track.append(marker);
 		list.append(track);
+	}
+	if (list) {
 		box.append(list);
 	}
 
@@ -3331,16 +3363,12 @@ function nav(context) {
 
 		while (dots.length > count) {
 			dots.pop().remove();
-			marks.delete(dots.length);
+			marks.length = dots.length;
 		}
 
 		while (dots.length < count) {
 			const index = dots.length,
 				dot = createButton(cls.dot, context.container, labels.dot.replace('%d', index + 1), () => api.goToSnap(index));
-			// The window of the dots hides the dots out of the zoom: keep them out of the tab order
-			if (windowed) {
-				dot.tabIndex = -1;
-			}
 			dots.push(dot);
 			track.append(dot);
 		}
@@ -3349,36 +3377,34 @@ function nav(context) {
 			box.append(list);
 		}
 
-		// The zoom effect: the 5 dots around the selected dot get state classes
-		const next = new Map();
+		// The zoom effect: the 5 dots around the selected dot get state classes, and the window hides the other dots: they are out of the tab order.
+		// With dotsStyle: 'all', only the selected dot gets a class: each change of a class makes the browser calculate the style of the dot again.
+		dots.forEach((dot, index) => {
+			const name = ((zoom || index === selected) && cls[STATES[index - selected + 2]]) || '';
 
-		['first', 'prev', 'current', 'next', 'last'].forEach((key, offset) => {
-			if (dots[selected + offset - 2]) {
-				next.set(selected + offset - 2, cls[key]);
+			if (marks[index] !== name) {
+				setClass(dot, marks[index], false);
+				setClass(dot, name, true);
+				setAttribute(dot, 'aria-current', index === selected && 'true');
+				setAttribute(dot, 'tabindex', zoom && !name && '-1');
+				marks[index] = name;
 			}
 		});
 
-		marks.forEach((name, index) => {
-			if (next.get(index) !== name) {
-				setClass(dots[index], name, false);
-				setAttribute(dots[index], 'aria-current', false);
-				dots[index].tabIndex = windowed ? -1 : 0;
+		// Center the group of up to 5 dots in the window, and move the marker to the selected dot. The CSS moves the track and the marker with "translate".
+		// Each variable is on the element that uses it: a variable on the window makes the browser calculate the style of all dots again.
+		if (zoom) {
+			setStyle(track, '--better-shift', 2 - (Math.max(0, selected - 2) + Math.min(count - 1, selected + 2)) / 2);
+			setStyle(marker, '--better-dot', selected);
+
+			// dotsStyle: 'glide': the marker stretches along the axis on its way, more for a longer way. The animation of "scale" runs on the compositor
+			// with the "translate" transition, and has the same duration and curve.
+			if (glide && shown >= 0 && shown !== selected && !reduced.matches) {
+				const stretch = 1 + Math.min(Math.abs(selected - shown), 3) * 0.5;
+				marker.animate([{ scale: 1 }, { scale: context.geo().axis === 'x' ? stretch + ' 0.8' : '0.8 ' + stretch, offset: 0.35 }, { scale: 1 }], { duration: 400, easing: 'ease' });
 			}
-		});
-
-		next.forEach((name, index) => {
-			setClass(dots[index], name, true);
-			setAttribute(dots[index], 'aria-current', index === selected && 'true');
-			dots[index].tabIndex = 0;
-		});
-
-		marks = next;
-
-		// Center the group of up to 5 dots in the window of the dots, and move the marker to the selected dot. The CSS moves the track and the marker with "translate".
-		if (windowed) {
-			setStyle(list, '--better-shift', 2 - (Math.max(0, selected - 2) + Math.min(count - 1, selected + 2)) / 2);
+			shown = selected;
 		}
-		setStyle(list, '--better-dot', selected);
 	}
 
 	context.on('init reinit resize select slideschanged', update);

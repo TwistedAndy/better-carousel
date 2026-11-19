@@ -76,7 +76,7 @@ export function snapDuration(duration, count) {
  *
  * @param {HTMLElement} element The container.
  * @param {(location: number) => string} css Get the CSS translate value of a location.
- * @param {(location: number) => void} frame Write a location.
+ * @param {(location: number, rest?: boolean) => void} frame Write a location. With rest, it is the end of a motion.
  * @param {() => void} done Called when a motion ends. A loop motion does not end.
  * @param {((location: number) => void)|null} [tick] Called on each frame of a motion on the compositor, because such a motion runs no script.
  * @returns {{run: Function, loop: Function, retarget: Function, stop: Function, current: Function, shifts: Function}}
@@ -102,7 +102,7 @@ export function animator(element, css, frame, done, tick) {
 	function finish() {
 		const to = state.to;
 		stop();
-		frame(to);
+		frame(to, true);
 		done();
 	}
 

@@ -4,7 +4,7 @@
 
 <p>A small, fast and accessible JavaScript carousel.<br />The CSS sets the layout, and the motion runs on the compositor, also on slow phones.</p>
 
-[![Gzip size](https://flat.badgen.net/static/gzip/12.9%20KB/green)](dist/better-carousel.min.js)
+[![Gzip size](https://flat.badgen.net/static/gzip/13.1%20KB/green)](dist/better-carousel.min.js)
 [![MIT license](https://flat.badgen.net/static/license/MIT/purple)](LICENSE)
 [![No dependencies](https://flat.badgen.net/static/dependencies/0/blue)](package.json)
 
@@ -16,7 +16,7 @@
 
 - **Layout from CSS** - Your CSS sets the sizes of the slides, the space between them, the axis and the alignment. One carousel can show 1 slide on a phone and 4 slides on a desktop.
 - **Smooth** - Each motion is a Web Animations API animation of `translate`. No script runs on each frame, also during the auto scroll.
-- **Small** - <!-- generated:gzip -->12.9 KB<!-- /generated --> gzip with loop, autoplay, auto scroll, auto height, sync and the mouse wheel.
+- **Small** - <!-- generated:gzip -->13.1 KB<!-- /generated --> gzip with loop, autoplay, auto scroll, auto height, sync and the mouse wheel.
 - **Loop** - The loop moves the original slides. It adds clones only if the slides are too few.
 - **Vertical and grid** - A column layout makes a vertical carousel. A CSS grid with more rows also works.
 - **Accessible** - WCAG 2.1 AA: names for the carousel, the slides and the buttons, the keyboard focus, a live region and reduced motion.
@@ -29,13 +29,13 @@ Load the minified script and the stylesheet from jsDelivr. The script adds the g
 ```html
 <link
   rel="stylesheet"
-  href="https://cdn.jsdelivr.net/gh/TwistedAndy/better-carousel@v1.1.5/dist/better-carousel.css"
-  integrity="sha384-2kYH/3D4NZj8lsDP2GHudOgPnUskWVUbMw0LIKm1BavDatvjrvqLODOXb4S0Rxd4"
+  href="https://cdn.jsdelivr.net/gh/TwistedAndy/better-carousel@v1.1.6/dist/better-carousel.css"
+  integrity="sha384-eMCWaKRE+ylXLvrz1kHddSvQwdSf9ZNBRLrlGQfDmGFwMLh9WoVKLY2CV/5pS+/o"
   crossorigin="anonymous"
 />
 <script
-  src="https://cdn.jsdelivr.net/gh/TwistedAndy/better-carousel@v1.1.5/dist/better-carousel.min.js"
-  integrity="sha384-tHhgKaJkTC8L68pE5n/z0ySasDHBouzNL7aphawjkp7EmkYcfpFxk8/klQqr4a5d"
+  src="https://cdn.jsdelivr.net/gh/TwistedAndy/better-carousel@v1.1.6/dist/better-carousel.min.js"
+  integrity="sha384-oSE8PmFZ9pYN4rPRf8/EMH8FnXNsIW+7hkIj/+K64dlAPE/4v/UjxazSYVeNgZu+"
   crossorigin="anonymous"
 ></script>
 ```
@@ -370,7 +370,7 @@ BetterCarousel(element, {
 | `wrapper` | `boolean` | `true` | Add the root and the viewport if the page does not have them. ([example](https://twistedandy.github.io/better-carousel/#options-usage)) |
 | `arrows` | `boolean`, `Element`, `string` | `true` | Add the arrows to the root. `false`: no arrows. An element or a selector: add the arrows to that element. ([example](https://twistedandy.github.io/better-carousel/#heading)) |
 | `dots` | `boolean`, `Element`, `string` | `true` | Add the dots. The values are the same as for `arrows`. ([example](https://twistedandy.github.io/better-carousel/#heading)) |
-| `dotsStyle` | `'zoom'`, `'all'` | `'zoom'` | The style of the dots. `'zoom'`: a window of 5 dots that slides, with smaller dots at the ends. `'all'`: all dots with the same size. |
+| `dotsStyle` | `'zoom'`, `'glide'`, `'all'` | `'glide'` | The style of the dots. `'zoom'`: a window of 5 dots that slides, with smaller dots at the ends. `'glide'`: the zoom, and the marker of the selected dot stretches on its way. `'all'`: all dots with the same size, and the selected dot has another color. ([example](https://twistedandy.github.io/better-carousel/#dots)) |
 | `labels` | `object` | English | The texts for screen readers: `carousel`, `slide` (`'%d of %n'`), `prev`, `next`, `dot` (`'Go to slide %d'`), `play`, `pause`. `%d` is the slide number, and `%n` is the number of slides. An empty text adds no name. ([example](#accessibility)) |
 | `classes` | `string`, `object` | `null` | A class prefix such as `'embla'`, or an object with the names to change. The [Classes](#classes) table gives all names. ([example](https://twistedandy.github.io/better-carousel/#embla)) |
 | `state` | `string` | `''` | The prefix of the state classes, such as `'is_'`. ([example](https://twistedandy.github.io/better-carousel/#embla)) |
@@ -667,14 +667,14 @@ These are the default class names. A prefix in `classes` changes the first part 
 | `better_fit` | On the root, if all slides fit |
 | `better_auto_height` | On the root, with `autoHeight` |
 | `better_button`, `better_prev`, `better_next`, `better_play` | The buttons |
-| `better_dots`, `better_dots_track`, `better_dot` | The window of the dots, the row that slides in it, and the dots |
-| `better_dots_marker` | The marker of the selected dot |
-| `better_dots_all` | On the window of the dots, with `dotsStyle: 'all'` |
+| `better_dots`, `better_dot` | The window of the dots, and the dots |
+| `better_dots_track`, `better_dots_marker` | With `dotsStyle: 'zoom'` and `'glide'`: the row of the dots that slides in the window, and the marker of the selected dot |
+| `better_dots_glide`, `better_dots_all` | On the window of the dots, with `dotsStyle: 'glide'` and `'all'` |
 | `selected` | The selected slide |
 | `clone` | A clone of a slide |
 | `dragging` | On the root, during a drag |
 | `playing` | On the root, while the autoplay or the auto scroll plays |
-| `current`, `prev`, `next`, `first`, `last` | The selected dot and the four dots around it |
+| `current`, `prev`, `next`, `first`, `last` | The selected dot and the four dots around it. With `dotsStyle: 'all'`, only `current`. |
 <!-- /generated -->
 
 ```js
@@ -720,9 +720,9 @@ The library is made for slow phones. A motion runs on the compositor, and a caro
 <!-- generated:sizes -->
 | File | Minified | Gzip | Brotli |
 | --- | --- | --- | --- |
-| `better-carousel.min.js` | 31.4 KB | 12.9 KB | 11.8 KB |
-| `better-carousel.css` | 4.9 KB | 1.4 KB | 1.2 KB |
-| Total | 36.2 KB | 14.3 KB | 13.0 KB |
+| `better-carousel.min.js` | 31.8 KB | 13.1 KB | 11.9 KB |
+| `better-carousel.css` | 5.0 KB | 1.4 KB | 1.2 KB |
+| Total | 36.8 KB | 14.5 KB | 13.2 KB |
 <!-- /generated -->
 
 The [Comparison](#comparison) section gives the sizes and the runtime costs of other carousel libraries.
@@ -747,26 +747,29 @@ This benchmark compares Better Carousel with Swiper, Embla Carousel and Glide in
 
 On a phone with a CPU 4 times slower:
 
-- With all features, Better Carousel is 13.3 KB gzip. Embla is 13.5 KB and Swiper 32.9 KB with the same features. Embla still has no names for screen readers and no arrow keys. Glide does not have all of these features.
-- 6 slide changes take 180 ms of main-thread time. Swiper takes 221 ms, Glide 329 ms and Embla 1584 ms.
-- The autoplay uses 0.9% of the CPU. Glide uses 2.4%, Swiper 24.4% and Embla 32.2%.
-- 5 drags take 1053 ms, about the same as Swiper (1024 ms). Glide takes 1732 ms and Embla 3587 ms. A drag causes the fewest paints of all libraries, and no layout shift.
-- A page with 10 carousels has 28 ms of Total Blocking Time. Swiper has 61 ms and Glide 42 ms. Embla has 18 ms.
+- 6 slide changes take 118 ms of main-thread time, the least of all libraries. Swiper takes 128 ms, Glide 197 ms and Embla 866 ms.
+- 5 drags take 519 ms of main-thread time, the least of all libraries. Swiper takes 619 ms, Glide 816 ms and Embla 1477 ms. A drag causes no layout shift.
+- The autoplay uses 0.6% of the CPU: 28 times less than Swiper (16.7%) and Embla (16.9%). Glide uses 1.6%.
+- During slide changes on a busy page, 1.9% of the frames are dropped or late, 1.6 times fewer than with Swiper (3.0%). Embla has 15.5% and Glide 0.7%. The motion runs on the compositor, so a busy main thread does not stop it.
+- A page with 10 carousels has 41 ms of Total Blocking Time, 1.6 times less than with Swiper (65 ms). Embla has 42 ms and Glide 54 ms. The main-thread time of the page is 230 ms: Swiper takes 251 ms, Glide 236 ms and Embla 217 ms.
+- With all features, Better Carousel is 15.0 KB gzip, 2.2 times less than Swiper (32.9 KB). Embla is 13.7 KB with its plugins and the scripts of its examples for the same features, but it has no names for screen readers and no arrow keys. Glide does not have all of these features.
 
-Measured with Chrome 157.0.8103.51 (headless) on 12th Gen Intel(R) Core(TM) i9-12900HK, 20 threads, 64 GB of memory, 2026-11-17. Each value is the median of 3 rounds.
+On a desktop computer, 6 slide changes take 26 ms of main-thread time, the same as Swiper, and 5 drags take 97 ms, the least of all libraries. Swiper takes 108 ms. The autoplay uses 0.3% of the CPU, 8.7 times less than Swiper (2.6%). During slide changes on a busy page, 0.4% of the frames are dropped or late. Swiper has 1.6%.
+
+Measured with Chrome 157.0.8103.51 (headless) on 12th Gen Intel(R) Core(TM) i9-12900HK, 20 threads, 64 GB of memory, 2026-11-19. Each value is the median of 3 rounds.
 
 ### Bundle size
 
-![Typical setup, JS + CSS, gzip](bench/results/charts/size.svg)
+![All features, JS + CSS, gzip](bench/results/charts/size.svg)
 
 | Library | Core | Typical | Typical, brotli | All features | Shipped files |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| **Better Carousel 1.0.0** | 13.3 | **13.3** | 12.1 | 13.3 | 12.9 |
-| Swiper 14.4.0 | 21.7 | **29.7** | 26.2 | 32.9 | 46.2 |
-| Embla Carousel 8.6.0 | 7.6 | **9.7** | 8.7 | 13.5 | 7.0 |
-| Glide 3.7.1 | 6.9 | **8.3** | 7.4 | not available | 8.7 |
+| **Better Carousel 1.1.6** | 15.0 | **15.0** | 13.6 | **15.0** | 14.5 |
+| Swiper 14.4.0 | 21.7 | 29.7 | 26.2 | **32.9** | 46.2 |
+| Embla Carousel 8.6.0 | 7.6 | 9.7 | 8.7 | **13.7** | 13.4 |
+| Glide 3.7.1 | 6.9 | 8.3 | 7.4 | not available | 8.7 |
 
-KB after gzip, JS and CSS. Core: the smallest setup that the user can drag. Typical: the setup of the tests below, with the loop, the arrows, the dots, the autoplay and the accessibility module. All features: the typical setup, the mouse wheel, the auto scroll, the auto height, the free drag and the sync. Shipped files: the minified JS and CSS files of the package, as they are.
+KB after gzip, JS and CSS. Core: the smallest setup that the user can drag. Typical: the setup of the tests below, with the loop, the arrows, the dots, the autoplay and the accessibility module. All features: the typical setup, the mouse wheel, the auto scroll, the auto height, the free drag, the sync and the lazy load. For Embla, these are its plugins and the scripts of its examples. Shipped files: the minified JS and CSS files of the package for all features, as they are. For Embla, the core file and the files of its 5 plugins.
 
 ### Mobile, CPU 4 times slower
 
@@ -780,21 +783,21 @@ KB after gzip, JS and CSS. Core: the smallest setup that the user can drag. Typi
 
 | Library | Load, ms | Blocking, ms | Layout shift | Idle CPU, % | Navigate, ms | Navigate paints | Autoplay CPU, % | Drag, ms | Drag paints | Busy: bad frames, % |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| **Better Carousel** | 198 | 28 | 0.000 | 0.2 | 180 | 12 | 0.9 | 1053 | 8 | 3.2 |
-| Swiper | 239 | 61 | 0.000 | 0.1 | 221 | 12 | 24.4 | 1024 | 10 | 4.3 |
-| Embla Carousel | 190 | 18 | 0.000 | 0.2 | 1584 | 12 | 32.2 | 3587 | 10 | 26.2 |
-| Glide | 221 | 42 | 0.000 | 0.1 | 329 | 22 | 2.4 | 1732 | 20 | 1.3 |
-| No carousel | 117 | 0 | 0.000 | 0.2 | 14 | 0 | 0.1 | 354 | 0 | - |
+| **Better Carousel** | 230 | 41 | 0.000 | 0.1 | 118 | 17 | 0.6 | 519 | 18 | 1.9 |
+| Swiper | 251 | 65 | 0.000 | 0.2 | 128 | 12 | 16.7 | 619 | 10 | 3.0 |
+| Embla Carousel | 217 | 42 | 0.000 | 0.2 | 866 | 12 | 16.9 | 1477 | 10 | 15.5 |
+| Glide | 236 | 54 | 0.000 | 0.1 | 197 | 24 | 1.6 | 816 | 20 | 0.7 |
+| No carousel | 126 | 0 | 0.000 | 0.1 | 15 | 0 | 0.1 | 193 | 0 | - |
 
 ### Desktop
 
 | Library | Load, ms | Blocking, ms | Layout shift | Idle CPU, % | Navigate, ms | Navigate paints | Autoplay CPU, % | Drag, ms | Drag paints | Busy: bad frames, % |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| **Better Carousel** | 40 | 0 | 0.000 | 0.0 | 37 | 12 | 0.4 | 174 | 30 | 1.5 |
-| Swiper | 51 | 0 | 0.000 | 0.0 | 29 | 12 | 3.3 | 146 | 16 | 1.2 |
-| Embla Carousel | 42 | 0 | 0.000 | 0.0 | 266 | 12 | 5.6 | 518 | 60 | 15.7 |
-| Glide | 47 | 0 | 0.000 | 0.0 | 49 | 26 | 0.6 | 303 | 22 | 0.7 |
-| No carousel | 30 | 0 | 0.000 | 0.1 | 3 | 0 | 0.0 | 45 | 0 | - |
+| **Better Carousel** | 41 | 0 | 0.000 | 0.0 | 26 | 17 | 0.3 | 97 | 58 | 0.4 |
+| Swiper | 51 | 0 | 0.000 | 0.1 | 26 | 12 | 2.6 | 108 | 16 | 1.6 |
+| Embla Carousel | 39 | 0 | 0.000 | 0.0 | 189 | 12 | 3.8 | 352 | 60 | 15.3 |
+| Glide | 51 | 0 | 0.000 | 0.1 | 31 | 24 | 0.5 | 199 | 22 | 0.7 |
+| No carousel | 27 | 0 | 0.000 | 0.0 | 3 | 0 | 0.0 | 38 | 0 | - |
 
 Load: the main-thread time and the Total Blocking Time of a page with 10 carousels. Navigate: 6 calls of `next()`. Drag: 5 drags. Busy: the share of frames that were dropped or late during navigate, while another script blocks the main thread. Less is better in all columns.
 

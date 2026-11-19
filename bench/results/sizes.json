@@ -1,5 +1,5 @@
 {
-	"built": "2026-11-17T18:08:09.025Z",
+	"built": "2026-11-19T06:28:07.201Z",
 	"esbuild": "0.28.2",
 	"settings": {
 		"bundle": true,
@@ -19,77 +19,79 @@
 		{
 			"name": "Better Carousel",
 			"id": "better",
-			"version": "1.0.0",
+			"version": "1.1.6",
 			"released": null,
 			"sets": {
 				"core": {
 					"js": {
-						"min": 29860,
-						"gzip": 12251,
-						"brotli": 11169
+						"min": 32913,
+						"gzip": 13882,
+						"brotli": 12673
 					},
 					"css": {
-						"min": 4967,
-						"gzip": 1416,
-						"brotli": 1207
+						"min": 5270,
+						"gzip": 1507,
+						"brotli": 1292
 					},
 					"total": {
-						"min": 34827,
-						"gzip": 13667,
-						"brotli": 12376
+						"min": 38183,
+						"gzip": 15389,
+						"brotli": 13965
 					}
 				},
 				"typical": {
 					"js": {
-						"min": 29860,
-						"gzip": 12251,
-						"brotli": 11169
+						"min": 32913,
+						"gzip": 13882,
+						"brotli": 12673
 					},
 					"css": {
-						"min": 4967,
-						"gzip": 1416,
-						"brotli": 1207
+						"min": 5270,
+						"gzip": 1507,
+						"brotli": 1292
 					},
 					"total": {
-						"min": 34827,
-						"gzip": 13667,
-						"brotli": 12376
+						"min": 38183,
+						"gzip": 15389,
+						"brotli": 13965
 					}
 				},
 				"parity": {
 					"js": {
-						"min": 29860,
-						"gzip": 12251,
-						"brotli": 11169
+						"min": 32913,
+						"gzip": 13882,
+						"brotli": 12673
 					},
 					"css": {
-						"min": 4967,
-						"gzip": 1416,
-						"brotli": 1207
+						"min": 5270,
+						"gzip": 1507,
+						"brotli": 1292
 					},
 					"total": {
-						"min": 34827,
-						"gzip": 13667,
-						"brotli": 12376
+						"min": 38183,
+						"gzip": 15389,
+						"brotli": 13965
 					}
 				}
 			},
 			"cdn": {
-				"file": "../dist/better-carousel.min.js",
+				"files": [
+					"../dist/better-carousel.min.js"
+				],
 				"js": {
-					"min": 29578,
-					"gzip": 11858,
-					"brotli": 10815
+					"min": 32553,
+					"gzip": 13398,
+					"brotli": 12227
 				},
 				"css": {
-					"min": 4823,
-					"gzip": 1380,
-					"brotli": 1171
+					"min": 5132,
+					"gzip": 1475,
+					"brotli": 1258
 				},
 				"total": {
-					"min": 34401,
-					"gzip": 13238,
-					"brotli": 11986
+					"min": 37685,
+					"gzip": 14873,
+					"brotli": 13485
 				}
 			}
 		},
@@ -152,7 +154,9 @@
 				}
 			},
 			"cdn": {
-				"file": "swiper/swiper-bundle.min.js",
+				"files": [
+					"swiper/swiper-bundle.min.js"
+				],
 				"js": {
 					"min": 154826,
 					"gzip": 44417,
@@ -212,9 +216,9 @@
 				},
 				"parity": {
 					"js": {
-						"min": 34756,
-						"gzip": 13182,
-						"brotli": 11885
+						"min": 35826,
+						"gzip": 13482,
+						"brotli": 12151
 					},
 					"css": {
 						"min": 1571,
@@ -222,18 +226,25 @@
 						"brotli": 490
 					},
 					"total": {
-						"min": 36327,
-						"gzip": 13777,
-						"brotli": 12375
+						"min": 37397,
+						"gzip": 14077,
+						"brotli": 12641
 					}
 				}
 			},
 			"cdn": {
-				"file": "embla-carousel/embla-carousel.umd.js",
+				"files": [
+					"embla-carousel/embla-carousel.umd.js",
+					"embla-carousel-autoplay/embla-carousel-autoplay.umd.js",
+					"embla-carousel-class-names/embla-carousel-class-names.umd.js",
+					"embla-carousel-auto-scroll/embla-carousel-auto-scroll.umd.js",
+					"embla-carousel-auto-height/embla-carousel-auto-height.umd.js",
+					"embla-carousel-wheel-gestures/dist/embla-carousel-wheel-gestures.umd.js"
+				],
 				"js": {
-					"min": 17946,
-					"gzip": 7141,
-					"brotli": 6467
+					"min": 33496,
+					"gzip": 13693,
+					"brotli": 12330
 				},
 				"css": {
 					"min": 0,
@@ -241,9 +252,9 @@
 					"brotli": 0
 				},
 				"total": {
-					"min": 17946,
-					"gzip": 7141,
-					"brotli": 6467
+					"min": 33496,
+					"gzip": 13693,
+					"brotli": 12330
 				}
 			}
 		},
@@ -290,7 +301,9 @@
 				"parity": null
 			},
 			"cdn": {
-				"file": "@glidejs/glide/dist/glide.min.js",
+				"files": [
+					"@glidejs/glide/dist/glide.min.js"
+				],
 				"js": {
 					"min": 27790,
 					"gzip": 7976,

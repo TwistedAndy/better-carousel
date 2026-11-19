@@ -15,8 +15,12 @@ $better-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'
 	position: relative;
 
 	// No "user-select" here: its change paints all layers of the carousel. The drag stops the text selection with script.
-	&.#{$better-state}dragging {
-		cursor: grabbing;
+	// Only for a mouse: "cursor" is inherited, so its change makes the browser calculate the style of all elements in the carousel again.
+	// A touch screen shows no cursor, and a drag on it does not need this work.
+	@media (pointer: fine) {
+		&.#{$better-state}dragging {
+			cursor: grabbing;
+		}
 	}
 
 }
@@ -31,9 +35,10 @@ $better-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'
 
 // The elements in the slides get the touch-action of the viewport. Without it, an element that can scroll, such as a list with overflow-y: auto,
 // keeps a touch move along the axis, and the carousel does not move. :where() gives no specificity: a page rule, such as touch-action: auto
-// for a table that scrolls along the axis, applies.
+// for a table that scrolls along the axis, applies. The value comes from the --better-touch variable of the viewport, not from inherit:
+// Chrome calculates the style of an element with inherit again on each change of its parent, and so of each slide on each frame of a motion.
 :where(.#{$better}_viewport) * {
-	touch-action: inherit;
+	touch-action: var(--better-touch);
 }
 
 // The width comes from the parent, not from the slides. Without it, a carousel in a flex item or a grid column grows to the width of all slides.
@@ -160,8 +165,9 @@ $better-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'
 		clip-path: none;
 	}
 
-	// The dots: a window of 5 dots. The track of the dots slides with "translate", and the marker of the selected dot glides with "translate".
-	// Only these two elements animate. Each animation costs work on the main thread at its start and its end, so the dots change size at once.
+	// The dots. With dotsStyle: 'zoom', a window of 5 dots: the track of the dots slides with "translate", and the marker of the selected dot
+	// glides with "translate". Only these two elements animate. Each animation costs work on the main thread at its start and its end,
+	// so the dots change size at once. With dotsStyle: 'all', the dots are directly in the window, and the selected dot has another color.
 	.#{$better}_dots {
 		display: flex;
 		position: relative;
@@ -186,7 +192,7 @@ $better-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'
 		border-radius: 50%;
 		background: none;
 		color: var(--button-text-disabled, #767676);
-		// A color transition runs on the main thread. It runs only on hover: a select does not change the color of a dot.
+		// A color transition runs on the main thread. It runs only on hover: the color of the selected dot comes from the background of :before.
 		transition: color 0.2s;
 		cursor: pointer;
 
@@ -244,6 +250,7 @@ $better-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'
 	}
 
 	// The selected dot, on top of the dots, also if the CSS of the site positions the buttons. It does not get the clicks.
+	// With dotsStyle: 'glide', the script stretches it with "scale" on its way to another dot.
 	.#{$better}_dots_marker {
 		position: absolute;
 		z-index: 1;
@@ -263,17 +270,26 @@ $better-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'
 
 	}
 
-	// dotsStyle: 'all'. All dots show with the same size, and the track does not slide.
+	// dotsStyle: 'glide'. The selected dot has the size of the dots around it, so that it does not show beside the marker on its way.
+	.#{$better}_dots_glide .#{$better}_dot.#{$better-state}current:before {
+		transform: scale(0.666);
+	}
+
+	// dotsStyle: 'all'. All dots show with the same size, and the selected dot changes its color at once.
 	.#{$better}_dots.#{$better}_dots_all {
 		width: max-content;
 		max-width: 100%;
 
-		.#{$better}_dots_track {
-			translate: none;
+		// The size, not "transform": an element with a transform paints as a separate layer, and the color change of the selected dot
+		// then paints the old dot, the new dot and the page. Without it, the color change paints only the window of the dots.
+		.#{$better}_dot:before {
+			width: 0.5625rem;
+			height: 0.5625rem;
+			transform: none;
 		}
 
-		.#{$better}_dot:before {
-			transform: scale(0.666);
+		.#{$better}_dot.#{$better-state}current:before {
+			background: var(--button-base, #222);
 		}
 
 	}

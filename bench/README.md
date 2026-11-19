@@ -1,6 +1,6 @@
 # Carousel benchmark
 
-This benchmark compares Better Carousel with Swiper, Embla Carousel and Glide in Chrome. It measures the bundle size, the main-thread time, the paints, the frames and the layout shift. The [Comparison](../README.md#comparison) section of the main README gives the results.
+This benchmark compares Better Carousel with Swiper, Embla Carousel and Glide in Chrome. It measures the bundle size, the main-thread time, the paints, the frames and the layout shift. The [Results](#results) section below gives the latest results, and the [Comparison](../README.md#comparison) section of the main README gives a summary.
 
 ## Run it
 
@@ -36,6 +36,41 @@ Add the options after `--`, for example `npm run bench -- --profiles mobile --li
 | `--headed` | off | Show the Chrome window. By default, Chrome runs headless. |
 
 The script finds Chrome in the usual places. If it does not find Chrome, set the `CHROME` environment variable to the path of Chrome or Chromium.
+
+## Results
+
+Better Carousel 1.1.6, Chrome 157.0.8103.51 (headless), 12th Gen Intel(R) Core(TM) i9-12900HK, 20 threads, 64 GB of memory, 2026-11-19. Each value is the median of 3 rounds. `results/REPORT.md` gives all values and the range of the rounds.
+
+### Bundle size, KB after gzip, JS + CSS
+
+| Library | Core | Typical | Typical, brotli | All features | Shipped files |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| **Better Carousel 1.1.6** | 15.0 | **15.0** | 13.6 | **15.0** | 14.5 |
+| Swiper 14.4.0 | 21.7 | 29.7 | 26.2 | **32.9** | 46.2 |
+| Embla Carousel 8.6.0 | 7.6 | 9.7 | 8.7 | **13.7** | 13.4 |
+| Glide 3.7.1 | 6.9 | 8.3 | 7.4 | not available | 8.7 |
+
+### Mobile: 412 × 823, CPU 4 times slower, 1 slide in view
+
+| Library | Load, ms | Blocking, ms | Layout shift | Idle CPU, % | Navigate, ms | Navigate paints | Autoplay CPU, % | Drag, ms | Drag paints | Busy: bad frames, % |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| **Better Carousel** | 230 | 41 | 0.000 | 0.1 | 118 | 17 | 0.6 | 519 | 18 | 1.9 |
+| Swiper | 251 | 65 | 0.000 | 0.2 | 128 | 12 | 16.7 | 619 | 10 | 3.0 |
+| Embla Carousel | 217 | 42 | 0.000 | 0.2 | 866 | 12 | 16.9 | 1477 | 10 | 15.5 |
+| Glide | 236 | 54 | 0.000 | 0.1 | 197 | 24 | 1.6 | 816 | 20 | 0.7 |
+| No carousel | 126 | 0 | 0.000 | 0.1 | 15 | 0 | 0.1 | 193 | 0 | - |
+
+### Desktop: 1350 × 940, no CPU throttling, 3 slides in view
+
+| Library | Load, ms | Blocking, ms | Layout shift | Idle CPU, % | Navigate, ms | Navigate paints | Autoplay CPU, % | Drag, ms | Drag paints | Busy: bad frames, % |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| **Better Carousel** | 41 | 0 | 0.000 | 0.0 | 26 | 17 | 0.3 | 97 | 58 | 0.4 |
+| Swiper | 51 | 0 | 0.000 | 0.1 | 26 | 12 | 2.6 | 108 | 16 | 1.6 |
+| Embla Carousel | 39 | 0 | 0.000 | 0.0 | 189 | 12 | 3.8 | 352 | 60 | 15.3 |
+| Glide | 51 | 0 | 0.000 | 0.1 | 31 | 24 | 0.5 | 199 | 22 | 0.7 |
+| No carousel | 27 | 0 | 0.000 | 0.0 | 3 | 0 | 0.0 | 38 | 0 | - |
+
+Load: the main-thread time, the Total Blocking Time and the layout shift of a page with 10 carousels. Navigate: 6 calls of `next()`. Drag: 5 drags. Busy: the share of frames that were dropped or late during navigate, while another script blocks the main thread. Less is better in all columns.
 
 ## Method
 
@@ -99,8 +134,8 @@ After each action, the runner reads the selected slide, to make sure that the ca
 | --- | --- |
 | Core | The smallest import that makes a carousel that the user can drag, and the core CSS |
 | Typical | The setup of the test page, with the accessibility module if the library has one, and the CSS of the arrows and the dots |
-| All features | The typical set, the mouse wheel, the auto scroll, the auto height, the free drag and the sync. Swiper adds `FreeMode`, `Mousewheel` and `Thumbs`. Embla adds `embla-carousel-auto-scroll` and `-auto-height` 8.6.0, and `embla-carousel-wheel-gestures` 8.1.0. Glide does not have all of these features. |
-| Shipped files | The minified JS and CSS files that the package gives for a script tag, as they are |
+| All features | The typical set, the mouse wheel, the auto scroll, the auto height, the free drag, the sync and the lazy load. Swiper adds `FreeMode`, `Mousewheel` and `Thumbs`. Embla adds `embla-carousel-auto-scroll` and `-auto-height` 8.6.0, `embla-carousel-wheel-gestures` 8.1.0, and the scripts of the thumbnails and the lazy load of the Embla examples (`adapters/embla-extras.js`). Glide does not have all of these features. |
+| Shipped files | The minified JS and CSS files that the package gives for a script tag, as they are, for all the features. For Embla, the core file and the files of the Autoplay, ClassNames, AutoScroll, AutoHeight and WheelGestures plugins. Each file is compressed separately, as a browser loads it. |
 
 The test page markup and the measurement script are not in the sizes.
 

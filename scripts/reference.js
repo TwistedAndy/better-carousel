@@ -34,7 +34,7 @@ export const options = [
 	{ name: 'wrapper', type: '`boolean`', default: true, text: 'Add the root and the viewport if the page does not have them.', example: 'options-usage' },
 	{ name: 'arrows', type: '`boolean`, `Element`, `string`', default: true, text: 'Add the arrows to the root. `false`: no arrows. An element or a selector: add the arrows to that element.', example: 'heading' },
 	{ name: 'dots', type: '`boolean`, `Element`, `string`', default: true, text: 'Add the dots. The values are the same as for `arrows`.', example: 'heading' },
-	{ name: 'dotsStyle', type: "`'zoom'`, `'all'`", default: 'zoom', text: "The style of the dots. `'zoom'`: a window of 5 dots that slides, with smaller dots at the ends. `'all'`: all dots with the same size." },
+	{ name: 'dotsStyle', type: "`'zoom'`, `'glide'`, `'all'`", default: 'glide', text: "The style of the dots. `'zoom'`: a window of 5 dots that slides, with smaller dots at the ends. `'glide'`: the zoom, and the marker of the selected dot stretches on its way. `'all'`: all dots with the same size, and the selected dot has another color.", example: 'dots' },
 	{
 		name: 'labels',
 		ts: "Labels",
@@ -104,14 +104,14 @@ export const classes = [
 	{ name: '`better_fit`', text: 'On the root, if all slides fit' },
 	{ name: '`better_auto_height`', text: 'On the root, with `autoHeight`' },
 	{ name: '`better_button`, `better_prev`, `better_next`, `better_play`', text: 'The buttons' },
-	{ name: '`better_dots`, `better_dots_track`, `better_dot`', text: 'The window of the dots, the row that slides in it, and the dots' },
-	{ name: '`better_dots_marker`', text: 'The marker of the selected dot' },
-	{ name: '`better_dots_all`', text: "On the window of the dots, with `dotsStyle: 'all'`" },
+	{ name: '`better_dots`, `better_dot`', text: 'The window of the dots, and the dots' },
+	{ name: '`better_dots_track`, `better_dots_marker`', text: "With `dotsStyle: 'zoom'` and `'glide'`: the row of the dots that slides in the window, and the marker of the selected dot" },
+	{ name: '`better_dots_glide`, `better_dots_all`', text: "On the window of the dots, with `dotsStyle: 'glide'` and `'all'`" },
 	{ name: '`selected`', text: 'The selected slide' },
 	{ name: '`clone`', text: 'A clone of a slide' },
 	{ name: '`dragging`', text: 'On the root, during a drag' },
 	{ name: '`playing`', text: 'On the root, while the autoplay or the auto scroll plays' },
-	{ name: '`current`, `prev`, `next`, `first`, `last`', text: 'The selected dot and the four dots around it' }
+	{ name: '`current`, `prev`, `next`, `first`, `last`', text: 'The selected dot and the four dots around it. With `dotsStyle: \'all\'`, only `current`.' }
 ];
 
 // The differences from Embla 9 and Embla 8. "version" is the Embla version that has the name.
