@@ -172,6 +172,7 @@ export function autoplay(context) {
 	// Stop the timer, and call the function that the "timer" callback returned
 	function clear() {
 		clearTimeout(timer);
+		timer = 0;
 		done?.();
 		done = null;
 	}
@@ -179,9 +180,12 @@ export function autoplay(context) {
 	function reset() {
 		clear();
 		if (!control.paused() && !api.isFit()) {
-			// The delay: data-delay on the selected slide, one value for each snap, or one value
+			// The delay: data-delay on the selected slide, one value for each snap, or one value. The last value of a list applies to the snaps after it.
+			// A value that is not a positive number gives the default delay. setTimeout() runs at once with 2^31 ms or more.
 			const value = api.slideNodes()[api.selectedSlide()]?.dataset.delay || options.delay,
-				delay = +(Array.isArray(value) ? value[api.selectedSnap()] : value);
+				list = [].concat(value),
+				number = +list[Math.min(api.selectedSnap(), list.length - 1)],
+				delay = number > 0 && number < 2e9 ? number : autoplayDefaults.delay;
 			timer = setTimeout(next, delay);
 			done = options.timer?.(delay, api);
 		}
@@ -210,11 +214,18 @@ export function autoplay(context) {
 		}
 	}
 
+	// A measure pass can start or end the fit mode: then start or stop the timer. During a drag or a motion, the "settle" starts the timer.
+	function resize() {
+		if (api.isFit() ? timer : !timer && !context.dragging() && !context.moving()) {
+			reset();
+		}
+	}
+
 	const control = controller(context, 'autoplay', options, {
 		play: reset,
 		stop: clear,
 		pause: reset,
-		events: [['settle', reset], ['interact', interact]]
+		events: [['settle', reset], ['interact', interact], ['resize', resize]]
 	});
 
 	control.reset = reset;
@@ -289,13 +300,13 @@ export function autoScroll(context) {
 	function run() {
 		timer = 0;
 		const geo = context.geo();
-		if (geo && !geo.fit && !pressed && !context.dragging() && !control.paused()) {
+		if (geo && !geo.fit && options.speed > 0 && !pressed && !context.dragging() && !control.paused()) {
 			context.scroll(options.direction === 'prev' ? -1 : 1, options.speed / 1000);
 		}
 	}
 
 	// While the auto scroll plays, a press stops the slides under the pointer. A release without a drag starts them again after the delay.
-	// A drag is an interaction.
+	// A drag is an interaction. Its release starts a motion to a snap, and the "settle" of this motion starts the delay.
 	const listen = bind(window, [['pointerup', release], ['pointercancel', release]]),
 		presses = bind(context.viewport, [['pointerdown', press]]);
 
@@ -311,7 +322,7 @@ export function autoScroll(context) {
 	function release() {
 		pressed = false;
 		listen();
-		if (!context.dragging()) {
+		if (!context.dragging() && !context.moving()) {
 			wait();
 		}
 	}

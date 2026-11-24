@@ -8,7 +8,7 @@
 import { abs, alignOffset, clamp, compute, floor, inView, nearestSnap, physicalSnap, progress, round, snapIndex, snapOfSlide, snapPosition, targetLocation } from './geometry.js';
 import { observeSize, readLayout, readRects, waitNear, windowSize } from './layout.js';
 import { normalize, pathFits, placement } from './loop.js';
-import { addClass, build, cleanStyle, copyContent, copySlides, labelSlides, readSlides, restore, setClass, setStyle } from './markup.js';
+import { addClass, build, cleanStyle, copyContent, copySlides, labelSlides, own, readSlides, restore, setClass, setStyle } from './markup.js';
 import { animator, EASE, snapDuration } from './motion.js';
 import { breakpoints, classNames, merge, resolve } from './options.js';
 
@@ -75,6 +75,8 @@ export default function carousel(element, userOptions, defaults, features) {
 
 	// The options and the markup
 	let options,
+		// The options of the reinit() calls. They apply over the data-carousel attribute.
+		changes = {},
 		cls,
 		root,
 		viewport,
@@ -136,8 +138,10 @@ export default function carousel(element, userOptions, defaults, features) {
 		options: () => options,
 		reinit,
 		destroy: () => {
-			teardown(false);
-			events.emit('destroy');
+			if (registry.get(element) === api) {
+				teardown(false);
+				events.emit('destroy');
+			}
 		}
 	};
 
@@ -204,7 +208,7 @@ export default function carousel(element, userOptions, defaults, features) {
 		waiting = resolved.lazy ? waitNear(element, resolved.lazy, reinit) : null;
 
 	if (waiting) {
-		registry.set(element, api);
+		register(true);
 	} else {
 		setup();
 	}
@@ -215,20 +219,20 @@ export default function carousel(element, userOptions, defaults, features) {
 	 * Read the options, add the markup, start the features and the observers. The first ResizeObserver callback measures the layout.
 	 */
 	function setup() {
-		media = breakpoints(resolved || resolve(element, defaults, userOptions), () => reinit());
+		media = breakpoints(resolved || merge(resolve(element, defaults, userOptions), changes), () => reinit());
 		resolved = null;
 		options = media.options;
 
+		// An inactive carousel stays in the registry, so that a second call gets it, and a breakpoint can start it again
 		if (!options.active) {
+			register(true);
 			return;
 		}
 
 		cls = classNames(options.classes, options.state);
 		({ root, viewport, container } = build(element, options, cls));
 
-		for (const node of [root, viewport, container]) {
-			registry.set(node, api);
-		}
+		register(true);
 
 		slides = readSlides(container, options.slides);
 		nodes = slides;
@@ -267,13 +271,17 @@ export default function carousel(element, userOptions, defaults, features) {
 	function teardown(keep) {
 		waiting?.();
 		waiting = null;
-		registry.delete(element);
+		register();
 		observe(false);
 		mutationObserver?.disconnect();
 		media?.remove();
 		media = null;
 
 		if (!cls) {
+			// An inactive carousel kept the wrapper of its last setup
+			if (!keep && root) {
+				restore(root, viewport, container, [], false);
+			}
 			return;
 		}
 
@@ -303,10 +311,7 @@ export default function carousel(element, userOptions, defaults, features) {
 			setClass(root, cls[name], false);
 		}
 
-		for (const node of [root, viewport, container]) {
-			cleanStyle(node);
-			registry.delete(node);
-		}
+		[root, viewport, container].forEach(cleanStyle);
 
 		restore(root, viewport, container, slides, keep);
 
@@ -320,13 +325,22 @@ export default function carousel(element, userOptions, defaults, features) {
 	}
 
 	/**
-	 * Merge new options and set up the carousel again. The selected slide stays.
+	 * Add the carousel to the registry for its element and its markup, so that BetterCarousel.get() finds it, or remove it.
+	 *
+	 * @param {boolean} [on] Without a value, remove the carousel.
+	 */
+	function register(on) {
+		[element, root, viewport, container].forEach((node) => node && registry[on ? 'set' : 'delete'](node, api));
+	}
+
+	/**
+	 * Merge new options and set up the carousel again. The selected slide stays. The new options apply over all other sources.
 	 *
 	 * @param {object} [newOptions]
 	 */
 	function reinit(newOptions) {
 		if (newOptions) {
-			userOptions = merge(userOptions, newOptions);
+			changes = merge(changes, newOptions);
 			resolved = null;
 		}
 		const keep = geo ? selectedSlide() : requested;
@@ -445,9 +459,9 @@ export default function carousel(element, userOptions, defaults, features) {
 		observe(true);
 	}
 
-	// The original slide index of a slide or a clone
+	// The original slide index of a slide or a clone. With no slides, 0.
 	function original(index) {
-		return index % slides.length;
+		return index % slides.length || 0;
 	}
 
 	// The logical snap of a snap. They are different only when the carousel has clones.
@@ -560,6 +574,10 @@ export default function carousel(element, userOptions, defaults, features) {
 			render(dragging);
 		}
 		labelSlides(slides, options.labels.slide);
+		// A right-to-left container gives its direction to the root, so that the arrows and the dots follow it
+		if (options.dir === 'auto') {
+			own(root, 'dir', geo.rtl && 'rtl');
+		}
 
 		if (!options.resize) {
 			observe(false);
@@ -607,8 +625,10 @@ export default function carousel(element, userOptions, defaults, features) {
 
 		// Auto height: the height of the tallest slide in view. During a motion or a drag, the slides in view at the selected snap give it,
 		// so that a taller slide makes the viewport taller only when it is selected. The CSS transition has the duration and the curve of a motion.
+		// With no slide in view, the height comes from the CSS.
 		if (options.autoHeight) {
-			setStyle(viewport, 'height', x ? Math.max(...inView(geo, keep ? geo.snaps[selected].location : location, 0).map((index) => geo.slides[index].cross)) + 'px' : '');
+			const height = x ? Math.max(...inView(geo, keep ? geo.snaps[selected].location : location, 0).map((index) => geo.slides[index].cross)) : 0;
+			setStyle(viewport, 'height', height > 0 ? height + 'px' : '');
 		}
 
 		const chosen = selectedSlide(),
@@ -687,7 +707,8 @@ export default function carousel(element, userOptions, defaults, features) {
 					// The slide start on the screen, and its distance from its snap position
 					start = box.start + geo.sign * (shifts[index] || 0) + at,
 					delta = start - alignOffset(geo.align, geo.view, size, index),
-					offset = delta / (size + geo.gap);
+					// A hidden slide has no size, and with no gap, it has no offset
+					offset = size + geo.gap ? delta / (size + geo.gap) : 0;
 
 				if (options.offset === true) {
 					node.style.setProperty('--better-offset', offset);
@@ -757,6 +778,10 @@ export default function carousel(element, userOptions, defaults, features) {
 	 * @param {boolean} [instant]
 	 */
 	function advance(direction, instant) {
+		// A lazy carousel starts first, so that the step starts from the startSnap option
+		if (waiting) {
+			reinit();
+		}
 		if (!geo) {
 			go(selected + direction, instant);
 		} else if (can(direction)) {

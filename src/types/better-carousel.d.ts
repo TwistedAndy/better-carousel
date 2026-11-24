@@ -3,7 +3,7 @@
 
 /** The options of the autoplay. */
 export interface AutoplayOptions {
-	/** The time on each slide, in ms, or an array with one time for each snap. A `data-delay` attribute on a slide sets the time of that slide. @default 4000 */
+	/** The time on each slide, in ms, or an array with one time for each snap. The last time of the array applies to the snaps after it. A `data-delay` attribute on a slide sets the time of that slide. @default 4000 */
 	delay?: number | number[];
 	/** A drag, an arrow or a dot stops the autoplay. @default true */
 	stopOnInteraction?: boolean;
@@ -141,7 +141,7 @@ export interface Options {
 	axis?: 'x' | 'y' | 'auto';
 	/** The position of the selected snap in the viewport. A function gets `(viewSize, snapSize, index)` and returns the offset in px. With `'auto'`, `justify-content` sets the alignment. @default 'auto' @see {@link https://twistedandy.github.io/better-carousel/#center | example} */
 	align?: 'start' | 'center' | 'end' | 'auto' | ((viewSize: number, snapSize: number, index: number) => number);
-	/** The text direction. With `'auto'`, the CSS `direction` sets it. @default 'auto' @see {@link https://twistedandy.github.io/better-carousel/#rtl | example} */
+	/** The text direction. With `'auto'`, the CSS `direction` sets it. With `'ltr'` or `'rtl'`, or with a right-to-left container, the root gets the `dir` attribute if it has none. @default 'auto' @see {@link https://twistedandy.github.io/better-carousel/#rtl | example} */
 	dir?: 'ltr' | 'rtl' | 'auto';
 	/** The first slide comes after the last slide. @default false @see {@link https://twistedandy.github.io/better-carousel/#loop | example} */
 	loop?: boolean;
@@ -179,7 +179,7 @@ export interface Options {
 	slideChanges?: boolean;
 	/** Go to a slide when it gets the keyboard focus. @default true @see {@link https://twistedandy.github.io/better-carousel/#controls | example} */
 	focus?: boolean;
-	/** The part of a slide, from 0 to 1, that must show for `slidesInView()`. @default 0 @see {@link https://twistedandy.github.io/better-carousel/#options-usage | example} */
+	/** The part of a slide, from 0 to 1, that must show for `slidesInView()`. A slide that is larger than the viewport must fill this part of the viewport. @default 0 @see {@link https://twistedandy.github.io/better-carousel/#options-usage | example} */
 	inViewThreshold?: number;
 	/** `false`: do not start the carousel. Use it in `breakpoints`. @default true @see {@link https://twistedandy.github.io/better-carousel/#breakpoints | example} */
 	active?: boolean;
@@ -287,7 +287,7 @@ export interface Carousel {
 	isFit(): boolean;
 	/** The options that apply now, after the breakpoints. */
 	options(): Options;
-	/** Merge new options and start again. The selected slide stays. */
+	/** Merge new options and start again. The selected slide stays. The new options apply over the `data-carousel` attribute. */
 	reinit(options?: Options): void;
 	/** Stop the carousel and restore the markup. */
 	destroy(): void;

@@ -197,6 +197,9 @@ function build(element, options, cls) {
 	if (!root.hasAttribute('aria-labelledby')) {
 		own(root, 'aria-label', options.labels.carousel);
 	}
+	// The dir option sets the direction of the root before the first measure pass, so that the slides and the controls follow it
+	own(root, 'dir', options.dir !== 'auto' && options.dir);
+
 	own(container, 'id', container.id || 'carousel-' + ++uid);
 	own(container, 'aria-live', 'polite');
 
@@ -491,6 +494,7 @@ function autoplay(context) {
 	// Stop the timer, and call the function that the "timer" callback returned
 	function clear() {
 		clearTimeout(timer);
+		timer = 0;
 		done?.();
 		done = null;
 	}
@@ -498,9 +502,12 @@ function autoplay(context) {
 	function reset() {
 		clear();
 		if (!control.paused() && !api.isFit()) {
-			// The delay: data-delay on the selected slide, one value for each snap, or one value
+			// The delay: data-delay on the selected slide, one value for each snap, or one value. The last value of a list applies to the snaps after it.
+			// A value that is not a positive number gives the default delay. setTimeout() runs at once with 2^31 ms or more.
 			const value = api.slideNodes()[api.selectedSlide()]?.dataset.delay || options.delay,
-				delay = +(Array.isArray(value) ? value[api.selectedSnap()] : value);
+				list = [].concat(value),
+				number = +list[Math.min(api.selectedSnap(), list.length - 1)],
+				delay = number > 0 && number < 2e9 ? number : autoplayDefaults.delay;
 			timer = setTimeout(next, delay);
 			done = options.timer?.(delay, api);
 		}
@@ -529,11 +536,18 @@ function autoplay(context) {
 		}
 	}
 
+	// A measure pass can start or end the fit mode: then start or stop the timer. During a drag or a motion, the "settle" starts the timer.
+	function resize() {
+		if (api.isFit() ? timer : !timer && !context.dragging() && !context.moving()) {
+			reset();
+		}
+	}
+
 	const control = controller(context, 'autoplay', options, {
 		play: reset,
 		stop: clear,
 		pause: reset,
-		events: [['settle', reset], ['interact', interact]]
+		events: [['settle', reset], ['interact', interact], ['resize', resize]]
 	});
 
 	control.reset = reset;
@@ -608,13 +622,13 @@ function autoScroll(context) {
 	function run() {
 		timer = 0;
 		const geo = context.geo();
-		if (geo && !geo.fit && !pressed && !context.dragging() && !control.paused()) {
+		if (geo && !geo.fit && options.speed > 0 && !pressed && !context.dragging() && !control.paused()) {
 			context.scroll(options.direction === 'prev' ? -1 : 1, options.speed / 1000);
 		}
 	}
 
 	// While the auto scroll plays, a press stops the slides under the pointer. A release without a drag starts them again after the delay.
-	// A drag is an interaction.
+	// A drag is an interaction. Its release starts a motion to a snap, and the "settle" of this motion starts the delay.
 	const listen = bind(window, [['pointerup', release], ['pointercancel', release]]),
 		presses = bind(context.viewport, [['pointerdown', press]]);
 
@@ -630,7 +644,7 @@ function autoScroll(context) {
 	function release() {
 		pressed = false;
 		listen();
-		if (!context.dragging()) {
+		if (!context.dragging() && !context.moving()) {
 			wait();
 		}
 	}
@@ -1028,12 +1042,13 @@ function targetLocation(target, location, period, direction = 0) {
  * Get the progress of a location, from 0 to 1.
  *
  * @param {number} location
- * @param {{min: number, max: number, period: number}} limits The limits of the location and the loop period. With the loop, max is the location of the first snap.
+ * @param {{min: number, max: number, cycle: number}} limits The limits of the location, and the length of one copy of the original slides in loop mode.
+ * With the loop, max is the location of the first snap, and the progress goes from 0 to 1 in each copy. Without the loop, cycle is 0.
  * @returns {number}
  */
-function progress(location, { min, max, period }) {
-	if (period) {
-		const value = (max - location) / period;
+function progress(location, { min, max, cycle }) {
+	if (cycle) {
+		const value = (max - location) / cycle;
 		return value - floor(value);
 	}
 	return max > min ? clamp((max - location) / (max - min), 0, 1) : 0;
@@ -1044,7 +1059,8 @@ function progress(location, { min, max, period }) {
  *
  * @param {{slides: Array<{start: number, end: number}>, view: number, period?: number}} geo
  * @param {number} location
- * @param {number} threshold The part of a slide that must show, from 0 to 1. With 0, any part is enough.
+ * @param {number} threshold The part of a slide that must show, from 0 to 1. With 0, any part is enough. A slide that is larger than the viewport
+ * must fill this part of the viewport.
  * @returns {number[]} The slide indexes.
  */
 function inView({ slides, view, period }, location, threshold) {
@@ -1055,7 +1071,7 @@ function inView({ slides, view, period }, location, threshold) {
 			start = period ? distance(slide.start + location + size / 2, view / 2, period) + view / 2 - size / 2 : slide.start + location,
 			visible = Math.min(start + size, view) - Math.max(start, 0);
 
-		if (!slide.hidden && visible > 0 && visible >= threshold * size - 0.5) {
+		if (!slide.hidden && visible > 0 && visible >= threshold * Math.min(size, view) - 0.5) {
 			result.push(index);
 		}
 	});
@@ -1114,7 +1130,7 @@ function compute(layout, rects, count, options) {
 		return { copies };
 	}
 
-	const geo = { ...layout, ...rects, fit, count, period, min: 0, max: 0 };
+	const geo = { ...layout, ...rects, fit, count, period, cycle: period / (copies + 1), min: 0, max: 0 };
 
 	if (fit) {
 		geo.snaps = [{ location: 0, slide: Math.max(0, activeSlide(rects.slides, 0, rects.view, layout.align)) }];
@@ -1133,15 +1149,15 @@ function compute(layout, rects, count, options) {
 /**
  * Find the snap of a logical snap that is nearest to a location. With clones, a logical snap has more than one snap.
  *
- * @param {{snaps: Array<{location: number}>, map: number[], period: number}} geo The result of compute().
- * @param {number} index The logical snap.
+ * @param {{snaps: Array<{location: number}>, logical: number[], map: number[], period: number}} geo The result of compute().
+ * @param {number} index The logical snap. An index out of range goes to the first or the last logical snap, and an index that is not a number goes to the first.
  * @param {number} location
  * @returns {number} The snap index.
  */
 function physicalSnap(geo, index, location) {
-	const best = lowest(geo.snaps, (snap, item) => geo.map[item] === index ? abs(distance(snap.location, location, geo.period)) : Infinity);
+	const logical = round(clamp(index, 0, geo.logical.length - 1)) || 0;
 
-	return best < 0 ? clamp(index, 0, geo.snaps.length - 1) : best;
+	return Math.max(0, lowest(geo.snaps, (snap, item) => geo.map[item] === logical ? abs(distance(snap.location, location, geo.period)) : Infinity));
 }
 
 /*
@@ -1161,7 +1177,8 @@ function physicalSnap(geo, index, location) {
 function readLayout(container, options) {
 	const style = getComputedStyle(container),
 		display = style.display,
-		content = style.justifyContent;
+		// The value without the "safe" or "unsafe" keyword. A browser can give "flex-end" as "flow-end".
+		content = style.justifyContent.split(' ').pop();
 
 	let axis = options.axis;
 
@@ -1177,7 +1194,7 @@ function readLayout(container, options) {
 	let align = options.align;
 
 	if (align === 'auto') {
-		align = content === 'center' ? 'center' : content === 'flex-end' || content === 'end' || (axis === 'x' && content === 'right') ? 'end' : 'start';
+		align = content === 'center' ? 'center' : content.endsWith('end') || (axis === 'x' && content === 'right') ? 'end' : 'start';
 	}
 
 	const rtl = axis === 'x' && (options.dir === 'auto' ? style.direction === 'rtl' : options.dir === 'rtl');
@@ -1203,7 +1220,7 @@ function readLayout(container, options) {
  * @param {{axis: string, container: number, slides: number[]}} written The translate values that the library wrote, in px on the screen.
  * @param {number} [size] The window size on the main axis, for clones: 'fill'.
  * @returns {{view: number, slides: Array<{start: number, end: number, cross: number, hidden: boolean}>, gap: number, scale: number, area: {start: number, size: number}}}
- * view is the viewport size without the padding. gap is the loop gap: the space between the last slide and the next copy of the first slide.
+ * view is the viewport size without the borders and the padding. gap is the loop gap: the space between the last slide and the next copy of the first slide.
  * scale is the screen px of one px of the carousel. area is the part of the main axis where the loop must show slides: the viewport with its
  * padding, or with a size, the window, so that the slides fill it when the viewport overflow shows.
  */
@@ -1220,7 +1237,9 @@ function readRects(viewport, nodes, layout, written, size) {
 		view = (x ? box.width : box.height) / scale,
 		style = getComputedStyle(viewport),
 		side = x ? (layout.rtl ? ['Right', 'Left'] : ['Left', 'Right']) : ['Top', 'Bottom'],
-		pad = { start: parseFloat(style['padding' + side[0]]) || 0, end: parseFloat(style['padding' + side[1]]) || 0 };
+		// The border and the padding of a side
+		inset = (name) => (parseFloat(style['border' + name + 'Width']) || 0) + (parseFloat(style['padding' + name]) || 0),
+		pad = { start: inset(side[0]), end: inset(side[1]) };
 
 	const slides = nodes.map((node, index) => {
 		const rect = node.getBoundingClientRect(),
@@ -1895,6 +1914,8 @@ function carousel(element, userOptions, defaults, features) {
 
 	// The options and the markup
 	let options,
+		// The options of the reinit() calls. They apply over the data-carousel attribute.
+		changes = {},
 		cls,
 		root,
 		viewport,
@@ -1956,8 +1977,10 @@ function carousel(element, userOptions, defaults, features) {
 		options: () => options,
 		reinit,
 		destroy: () => {
-			teardown(false);
-			events.emit('destroy');
+			if (registry.get(element) === api) {
+				teardown(false);
+				events.emit('destroy');
+			}
 		}
 	};
 
@@ -2024,7 +2047,7 @@ function carousel(element, userOptions, defaults, features) {
 		waiting = resolved.lazy ? waitNear(element, resolved.lazy, reinit) : null;
 
 	if (waiting) {
-		registry.set(element, api);
+		register(true);
 	} else {
 		setup();
 	}
@@ -2035,20 +2058,20 @@ function carousel(element, userOptions, defaults, features) {
 	 * Read the options, add the markup, start the features and the observers. The first ResizeObserver callback measures the layout.
 	 */
 	function setup() {
-		media = breakpoints(resolved || resolve(element, defaults, userOptions), () => reinit());
+		media = breakpoints(resolved || merge(resolve(element, defaults, userOptions), changes), () => reinit());
 		resolved = null;
 		options = media.options;
 
+		// An inactive carousel stays in the registry, so that a second call gets it, and a breakpoint can start it again
 		if (!options.active) {
+			register(true);
 			return;
 		}
 
 		cls = classNames(options.classes, options.state);
 		({ root, viewport, container } = build(element, options, cls));
 
-		for (const node of [root, viewport, container]) {
-			registry.set(node, api);
-		}
+		register(true);
 
 		slides = readSlides(container, options.slides);
 		nodes = slides;
@@ -2087,13 +2110,17 @@ function carousel(element, userOptions, defaults, features) {
 	function teardown(keep) {
 		waiting?.();
 		waiting = null;
-		registry.delete(element);
+		register();
 		observe(false);
 		mutationObserver?.disconnect();
 		media?.remove();
 		media = null;
 
 		if (!cls) {
+			// An inactive carousel kept the wrapper of its last setup
+			if (!keep && root) {
+				restore(root, viewport, container, [], false);
+			}
 			return;
 		}
 
@@ -2123,10 +2150,7 @@ function carousel(element, userOptions, defaults, features) {
 			setClass(root, cls[name], false);
 		}
 
-		for (const node of [root, viewport, container]) {
-			cleanStyle(node);
-			registry.delete(node);
-		}
+		[root, viewport, container].forEach(cleanStyle);
 
 		restore(root, viewport, container, slides, keep);
 
@@ -2140,13 +2164,22 @@ function carousel(element, userOptions, defaults, features) {
 	}
 
 	/**
-	 * Merge new options and set up the carousel again. The selected slide stays.
+	 * Add the carousel to the registry for its element and its markup, so that BetterCarousel.get() finds it, or remove it.
+	 *
+	 * @param {boolean} [on] Without a value, remove the carousel.
+	 */
+	function register(on) {
+		[element, root, viewport, container].forEach((node) => node && registry[on ? 'set' : 'delete'](node, api));
+	}
+
+	/**
+	 * Merge new options and set up the carousel again. The selected slide stays. The new options apply over all other sources.
 	 *
 	 * @param {object} [newOptions]
 	 */
 	function reinit(newOptions) {
 		if (newOptions) {
-			userOptions = merge(userOptions, newOptions);
+			changes = merge(changes, newOptions);
 			resolved = null;
 		}
 		const keep = geo ? selectedSlide() : requested;
@@ -2265,9 +2298,9 @@ function carousel(element, userOptions, defaults, features) {
 		observe(true);
 	}
 
-	// The original slide index of a slide or a clone
+	// The original slide index of a slide or a clone. With no slides, 0.
 	function original(index) {
-		return index % slides.length;
+		return index % slides.length || 0;
 	}
 
 	// The logical snap of a snap. They are different only when the carousel has clones.
@@ -2380,6 +2413,10 @@ function carousel(element, userOptions, defaults, features) {
 			render(dragging);
 		}
 		labelSlides(slides, options.labels.slide);
+		// A right-to-left container gives its direction to the root, so that the arrows and the dots follow it
+		if (options.dir === 'auto') {
+			own(root, 'dir', geo.rtl && 'rtl');
+		}
 
 		if (!options.resize) {
 			observe(false);
@@ -2427,8 +2464,10 @@ function carousel(element, userOptions, defaults, features) {
 
 		// Auto height: the height of the tallest slide in view. During a motion or a drag, the slides in view at the selected snap give it,
 		// so that a taller slide makes the viewport taller only when it is selected. The CSS transition has the duration and the curve of a motion.
+		// With no slide in view, the height comes from the CSS.
 		if (options.autoHeight) {
-			setStyle(viewport, 'height', x ? Math.max(...inView(geo, keep ? geo.snaps[selected].location : location, 0).map((index) => geo.slides[index].cross)) + 'px' : '');
+			const height = x ? Math.max(...inView(geo, keep ? geo.snaps[selected].location : location, 0).map((index) => geo.slides[index].cross)) : 0;
+			setStyle(viewport, 'height', height > 0 ? height + 'px' : '');
 		}
 
 		const chosen = selectedSlide(),
@@ -2507,7 +2546,8 @@ function carousel(element, userOptions, defaults, features) {
 					// The slide start on the screen, and its distance from its snap position
 					start = box.start + geo.sign * (shifts[index] || 0) + at,
 					delta = start - alignOffset(geo.align, geo.view, size, index),
-					offset = delta / (size + geo.gap);
+					// A hidden slide has no size, and with no gap, it has no offset
+					offset = size + geo.gap ? delta / (size + geo.gap) : 0;
 
 				if (options.offset === true) {
 					node.style.setProperty('--better-offset', offset);
@@ -2577,6 +2617,10 @@ function carousel(element, userOptions, defaults, features) {
 	 * @param {boolean} [instant]
 	 */
 	function advance(direction, instant) {
+		// A lazy carousel starts first, so that the step starts from the startSnap option
+		if (waiting) {
+			reinit();
+		}
 		if (!geo) {
 			go(selected + direction, instant);
 		} else if (can(direction)) {
@@ -3133,11 +3177,14 @@ function drag(context) {
 function scrolls(node, viewport, axis, delta) {
 	const [size, client, position, overflow] = axis === 'x' ? ['scrollWidth', 'clientWidth', 'scrollLeft', 'overflowX'] : ['scrollHeight', 'clientHeight', 'scrollTop', 'overflowY'];
 
+	let style;
+
 	for (; node && node !== viewport; node = node.parentElement) {
-		// Read the style only for an element with more content than space
-		if (node[size] > node[client] && /auto|scroll/.test(getComputedStyle(node)[overflow])) {
+		// Read the style only for an element with more content than space. In a right-to-left element, scrollLeft is 0 at the right
+		// and goes below 0 to the left, so a negative delta goes away from the start.
+		if (node[size] > node[client] && /auto|scroll/.test((style = getComputedStyle(node))[overflow])) {
 			const at = abs(node[position]);
-			if (delta > 0 ? at + node[client] < node[size] - 1 : at > 0) {
+			if ((axis === 'x' && style.direction === 'rtl' ? -delta : delta) > 0 ? at + node[client] < node[size] - 1 : at > 0) {
 				return true;
 			}
 		}
@@ -3219,9 +3266,11 @@ function wheel(context) {
 		}
 
 		event.preventDefault();
-		context.emit('interact');
 
-		if (!timer) {
+		// The first event of a gesture keeps the selected snap. The "interact" event stops the timer.
+		const first = !timer;
+		context.emit('interact');
+		if (first) {
 			snap = context.selected();
 		}
 		held = true;
@@ -3249,6 +3298,14 @@ function wheel(context) {
 	// Add it only where the wheel moves the carousel.
 	const listen = bind(viewport, [['wheel', onWheel, { passive: false }]]);
 
+	// Stop the timer of the gesture end, so that it does not go to a snap after a drag, a key or a goToSnap() call
+	function cancel() {
+		clearTimeout(timer);
+		timer = 0;
+	}
+
+	context.on('interact', cancel);
+
 	context.on('init reinit resize', () => {
 		const geo = context.geo();
 		listen(!geo.fit);
@@ -3257,7 +3314,7 @@ function wheel(context) {
 	return {
 		remove() {
 			listen();
-			clearTimeout(timer);
+			cancel();
 		}
 	};
 }

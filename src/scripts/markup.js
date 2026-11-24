@@ -197,6 +197,9 @@ export function build(element, options, cls) {
 	if (!root.hasAttribute('aria-labelledby')) {
 		own(root, 'aria-label', options.labels.carousel);
 	}
+	// The dir option sets the direction of the root before the first measure pass, so that the slides and the controls follow it
+	own(root, 'dir', options.dir !== 'auto' && options.dir);
+
 	own(container, 'id', container.id || 'carousel-' + ++uid);
 	own(container, 'aria-live', 'polite');
 

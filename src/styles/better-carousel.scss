@@ -307,7 +307,9 @@ $better-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'
 
 	.#{$better}_vertical {
 
-		.#{$better}_button {
+		// The arrows are bars at the top and the bottom
+		.#{$better}_prev,
+		.#{$better}_next {
 			top: auto;
 			right: 0;
 			bottom: 0;
@@ -332,11 +334,25 @@ $better-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'
 
 		}
 
-		// One column of dots on the right side, in the middle of the carousel height
+		// The play button is at the start side, in the middle of the carousel height, opposite the dots
+		.#{$better}_play {
+			top: 50%;
+			bottom: auto;
+			inset-inline-start: 0;
+			translate: 0 -50%;
+		}
+
+		// With no arrows and no dots in the root, the play button stays under the slides
+		.#{$better}_viewport + .#{$better}_play {
+			top: auto;
+			translate: none;
+		}
+
+		// One column of dots at the end side, in the middle of the carousel height
 		.#{$better}_dots {
 			position: absolute;
 			top: 50%;
-			right: 0;
+			inset-inline-end: 0;
 			flex-direction: column;
 			width: var(--height-button);
 			height: 7.5rem;

@@ -4,7 +4,7 @@
 
 <p>A small, fast and accessible JavaScript carousel.<br />Your grid of cards becomes a carousel with the same HTML and CSS.<br />The motion runs on the compositor, also on slow phones.</p>
 
-[![Gzip size](https://flat.badgen.net/static/gzip/13.3%20KB/green)](dist/better-carousel.min.js)
+[![Gzip size](https://flat.badgen.net/static/gzip/13.5%20KB/green)](dist/better-carousel.min.js)
 [![MIT license](https://flat.badgen.net/static/license/MIT/purple)](LICENSE)
 [![No dependencies](https://flat.badgen.net/static/dependencies/0/blue)](package.json)
 
@@ -16,7 +16,7 @@
 
 - **Your HTML and CSS** - No special classes or markup. Your CSS sets the layout.
 - **Smooth on slow phones** - The browser animates the slides, not JavaScript.
-- **Small** - <!-- generated:gzip -->13.3 KB<!-- /generated --> gzip with all features.
+- **Small** - <!-- generated:gzip -->13.5 KB<!-- /generated --> gzip with all features.
 - **Accessible** - WCAG 2.1 AA, with keyboard and screen reader support.
 - **Loop** - It moves the original slides, with clones only when needed.
 - **Vertical, grid and right-to-left** - Your CSS sets them.
@@ -31,13 +31,13 @@ Load the script and the stylesheet from jsDelivr. The script adds the global `Be
 ```html
 <link
   rel="stylesheet"
-  href="https://cdn.jsdelivr.net/gh/TwistedAndy/better-carousel@v1.1.6/dist/better-carousel.css"
-  integrity="sha384-eMCWaKRE+ylXLvrz1kHddSvQwdSf9ZNBRLrlGQfDmGFwMLh9WoVKLY2CV/5pS+/o"
+  href="https://cdn.jsdelivr.net/gh/TwistedAndy/better-carousel@v1.1.7/dist/better-carousel.css"
+  integrity="sha384-GBNQ7Zs2+j2S7dPR2N6usuMhPqnPSE03cOlj5iEM6UdyVaAGF7WXx5AUaxd9B27D"
   crossorigin="anonymous"
 />
 <script
-  src="https://cdn.jsdelivr.net/gh/TwistedAndy/better-carousel@v1.1.6/dist/better-carousel.min.js"
-  integrity="sha384-oSE8PmFZ9pYN4rPRf8/EMH8FnXNsIW+7hkIj/+K64dlAPE/4v/UjxazSYVeNgZu+"
+  src="https://cdn.jsdelivr.net/gh/TwistedAndy/better-carousel@v1.1.7/dist/better-carousel.min.js"
+  integrity="sha384-drPkTGmNy2zUodmdagAeftW0OLBynNxbpLliRqfnRirpcome3LHUGS/kO54WENSA"
   crossorigin="anonymous"
 ></script>
 ```
@@ -369,7 +369,7 @@ Set the options in one of these places:
 - In the `data-carousel` attribute, as JSON.
 - In `BetterCarousel.defaults`, for all carousels.
 
-If the call and the attribute set the same option, the value of the attribute applies.
+If the call and the attribute set the same option, the value of the attribute applies. The options of a `reinit()` call apply over the call and the attribute.
 
 ```html
 <div class="items carousel" data-carousel='{"loop":true,"autoplay":3000}'>...</div>
@@ -403,7 +403,7 @@ BetterCarousel(element, {
 | --- | --- | --- | --- |
 | `axis` | `'x'`, `'y'`, `'auto'` | `'auto'` | The axis of the motion. With `'auto'`, the CSS of the container sets the axis. ([example](https://twistedandy.github.io/better-carousel/#switch)) |
 | `align` | `'start'`, `'center'`, `'end'`, `'auto'`, `function` | `'auto'` | The position of the selected snap in the viewport. A function gets `(viewSize, snapSize, index)` and returns the offset in px. With `'auto'`, `justify-content` sets the alignment. ([example](https://twistedandy.github.io/better-carousel/#center)) |
-| `dir` | `'ltr'`, `'rtl'`, `'auto'` | `'auto'` | The text direction. With `'auto'`, the CSS `direction` sets it. ([example](https://twistedandy.github.io/better-carousel/#rtl)) |
+| `dir` | `'ltr'`, `'rtl'`, `'auto'` | `'auto'` | The text direction. With `'auto'`, the CSS `direction` sets it. With `'ltr'` or `'rtl'`, or with a right-to-left container, the root gets the `dir` attribute if it has none. ([example](https://twistedandy.github.io/better-carousel/#rtl)) |
 | `loop` | `boolean` | `false` | The first slide comes after the last slide. ([example](https://twistedandy.github.io/better-carousel/#loop)) |
 | `clones` | `'auto'`, `'fill'`, `false` | `'auto'` | `'auto'`: add clones only if the loop needs them. `'fill'`: add clones that fill the window. `false`: add no clones. ([example](https://twistedandy.github.io/better-carousel/#clones)) |
 | `dragFree` | `boolean`, `'snap'` | `false` | `true`: glide after a drag and stop at any position. `'snap'`: glide and stop at the nearest snap. ([example](https://twistedandy.github.io/better-carousel/#free)) |
@@ -422,7 +422,7 @@ BetterCarousel(element, {
 | `resize` | `boolean` | `true` | Measure again when a size changes. ([example](https://twistedandy.github.io/better-carousel/#options-usage)) |
 | `slideChanges` | `boolean` | `true` | Measure again when the page adds or removes a slide. ([example](https://twistedandy.github.io/better-carousel/#changes)) |
 | `focus` | `boolean` | `true` | Go to a slide when it gets the keyboard focus. ([example](https://twistedandy.github.io/better-carousel/#controls)) |
-| `inViewThreshold` | `number` | `0` | The part of a slide, from 0 to 1, that must show for `slidesInView()`. ([example](https://twistedandy.github.io/better-carousel/#options-usage)) |
+| `inViewThreshold` | `number` | `0` | The part of a slide, from 0 to 1, that must show for `slidesInView()`. A slide that is larger than the viewport must fill this part of the viewport. ([example](https://twistedandy.github.io/better-carousel/#options-usage)) |
 | `active` | `boolean` | `true` | `false`: do not start the carousel. Use it in `breakpoints`. ([example](https://twistedandy.github.io/better-carousel/#breakpoints)) |
 | `breakpoints` | `object` | `{}` | The options for media queries: `{ '(min-width: 768px)': { loop: true } }`. ([example](https://twistedandy.github.io/better-carousel/#breakpoints)) |
 | `container` | `string` | `null` | The selector of the container, if the element is the root. |
@@ -444,7 +444,7 @@ BetterCarousel(element, {
 
 ### autoplay
 
-The value is `true`, a delay in ms, or an object. In the object, `delay` can also be an array with one delay for each snap. A `data-delay` attribute on a slide sets the delay of that slide, and it has priority over `delay`.
+The value is `true`, a delay in ms, or an object. In the object, `delay` can also be an array with one delay for each snap. The last delay of the array applies to the snaps after it. A `data-delay` attribute on a slide sets the delay of that slide, and it has priority over `delay`.
 
 The autoplay pauses in these conditions:
 
@@ -627,7 +627,7 @@ In loop mode, the progress goes from 1 back to 0. The auto scroll is a motion th
 | `rootNode()`, `viewportNode()`, `containerNode()` | `HTMLElement` | The root, the viewport and the container. |
 | `isFit()` | `boolean` | `true` if all slides fit in the viewport. |
 | `options()` | `object` | The options that apply now, after the breakpoints. |
-| `reinit(options)` | - | Merge new options and start again. The selected slide stays. |
+| `reinit(options)` | - | Merge new options and start again. The selected slide stays. The new options apply over the `data-carousel` attribute. |
 | `destroy()` | - | Stop the carousel and restore the markup. |
 | `on(name, handler)`, `off(name, handler)` | carousel | Add or remove an event handler. The handler gets `(carousel, name)`. |
 | `autoplay` | `object` | Only with the `autoplay` option: `play()`, `stop()`, `reset()` and `isPlaying()`. |
@@ -780,9 +780,9 @@ The library is made for slow phones. A motion runs on the compositor, and a caro
 <!-- generated:sizes -->
 | File | Minified | Gzip | Brotli |
 | --- | --- | --- | --- |
-| `better-carousel.min.js` | 32.3 KB | 13.3 KB | 12.1 KB |
-| `better-carousel.css` | 5.1 KB | 1.5 KB | 1.2 KB |
-| Total | 37.4 KB | 14.8 KB | 13.4 KB |
+| `better-carousel.min.js` | 32.8 KB | 13.5 KB | 12.3 KB |
+| `better-carousel.css` | 5.4 KB | 1.5 KB | 1.3 KB |
+| Total | 38.2 KB | 15.0 KB | 13.6 KB |
 <!-- /generated -->
 
 - A motion is a Web Animations API animation of `translate`. No script runs on each frame.

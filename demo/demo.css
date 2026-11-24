@@ -1472,7 +1472,8 @@ pre {
   background: var(--button-base, #222);
 }
 
-.better_vertical .better_button {
+.better_vertical .better_prev,
+.better_vertical .better_next {
   top: auto;
   right: 0;
   bottom: 0;
@@ -1481,7 +1482,8 @@ pre {
   height: 30px;
   margin: 0;
 }
-.better_vertical .better_button:before {
+.better_vertical .better_prev:before,
+.better_vertical .better_next:before {
   transform: rotate(90deg);
 }
 .better_vertical .better_prev {
@@ -1491,10 +1493,20 @@ pre {
 .better_vertical .better_prev:before {
   transform: rotate(-90deg);
 }
+.better_vertical .better_play {
+  top: 50%;
+  bottom: auto;
+  inset-inline-start: 0;
+  translate: 0 -50%;
+}
+.better_vertical .better_viewport + .better_play {
+  top: auto;
+  translate: none;
+}
 .better_vertical .better_dots {
   position: absolute;
   top: 50%;
-  right: 0;
+  inset-inline-end: 0;
   flex-direction: column;
   width: var(--height-button);
   height: 7.5rem;
@@ -1725,7 +1737,8 @@ pre {
 .demo_classes .embla_dots.embla_dots_all .embla_dot.is_current:before {
   background: var(--button-base, #222);
 }
-.demo_classes .embla_vertical .embla_button {
+.demo_classes .embla_vertical .embla_prev,
+.demo_classes .embla_vertical .embla_next {
   top: auto;
   right: 0;
   bottom: 0;
@@ -1734,7 +1747,8 @@ pre {
   height: 30px;
   margin: 0;
 }
-.demo_classes .embla_vertical .embla_button:before {
+.demo_classes .embla_vertical .embla_prev:before,
+.demo_classes .embla_vertical .embla_next:before {
   transform: rotate(90deg);
 }
 .demo_classes .embla_vertical .embla_prev {
@@ -1744,10 +1758,20 @@ pre {
 .demo_classes .embla_vertical .embla_prev:before {
   transform: rotate(-90deg);
 }
+.demo_classes .embla_vertical .embla_play {
+  top: 50%;
+  bottom: auto;
+  inset-inline-start: 0;
+  translate: 0 -50%;
+}
+.demo_classes .embla_vertical .embla_viewport + .embla_play {
+  top: auto;
+  translate: none;
+}
 .demo_classes .embla_vertical .embla_dots {
   position: absolute;
   top: 50%;
-  right: 0;
+  inset-inline-end: 0;
   flex-direction: column;
   width: var(--height-button);
   height: 7.5rem;

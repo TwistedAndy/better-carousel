@@ -1,6 +1,6 @@
 {
 	"name": "@twistedandy/better-carousel",
-	"version": "1.1.6",
+	"version": "1.1.7",
 	"description": "A small and fast carousel that takes all sizes, gaps and the layout from CSS.",
 	"repository": {
 		"type": "git",

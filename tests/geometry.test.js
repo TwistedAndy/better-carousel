@@ -123,15 +123,18 @@ test('loop: target locations and the nearest snap modulo the period', () => {
 
 test('progress and slides in view', () => {
 	assert.equal(progress(-480, { min: -960, max: 0 }), 0.5);
-	assert.equal(progress(-480, { min: 0, max: 0, period: 1920 }), 0.25);
+	assert.equal(progress(-480, { min: 0, max: 0, cycle: 1920 }), 0.25);
 	// With the loop, the progress starts at the first snap, also if its location is not 0
-	assert.equal(progress(-160, { min: 0, max: 320, period: 1920 }), 0.25);
-	assert.equal(progress(320, { min: 0, max: 320, period: 1920 }), 0);
+	assert.equal(progress(-160, { min: 0, max: 320, cycle: 1920 }), 0.25);
+	assert.equal(progress(320, { min: 0, max: 320, cycle: 1920 }), 0);
 
 	const slides = row(6);
 
 	assert.deepEqual(inView({ slides, view }, -160, 0), [0, 1, 2, 3]);
 	assert.deepEqual(inView({ slides, view }, -160, 1), [1, 2]);
+	// A slide that is larger than the viewport is fully in view when it fills the viewport
+	assert.deepEqual(inView({ slides: [{ start: 0, end: 500 }], view: 400 }, -50, 1), [0]);
+	assert.deepEqual(inView({ slides: [{ start: 0, end: 500 }], view: 400 }, 50, 1), []);
 	assert.deepEqual(inView({ slides, view, period: 1920 }, 0, 0), [0, 1, 2]);
 	assert.deepEqual(inView({ slides, view, period: 1920 }, 320, 0), [0, 1, 5]);
 });
@@ -180,13 +183,17 @@ test('compute: a loop that needs clones asks for them, then maps each clone snap
 	const geo = compute(layout, rects(8, 1000), 4, loop);
 
 	assert.equal(geo.period, 2560);
+	assert.equal(geo.cycle, 1280);
 	assert.deepEqual(geo.logical, [0, 1, 2, 3]);
 	assert.deepEqual(geo.map, [0, 1, 2, 3, 0, 1, 2, 3]);
 	// A logical snap has two snaps: the one nearest to the location wins
 	assert.equal(physicalSnap(geo, 1, 0), 1);
 	assert.equal(physicalSnap(geo, 1, -1500), 5);
-	// A logical snap that is not in the map gives the nearest valid index
+	// A logical snap out of range goes to the last or the first logical snap, not to a clone snap of another logical snap
 	assert.equal(physicalSnap(geo, 20, 0), 7);
+	assert.equal(geo.map[physicalSnap(geo, 4, 0)], 3);
+	assert.equal(geo.map[physicalSnap(geo, -2, 0)], 0);
+	assert.equal(physicalSnap(geo, NaN, 0), 0);
 });
 
 test('compute: an auto scroll loop with no slide that shows fits, so it gets one snap', () => {

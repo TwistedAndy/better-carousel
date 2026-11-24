@@ -348,11 +348,14 @@ export function drag(context) {
 function scrolls(node, viewport, axis, delta) {
 	const [size, client, position, overflow] = axis === 'x' ? ['scrollWidth', 'clientWidth', 'scrollLeft', 'overflowX'] : ['scrollHeight', 'clientHeight', 'scrollTop', 'overflowY'];
 
+	let style;
+
 	for (; node && node !== viewport; node = node.parentElement) {
-		// Read the style only for an element with more content than space
-		if (node[size] > node[client] && /auto|scroll/.test(getComputedStyle(node)[overflow])) {
+		// Read the style only for an element with more content than space. In a right-to-left element, scrollLeft is 0 at the right
+		// and goes below 0 to the left, so a negative delta goes away from the start.
+		if (node[size] > node[client] && /auto|scroll/.test((style = getComputedStyle(node))[overflow])) {
 			const at = abs(node[position]);
-			if (delta > 0 ? at + node[client] < node[size] - 1 : at > 0) {
+			if ((axis === 'x' && style.direction === 'rtl' ? -delta : delta) > 0 ? at + node[client] < node[size] - 1 : at > 0) {
 				return true;
 			}
 		}
@@ -434,9 +437,11 @@ export function wheel(context) {
 		}
 
 		event.preventDefault();
-		context.emit('interact');
 
-		if (!timer) {
+		// The first event of a gesture keeps the selected snap. The "interact" event stops the timer.
+		const first = !timer;
+		context.emit('interact');
+		if (first) {
 			snap = context.selected();
 		}
 		held = true;
@@ -464,6 +469,14 @@ export function wheel(context) {
 	// Add it only where the wheel moves the carousel.
 	const listen = bind(viewport, [['wheel', onWheel, { passive: false }]]);
 
+	// Stop the timer of the gesture end, so that it does not go to a snap after a drag, a key or a goToSnap() call
+	function cancel() {
+		clearTimeout(timer);
+		timer = 0;
+	}
+
+	context.on('interact', cancel);
+
 	context.on('init reinit resize', () => {
 		const geo = context.geo();
 		listen(!geo.fit);
@@ -472,7 +485,7 @@ export function wheel(context) {
 	return {
 		remove() {
 			listen();
-			clearTimeout(timer);
+			cancel();
 		}
 	};
 }

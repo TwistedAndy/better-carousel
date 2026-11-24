@@ -16,7 +16,8 @@ import { abs, round } from './geometry.js';
 export function readLayout(container, options) {
 	const style = getComputedStyle(container),
 		display = style.display,
-		content = style.justifyContent;
+		// The value without the "safe" or "unsafe" keyword. A browser can give "flex-end" as "flow-end".
+		content = style.justifyContent.split(' ').pop();
 
 	let axis = options.axis;
 
@@ -32,7 +33,7 @@ export function readLayout(container, options) {
 	let align = options.align;
 
 	if (align === 'auto') {
-		align = content === 'center' ? 'center' : content === 'flex-end' || content === 'end' || (axis === 'x' && content === 'right') ? 'end' : 'start';
+		align = content === 'center' ? 'center' : content.endsWith('end') || (axis === 'x' && content === 'right') ? 'end' : 'start';
 	}
 
 	const rtl = axis === 'x' && (options.dir === 'auto' ? style.direction === 'rtl' : options.dir === 'rtl');
@@ -58,7 +59,7 @@ export function readLayout(container, options) {
  * @param {{axis: string, container: number, slides: number[]}} written The translate values that the library wrote, in px on the screen.
  * @param {number} [size] The window size on the main axis, for clones: 'fill'.
  * @returns {{view: number, slides: Array<{start: number, end: number, cross: number, hidden: boolean}>, gap: number, scale: number, area: {start: number, size: number}}}
- * view is the viewport size without the padding. gap is the loop gap: the space between the last slide and the next copy of the first slide.
+ * view is the viewport size without the borders and the padding. gap is the loop gap: the space between the last slide and the next copy of the first slide.
  * scale is the screen px of one px of the carousel. area is the part of the main axis where the loop must show slides: the viewport with its
  * padding, or with a size, the window, so that the slides fill it when the viewport overflow shows.
  */
@@ -75,7 +76,9 @@ export function readRects(viewport, nodes, layout, written, size) {
 		view = (x ? box.width : box.height) / scale,
 		style = getComputedStyle(viewport),
 		side = x ? (layout.rtl ? ['Right', 'Left'] : ['Left', 'Right']) : ['Top', 'Bottom'],
-		pad = { start: parseFloat(style['padding' + side[0]]) || 0, end: parseFloat(style['padding' + side[1]]) || 0 };
+		// The border and the padding of a side
+		inset = (name) => (parseFloat(style['border' + name + 'Width']) || 0) + (parseFloat(style['padding' + name]) || 0),
+		pad = { start: inset(side[0]), end: inset(side[1]) };
 
 	const slides = nodes.map((node, index) => {
 		const rect = node.getBoundingClientRect(),

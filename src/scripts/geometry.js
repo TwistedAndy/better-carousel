@@ -305,12 +305,13 @@ export function targetLocation(target, location, period, direction = 0) {
  * Get the progress of a location, from 0 to 1.
  *
  * @param {number} location
- * @param {{min: number, max: number, period: number}} limits The limits of the location and the loop period. With the loop, max is the location of the first snap.
+ * @param {{min: number, max: number, cycle: number}} limits The limits of the location, and the length of one copy of the original slides in loop mode.
+ * With the loop, max is the location of the first snap, and the progress goes from 0 to 1 in each copy. Without the loop, cycle is 0.
  * @returns {number}
  */
-export function progress(location, { min, max, period }) {
-	if (period) {
-		const value = (max - location) / period;
+export function progress(location, { min, max, cycle }) {
+	if (cycle) {
+		const value = (max - location) / cycle;
 		return value - floor(value);
 	}
 	return max > min ? clamp((max - location) / (max - min), 0, 1) : 0;
@@ -321,7 +322,8 @@ export function progress(location, { min, max, period }) {
  *
  * @param {{slides: Array<{start: number, end: number}>, view: number, period?: number}} geo
  * @param {number} location
- * @param {number} threshold The part of a slide that must show, from 0 to 1. With 0, any part is enough.
+ * @param {number} threshold The part of a slide that must show, from 0 to 1. With 0, any part is enough. A slide that is larger than the viewport
+ * must fill this part of the viewport.
  * @returns {number[]} The slide indexes.
  */
 export function inView({ slides, view, period }, location, threshold) {
@@ -332,7 +334,7 @@ export function inView({ slides, view, period }, location, threshold) {
 			start = period ? distance(slide.start + location + size / 2, view / 2, period) + view / 2 - size / 2 : slide.start + location,
 			visible = Math.min(start + size, view) - Math.max(start, 0);
 
-		if (!slide.hidden && visible > 0 && visible >= threshold * size - 0.5) {
+		if (!slide.hidden && visible > 0 && visible >= threshold * Math.min(size, view) - 0.5) {
 			result.push(index);
 		}
 	});
@@ -391,7 +393,7 @@ export function compute(layout, rects, count, options) {
 		return { copies };
 	}
 
-	const geo = { ...layout, ...rects, fit, count, period, min: 0, max: 0 };
+	const geo = { ...layout, ...rects, fit, count, period, cycle: period / (copies + 1), min: 0, max: 0 };
 
 	if (fit) {
 		geo.snaps = [{ location: 0, slide: Math.max(0, activeSlide(rects.slides, 0, rects.view, layout.align)) }];
@@ -410,13 +412,13 @@ export function compute(layout, rects, count, options) {
 /**
  * Find the snap of a logical snap that is nearest to a location. With clones, a logical snap has more than one snap.
  *
- * @param {{snaps: Array<{location: number}>, map: number[], period: number}} geo The result of compute().
- * @param {number} index The logical snap.
+ * @param {{snaps: Array<{location: number}>, logical: number[], map: number[], period: number}} geo The result of compute().
+ * @param {number} index The logical snap. An index out of range goes to the first or the last logical snap, and an index that is not a number goes to the first.
  * @param {number} location
  * @returns {number} The snap index.
  */
 export function physicalSnap(geo, index, location) {
-	const best = lowest(geo.snaps, (snap, item) => geo.map[item] === index ? abs(distance(snap.location, location, geo.period)) : Infinity);
+	const logical = round(clamp(index, 0, geo.logical.length - 1)) || 0;
 
-	return best < 0 ? clamp(index, 0, geo.snaps.length - 1) : best;
+	return Math.max(0, lowest(geo.snaps, (snap, item) => geo.map[item] === logical ? abs(distance(snap.location, location, geo.period)) : Infinity));
 }
