@@ -31,13 +31,13 @@ Load the script and the stylesheet from jsDelivr. The script adds the global `Be
 ```html
 <link
   rel="stylesheet"
-  href="https://cdn.jsdelivr.net/gh/TwistedAndy/better-carousel@v1.1.7/dist/better-carousel.css"
+  href="https://cdn.jsdelivr.net/gh/TwistedAndy/better-carousel@v1.1.8/dist/better-carousel.css"
   integrity="sha384-GBNQ7Zs2+j2S7dPR2N6usuMhPqnPSE03cOlj5iEM6UdyVaAGF7WXx5AUaxd9B27D"
   crossorigin="anonymous"
 />
 <script
-  src="https://cdn.jsdelivr.net/gh/TwistedAndy/better-carousel@v1.1.7/dist/better-carousel.min.js"
-  integrity="sha384-drPkTGmNy2zUodmdagAeftW0OLBynNxbpLliRqfnRirpcome3LHUGS/kO54WENSA"
+  src="https://cdn.jsdelivr.net/gh/TwistedAndy/better-carousel@v1.1.8/dist/better-carousel.min.js"
+  integrity="sha384-F1UHq51ROeDkMNAs7MowOtjLYAmExlVq6hfhsFz+VEj5pJMb1SgHA4kIWOWJa1o8"
   crossorigin="anonymous"
 ></script>
 ```
@@ -534,7 +534,7 @@ The `progress` and `offset` options give the position of the carousel on each fr
 With `true`, the carousel sets CSS variables:
 
 - `--better-progress` on the root: the progress, from 0 to 1;
-- `--better-offset` on each slide: the distance from the snap position of the slide, in slides. The value is 0 at the snap position, 1 for the next slide and -1 for the previous slide.
+- `--better-offset` on each slide: the distance from the snap position of the slide, in slides. The value is 0 at the snap position, 1 for the next slide and -1 for the previous slide. During a motion or a drag, only the slides in view get a new value. At rest, all slides have their value.
 
 ```html
 <div class="items carousel" data-carousel='{"progress":true,"offset":true}'>...</div>
@@ -780,9 +780,9 @@ The library is made for slow phones. A motion runs on the compositor, and a caro
 <!-- generated:sizes -->
 | File | Minified | Gzip | Brotli |
 | --- | --- | --- | --- |
-| `better-carousel.min.js` | 32.8 KB | 13.5 KB | 12.3 KB |
+| `better-carousel.min.js` | 32.9 KB | 13.5 KB | 12.4 KB |
 | `better-carousel.css` | 5.4 KB | 1.5 KB | 1.3 KB |
-| Total | 38.2 KB | 15.0 KB | 13.6 KB |
+| Total | 38.3 KB | 15.0 KB | 13.6 KB |
 <!-- /generated -->
 
 - A motion is a Web Animations API animation of `translate`. No script runs on each frame.

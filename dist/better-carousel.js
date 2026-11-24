@@ -1948,6 +1948,8 @@ function carousel(element, userOptions, defaults, features) {
 		requested = -1,
 		followed = -1,
 		visible = [],
+		// The slides in the visible area at the last write of --better-offset
+		inArea = [],
 		written = { axis: '', container: 0, slides: [] };
 
 	// The motion and the drag. A free motion, such as the auto scroll, has no snap: it selects the nearest snap when it stops.
@@ -2540,6 +2542,11 @@ function carousel(element, userOptions, defaults, features) {
 		}
 
 		if (options.offset) {
+			// During a motion or a drag, only the slides in the visible area get a new --better-offset, and a slide that leaves the area gets
+			// its value one more time. A style change of a slide that does not show is wasted work. At rest, all slides get their value.
+			const area = geo.area,
+				moving = options.offset === true && (dragging || motion.current() !== null);
+
 			nodes.forEach((node, index) => {
 				const box = geo.slides[index],
 					size = box.end - box.start,
@@ -2550,7 +2557,11 @@ function carousel(element, userOptions, defaults, features) {
 					offset = size + geo.gap ? delta / (size + geo.gap) : 0;
 
 				if (options.offset === true) {
-					node.style.setProperty('--better-offset', offset);
+					const shown = start + size > area.start && start < area.start + area.size;
+					if (!moving || shown || inArea[index]) {
+						node.style.setProperty('--better-offset', offset);
+					}
+					inArea[index] = shown;
 				} else {
 					each.node = node;
 					each.index = original(index);
